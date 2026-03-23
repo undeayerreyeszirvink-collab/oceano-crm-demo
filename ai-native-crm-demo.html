@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Native CRM - 经销商运营助手演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        .pulse-slow { animation: pulse 2s ease-in-out infinite; }
+        .slide-in { animation: slideIn 0.4s ease-out; }
+        .chat-bubble {
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .typing-indicator span {
+            animation: pulse 1.4s infinite;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans">
+    <!-- 顶部导航 -->
+    <nav class="bg-slate-900 border-b border-slate-800 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center">
+                    <span class="text-2xl">🤖</span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-semibold">AI-Native CRM</h1>
+                    <p class="text-xs text-slate-400">经销商运营助手</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="switchMode('chat')" id="btn-chat" class="px-4 py-2 rounded-lg bg-slate-700 text-sm font-medium">对话模式</button>
+                <button onclick="switchMode('dashboard')" id="btn-dashboard" class="px-4 py-2 rounded-lg bg-slate-800 text-sm font-medium hover:bg-slate-700">仪表盘</button>
+                <button onclick="switchMode('alerts')" id="btn-alerts" class="px-4 py-2 rounded-lg bg-slate-800 text-sm font-medium hover:bg-slate-700">预警中心</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- 对话模式 -->
+        <div id="mode-chat" class="space-y-6">
+            <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                <h2 class="text-lg font-semibold mb-4">💬 企业微信对话</h2>
+                <div class="bg-slate-950 rounded-lg p-4 h-[500px] overflow-y-auto space-y-4" id="chat-container">
+                    <!-- 聊天消息将在这里显示 -->
+                </div>
+                <div class="mt-4 flex space-x-2">
+                    <input type="text" id="chat-input" placeholder="输入消息..."
+                           class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-slate-600"
+                           onkeypress="if(event.key==='Enter') sendMessage()">
+                    <button onclick="sendMessage()" class="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium">
+                        发送
+                    </button>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <button onclick="quickQuery('华南区经销商最近情况怎么样？')" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded text-xs">
+                        华南区情况
+                    </button>
+                    <button onclick="quickQuery('佛山张总门店详情')" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded text-xs">
+                        查看经销商
+                    </button>
+                    <button onclick="quickQuery('有哪些需要关注的异常？')" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded text-xs">
+                        异常预警
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 仪表盘模式 -->
+        <div id="mode-dashboard" class="hidden space-y-6">
+            <!-- 关键指标 -->
+            <div class="grid grid-cols-4 gap-4">
+                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                    <p class="text-sm text-slate-400 mb-2">本月销售</p>
+                    <p class="text-3xl font-bold tabular-nums">¥1,280万</p>
+                    <p class="text-xs text-green-600 tabular-nums mt-1">+12% 同比</p>
+                </div>
+                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                    <p class="text-sm text-slate-400 mb-2">活跃经销商</p>
+                    <p class="text-3xl font-bold tabular-nums">47家</p>
+                    <p class="text-xs text-slate-400 tabular-nums mt-1">华南区</p>
+                </div>
+                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                    <p class="text-sm text-slate-400 mb-2">待处理预警</p>
+                    <p class="text-3xl font-bold tabular-nums text-amber-500">8个</p>
+                    <p class="text-xs text-amber-500 tabular-nums mt-1">3个高优先级</p>
+                </div>
+                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                    <p class="text-sm text-slate-400 mb-2">待办任务</p>
+                    <p class="text-3xl font-bold tabular-nums">12个</p>
+                    <p class="text-xs text-slate-400 tabular-nums mt-1">5个今日到期</p>
+                </div>
+            </div>
+
+            <!-- 经销商表现 -->
+            <div class="grid grid-cols-2 gap-6">
+                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                    <h3 class="text-lg font-semibold mb-4">📊 TOP 5 经销商</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                            <div>
+                                <p class="font-medium">深圳李总建材</p>
+                                <p class="text-xs text-slate-400">深圳 · A级</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold tabular-nums">¥380万</p>
+                                <p class="text-xs text-green-600 tabular-nums">+18%</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                            <div>
+                                <p class="font-medium">广州王总陶瓷</p>
+                                <p class="text-xs text-slate-400">广州 · A级</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold tabular-nums">¥320万</p>
+                                <p class="text-xs text-green-600 tabular-nums">+15%</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                            <div>
+                                <p class="font-medium">东莞陈总门店</p>
+                                <p class="text-xs text-slate-400">东莞 · B级</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold tabular-nums">¥280万</p>
+                                <p class="text-xs text-green-600 tabular-nums">+22%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                    <h3 class="text-lg font-semibold mb-4">⚠️ 需要关注</h3>
+                    <div class="space-y-3">
+                        <div class="p-3 bg-red-950 border border-red-900 rounded-lg">
+                            <div class="flex items-start justify-between mb-2">
+                                <p class="font-medium text-red-400">佛山张总建材</p>
+                                <span class="text-xs px-2 py-1 bg-red-900 text-red-300 rounded">高</span>
+                            </div>
+                            <p class="text-sm text-slate-300">销量连续2月下滑18%</p>
+                            <p class="text-xs text-slate-400 mt-1">建议：安排拜访</p>
+                        </div>
+                        <div class="p-3 bg-amber-950 border border-amber-900 rounded-lg">
+                            <div class="flex items-start justify-between mb-2">
+                                <p class="font-medium text-amber-400">深圳李总建材</p>
+                                <span class="text-xs px-2 py-1 bg-amber-900 text-amber-300 rounded">中</span>
+                            </div>
+                            <p class="text-sm text-slate-300">库存周转89天，积压严重</p>
+                            <p class="text-xs text-slate-400 mt-1">建议：推送促销活动</p>
+                        </div>
+                        <div class="p-3 bg-amber-950 border border-amber-900 rounded-lg">
+                            <div class="flex items-start justify-between mb-2">
+                                <p class="font-medium text-amber-400">东莞王总门店</p>
+                                <span class="text-xs px-2 py-1 bg-amber-900 text-amber-300 rounded">中</span>
+                            </div>
+                            <p class="text-sm text-slate-300">回款逾期45万，超30天</p>
+                            <p class="text-xs text-slate-400 mt-1">建议：电话跟进</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 预警中心模式 -->
+        <div id="mode-alerts" class="hidden space-y-6">
+            <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-lg font-semibold">🚨 异常预警中心</h2>
+                    <div class="flex space-x-2">
+                        <button class="px-3 py-1 bg-red-900 text-red-300 rounded text-sm">高优先级 (3)</button>
+                        <button class="px-3 py-1 bg-amber-900 text-amber-300 rounded text-sm">中优先级 (5)</button>
+                        <button class="px-3 py-1 bg-slate-700 text-slate-300 rounded text-sm">已处理 (12)</button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- 高优先级预警 -->
+                    <div class="bg-red-950 border-2 border-red-900 rounded-xl p-5">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-2xl">⚠️</span>
+                                <div>
+                                    <h3 class="font-semibold text-red-400">销量异常下滑</h3>
+                                    <p class="text-sm text-slate-300 mt-1">佛山张总建材 · 华南区</p>
+                                </div>
+                            </div>
+                            <span class="px-3 py-1 bg-red-900 text-red-300 rounded-full text-xs font-medium">高优先级</span>
+                        </div>
+                        <div class="bg-slate-900 rounded-lg p-4 mb-4">
+                            <div class="grid grid-cols-3 gap-4 text-sm">
+                                <div>
+                                    <p class="text-slate-400">本月销售</p>
+                                    <p class="font-bold tabular-nums text-red-400">¥18万</p>
+                                </div>
+                                <div>
+                                    <p class="text-slate-400">环比变化</p>
+                                    <p class="font-bold tabular-nums text-red-400">-18%</p>
+                                </div>
+                                <div>
+                                    <p class="text-slate-400">连续下滑</p>
+                                    <p class="font-bold tabular-nums text-red-400">2个月</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <p class="text-sm font-medium text-slate-300 mb-2">🤖 AI 分析：</p>
+                            <p class="text-sm text-slate-400">
+                                客户主营工程渠道，近期工程烂尾导致资金压力大。建议立即安排拜访，了解资金缺口，推荐零售渠道转型方案。
+                            </p>
+                        </div>
+                        <div class="mb-4">
+                            <p class="text-sm font-medium text-slate-300 mb-2">💡 建议行动：</p>
+                            <div class="space-y-2">
+                                <div class="flex items-center space-x-2 text-sm">
+                                    <span class="text-red-400">🔴</span>
+                                    <span class="text-slate-300">48小时内电话回访，了解资金缺口</span>
+                                </div>
+                                <div class="flex items-center space-x-2 text-sm">
+                                    <span class="text-amber-400">🟡</span>
+                                    <span class="text-slate-300">推荐零售渠道转型方案</span>
+                                </div>
+                                <div class="flex items-center space-x-2 text-sm">
+                                    <span class="text-green-400">🟢</span>
+                                    <span class="text-slate-300">邀请参加下月经销商大会</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="approveAction('visit')" class="flex-1 bg-slate-700 hover:bg-slate-600 py-2 rounded-lg text-sm font-medium">
+                                批准拜访
+                            </button>
+                            <button class="flex-1 bg-slate-800 hover:bg-slate-700 py-2 rounded-lg text-sm font-medium">
+                                查看详情
+                            </button>
+                            <button class="px-4 bg-slate-800 hover:bg-slate-700 py-2 rounded-lg text-sm font-medium">
+                                稍后处理
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 中优先级预警 -->
+                    <div class="bg-amber-950 border border-amber-900 rounded-xl p-5">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-2xl">⚠️</span>
+                                <div>
+                                    <h3 class="font-semibold text-amber-400">库存积压预警</h3>
+                                    <p class="text-sm text-slate-300 mt-1">深圳李总建材 · 华南区</p>
+                                </div>
+                            </div>
+                            <span class="px-3 py-1 bg-amber-900 text-amber-300 rounded-full text-xs font-medium">中优先级</span>
+                        </div>
+                        <div class="bg-slate-900 rounded-lg p-4 mb-4">
+                            <div class="grid grid-cols-3 gap-4 text-sm">
+                                <div>
+                                    <p class="text-slate-400">库存周转</p>
+                                    <p class="font-bold tabular-nums text-amber-400">89天</p>
+                                </div>
+                                <div>
+                                    <p class="text-slate-400">库存金额</p>
+                                    <p class="font-bold tabular-nums text-amber-400">¥120万</p>
+                                </div>
+                                <div>
+                                    <p class="text-slate-400">积压品类</p>
+                                    <p class="font-bold tabular-nums text-amber-400">3个</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <p class="text-sm font-medium text-slate-300 mb-2">💡 建议行动：</p>
+                            <div class="space-y-2">
+                                <div class="flex items-center space-x-2 text-sm">
+                                    <span class="text-amber-400">🟡</span>
+                                    <span class="text-slate-300">推送促销活动方案</span>
+                                </div>
+                                <div class="flex items-center space-x-2 text-sm">
+                                    <span class="text-green-400">🟢</span>
+                                    <span class="text-slate-300">提供库存优化建议</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="flex-1 bg-slate-700 hover:bg-slate-600 py-2 rounded-lg text-sm font-medium">
+                                批准方案
+                            </button>
+                            <button class="flex-1 bg-slate-800 hover:bg-slate-700 py-2 rounded-lg text-sm font-medium">
+                                查看详情
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'chat';
+        let chatHistory = [];
+
+        // 初始化聊天
+        function initChat() {
+            addMessage('agent', '你好！我是经销商运营助手。我可以帮你：\n\n• 查询经销商经营数据\n• 分析销售趋势\n• 预警异常情况\n• 生成行动建议\n\n请问有什么可以帮你的？');
+        }
+
+        // 切换模式
+        function switchMode(mode) {
+            currentMode = mode;
+            document.getElementById('mode-chat').classList.add('hidden');
+            document.getElementById('mode-dashboard').classList.add('hidden');
+            document.getElementById('mode-alerts').classList.add('hidden');
+
+            document.getElementById('btn-chat').classList.remove('bg-slate-700');
+            document.getElementById('btn-dashboard').classList.remove('bg-slate-700');
+            document.getElementById('btn-alerts').classList.remove('bg-slate-700');
+
+            document.getElementById('btn-chat').classList.add('bg-slate-800');
+            document.getElementById('btn-dashboard').classList.add('bg-slate-800');
+            document.getElementById('btn-alerts').classList.add('bg-slate-800');
+
+            if (mode === 'chat') {
+                document.getElementById('mode-chat').classList.remove('hidden');
+                document.getElementById('btn-chat').classList.remove('bg-slate-800');
+                document.getElementById('btn-chat').classList.add('bg-slate-700');
+            } else if (mode === 'dashboard') {
+                document.getElementById('mode-dashboard').classList.remove('hidden');
+                document.getElementById('btn-dashboard').classList.remove('bg-slate-800');
+                document.getElementById('btn-dashboard').classList.add('bg-slate-700');
+            } else if (mode === 'alerts') {
+                document.getElementById('mode-alerts').classList.remove('hidden');
+                document.getElementById('btn-alerts').classList.remove('bg-slate-800');
+                document.getElementById('btn-alerts').classList.add('bg-slate-700');
+            }
+        }
+
+        // 添加消息
+        function addMessage(sender, text) {
+            const container = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} slide-in`;
+
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble px-4 py-3 rounded-lg ${
+                sender === 'user'
+                    ? 'bg-slate-700 text-slate-100'
+                    : 'bg-slate-800 text-slate-200 border border-slate-700'
+            }`;
+            bubble.style.whiteSpace = 'pre-wrap';
+            bubble.textContent = text;
+
+            messageDiv.appendChild(bubble);
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 显示输入中指示器
+        function showTyping() {
+            const container = document.getElementById('chat-container');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typing-indicator';
+            typingDiv.className = 'flex justify-start';
+            typingDiv.innerHTML = `
+                <div class="chat-bubble px-4 py-3 rounded-lg bg-slate-800 border border-slate-700">
+                    <div class="typing-indicator flex space-x-1">
+                        <span class="w-2 h-2 bg-slate-500 rounded-full"></span>
+                        <span class="w-2 h-2 bg-slate-500 rounded-full"></span>
+                        <span class="w-2 h-2 bg-slate-500 rounded-full"></span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(typingDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 移除输入中指示器
+        function hideTyping() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+        }
+
+        // 发送消息
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addMessage('user', message);
+            input.value = '';
+
+            // 模拟AI响应
+            showTyping();
+            setTimeout(() => {
+                hideTyping();
+                handleQuery(message);
+            }, 1500);
+        }
+
+        // 快速查询
+        function quickQuery(query) {
+            document.getElementById('chat-input').value = query;
+            sendMessage();
+        }
+
+        // 处理查询
+        function handleQuery(query) {
+            if (query.includes('华南区') || query.includes('情况')) {
+                addMessage('agent', '华南区 47 家经销商本月整体表现：\n\n📊 销售额：¥1,280万\n📈 同比：+12%\n📉 环比：-3%\n\n⚠️ 需要关注：\n\n• 佛山张总：连续2月销量下滑18%，建议安排拜访\n• 深圳李总：库存周转89天，积压严重\n• 东莞王总：回款逾期45万，超30天\n\n要看具体哪位经销商的详情？');
+            } else if (query.includes('佛山') || query.includes('张总')) {
+                addMessage('agent', '佛山张总建材 详细信息：\n\n📋 基本信息：\n• 区域：华南-佛山\n• 等级：B级\n• 主营：工程渠道\n\n📊 经营数据：\n• 本月销售：¥18万（↓18%）\n• 库存周转：45天\n• 回款状态：正常\n\n⚠️ 异常分析：\n销量连续2月下滑，主要原因是工程烂尾导致资金压力大。\n\n💡 建议行动：\n1. 48小时内电话回访\n2. 推荐零售渠道转型方案\n3. 邀请参加经销商大会\n\n需要我安排拜访吗？');
+            } else if (query.includes('异常') || query.includes('预警')) {
+                addMessage('agent', '当前有 8 个异常预警：\n\n🔴 高优先级（3个）：\n• 佛山张总 - 销量下滑18%\n• 珠海刘总 - 连续3月未进货\n• 中山陈总 - 回款逾期60天\n\n🟡 中优先级（5个）：\n• 深圳李总 - 库存积压\n• 东莞王总 - 回款逾期30天\n• 惠州赵总 - 销量下滑10%\n• 江门周总 - 库存周转慢\n• 肇庆吴总 - 30天未联系\n\n要查看详细预警信息吗？');
+            } else {
+                addMessage('agent', '我理解你的问题。我可以帮你：\n\n• 查询经销商数据\n• 分析销售趋势\n• 查看异常预警\n• 生成行动建议\n\n请具体说明你想了解什么？');
+            }
+        }
+
+        // 批准行动
+        function approveAction(action) {
+            if (action === 'visit') {
+                alert('✅ 已批准拜访\n\n任务已创建并分配给区域经理\n已同步到企业微信日程\n\n拜访时间：本周五下午\n负责人：张经理');
+            }
+        }
+
+        // 页面加载时初始化
+        window.onload = function() {
+            initChat();
+        };
+    </script>
+</body>
+</html>
