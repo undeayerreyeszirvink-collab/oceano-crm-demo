@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>欧神诺CRM系统 - 完整演示版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes scanLine {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        @keyframes cardSlide {
+            0% { transform: translateX(0); opacity: 1; }
+            50% { transform: translateX(100px); opacity: 0.5; }
+            100% { transform: translateX(200px); opacity: 0; }
+        }
+        .fade-in { animation: fadeIn 0.6s ease-out; }
+        .slide-in { animation: slideIn 0.8s ease-out; }
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #10B981, transparent);
+            animation: scanLine 2s linear infinite;
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
+        }
+        .temp-bar {
+            transition: width 1s ease-out;
+        }
+        .slide-away {
+            animation: cardSlide 1.5s ease-out forwards;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans">
+    <div class="flex h-screen overflow-hidden">
+        <!-- 左侧主内容区 -->
+        <div class="flex-1 overflow-y-auto p-8">
+            <!-- 顶部标题 -->
+            <div class="mb-8 fade-in">
+                <h1 class="text-4xl font-bold text-blue-400 mb-2">欧神诺CRM系统</h1>
+                <p class="text-gray-400">AI驱动的客户关系管理平台 - 完整演示版</p>
+            </div>
+
+            <!-- Tab导航 -->
+            <div class="mb-6 flex space-x-2 overflow-x-auto">
+                <button onclick="switchTab('architecture')" class="tab-btn px-4 py-2 rounded bg-blue-600 text-white">系统架构</button>
+                <button onclick="switchTab('analysis')" class="tab-btn px-4 py-2 rounded bg-gray-700 hover:bg-gray-600">华中运营分析</button>
+                <button onclick="switchTab('mobile')" class="tab-btn px-4 py-2 rounded bg-gray-700 hover:bg-gray-600">移动端演练</button>
+                <button onclick="switchTab('funnel')" class="tab-btn px-4 py-2 rounded bg-gray-700 hover:bg-gray-600">销售漏斗</button>
+                <button onclick="switchTab('prediction')" class="tab-btn px-4 py-2 rounded bg-gray-700 hover:bg-gray-600">数据驱动决策</button>
+                <button onclick="switchTab('sop')" class="tab-btn px-4 py-2 rounded bg-gray-700 hover:bg-gray-600">作战标准化</button>
+                <button onclick="switchTab('journey')" class="tab-btn px-4 py-2 rounded bg-gray-700 hover:bg-gray-600">客户旅程</button>
+            </div>
+
+            <!-- Tab内容区 -->
+            <div id="tab-content"></div>
+        </div>
+
+        <!-- 右侧提词器 -->
+        <div class="w-96 bg-gray-800 p-6 overflow-y-auto border-l border-gray-700">
+            <h3 class="text-xl font-bold text-green-400 mb-4">📋 演示提词器</h3>
+            <div id="prompter-content" class="text-sm text-gray-300 space-y-3"></div>
+        </div>
+    </div>
+
+    <script>
+        // 全局状态
+        let currentTab = 'architecture';
+
+        // Tab切换
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600');
+                btn.classList.add('bg-gray-700');
+            });
+            event.target.classList.remove('bg-gray-700');
+            event.target.classList.add('bg-blue-600');
+
+            renderTab(tab);
+            updatePrompter(tab);
+        }
+
+        // 渲染Tab内容
+        function renderTab(tab) {
+            const content = document.getElementById('tab-content');
+            content.innerHTML = '';
+            content.className = 'fade-in';
+
+            switch(tab) {
+                case 'architecture':
+                    renderArchitecture(content);
+                    break;
+                case 'analysis':
+                    renderAnalysis(content);
+                    break;
+                case 'mobile':
+                    renderMobile(content);
+                    break;
+                case 'funnel':
+                    renderFunnel(content);
+                    break;
+                case 'prediction':
+                    renderPrediction(content);
+                    break;
+                case 'sop':
+                    renderSOP(content);
+                    break;
+                case 'journey':
+                    renderJourney(content);
+                    break;
+            }
+        }
+
+        // 渲染系统架构
+        function renderArchitecture(content) {
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-bold text-blue-400 mb-4">三层架构设计</h2>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-gray-800 p-6 rounded-lg border-2 border-blue-500">
+                            <h3 class="text-xl font-bold text-blue-400 mb-3">📥 输入端</h3>
+                            <ul class="space-y-2 text-sm">
+                                <li>• AI拍照盘点</li>
+                                <li>• 语音转文字</li>
+                                <li>• 零感知录入</li>
+                                <li>• 自动数据采集</li>
+                            </ul>
+                        </div>
+                        <div class="bg-gray-800 p-6 rounded-lg border-2 border-green-500">
+                            <h3 class="text-xl font-bold text-green-400 mb-3">⚙️ 引擎端</h3>
+                            <ul class="space-y-2 text-sm">
+                                <li>• AI决策引擎</li>
+                                <li>• 客户画像分析</li>
+                                <li>• 流失预测模型</li>
+                                <li>• 智能推荐算法</li>
+                            </ul>
+                        </div>
+                        <div class="bg-gray-800 p-6 rounded-lg border-2 border-purple-500">
+                            <h3 class="text-xl font-bold text-purple-400 mb-3">📤 输出端</h3>
+                            <ul class="space-y-2 text-sm">
+                                <li>• 下一步行动推荐</li>
+                                <li>• 智能话术生成</li>
+                                <li>• 风险预警推送</li>
+                                <li>• 数据可视化</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-blue-900 to-purple-900 p-6 rounded-lg mt-6">
+                        <h3 class="text-xl font-bold text-green-400 mb-3">🎯 四大核心能力</h3>
+                        <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div class="bg-gray-800 bg-opacity-50 p-4 rounded">
+                                <div class="text-lg font-bold text-blue-400">1. 客户资产沉淀</div>
+                                <div class="text-sm text-gray-300 mt-2">客户永远属于公司，沉淀率从35%→87%</div>
+                            </div>
+                            <div class="bg-gray-800 bg-opacity-50 p-4 rounded">
+                                <div class="text-lg font-bold text-green-400">2. AI决策层</div>
+                                <div class="text-sm text-gray-300 mt-2">智能推荐下一步行动，提升成交率40%</div>
+                            </div>
+                            <div class="bg-gray-800 bg-opacity-50 p-4 rounded">
+                                <div class="text-lg font-bold text-purple-400">3. 销售作战标准化</div>
+                                <div class="text-sm text-gray-300 mt-2">复制销冠经验，新人上手时间减少60%</div>
+                            </div>
+                            <div class="bg-gray-800 bg-opacity-50 p-4 rounded">
+                                <div class="text-lg font-bold text-yellow-400">4. 数据驱动决策</div>
+                                <div class="text-sm text-gray-300 mt-2">预测流失风险，提前30天预警干预</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 渲染华中运营分析
+        function renderAnalysis(content) {
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-bold text-blue-400 mb-4">华中区域运营分析</h2>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="bg-blue-900 p-6 rounded-lg text-center">
+                            <div class="text-4xl font-bold text-blue-400">159</div>
+                            <div class="text-sm text-gray-300 mt-2">经销商总数</div>
+                        </div>
+                        <div class="bg-orange-900 p-6 rounded-lg text-center">
+                            <div class="text-4xl font-bold text-orange-400">52%</div>
+                            <div class="text-sm text-gray-300 mt-2">夫妻店占比</div>
+                        </div>
+                        <div class="bg-purple-900 p-6 rounded-lg text-center">
+                            <div class="text-4xl font-bold text-purple-400">73%</div>
+                            <div class="text-sm text-gray-300 mt-2">多品牌经营</div>
+                        </div>
+                        <div class="bg-green-900 p-6 rounded-lg text-center">
+                            <div class="text-4xl font-bold text-green-400">5%</div>
+                            <div class="text-sm text-gray-300 mt-2">二代接班率</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-green-400 mb-4">零感知录入演示</h3>
+                        <div class="bg-gray-900 p-4 rounded border border-green-500 relative overflow-hidden">
+                            <div class="scan-line"></div>
+                            <div class="text-sm text-gray-300 space-y-2">
+                                <div>📞 通话记录自动同步...</div>
+                                <div>📧 邮件往来自动归档...</div>
+                                <div>📱 微信聊天智能提取...</div>
+                                <div class="text-green-400 font-bold mt-4">✓ 销售无需手动录入，专注客户沟通</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-blue-400 mb-4">客户分布热力图</h3>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="bg-red-900 bg-opacity-50 p-4 rounded text-center">
+                                <div class="text-2xl font-bold">武汉</div>
+                                <div class="text-sm text-gray-300">45家</div>
+                            </div>
+                            <div class="bg-orange-900 bg-opacity-50 p-4 rounded text-center">
+                                <div class="text-2xl font-bold">合肥</div>
+                                <div class="text-sm text-gray-300">38家</div>
+                            </div>
+                            <div class="bg-yellow-900 bg-opacity-50 p-4 rounded text-center">
+                                <div class="text-2xl font-bold">郑州</div>
+                                <div class="text-sm text-gray-300">32家</div>
+                            </div>
+                            <div class="bg-green-900 bg-opacity-50 p-4 rounded text-center">
+                                <div class="text-2xl font-bold">长沙</div>
+                                <div class="text-sm text-gray-300">28家</div>
+                            </div>
+                            <div class="bg-blue-900 bg-opacity-50 p-4 rounded text-center">
+                                <div class="text-2xl font-bold">南昌</div>
+                                <div class="text-sm text-gray-300">16家</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        // 渲染移动端演练
+        function renderMobile(content) {
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-bold text-blue-400 mb-4">移动端8大场景演练</h2>
+                    <div class="flex space-x-2 mb-4 overflow-x-auto">
+                        <button onclick="showMobileScene(1)" class="mobile-btn px-3 py-1 bg-blue-600 rounded text-sm">场景1:AI拍照</button>
+                        <button onclick="showMobileScene(2)" class="mobile-btn px-3 py-1 bg-gray-700 rounded text-sm">场景2:语音助手</button>
+                        <button onclick="showMobileScene(3)" class="mobile-btn px-3 py-1 bg-gray-700 rounded text-sm">场景3:温度计</button>
+                        <button onclick="showMobileScene(4)" class="mobile-btn px-3 py-1 bg-gray-700 rounded text-sm">场景4:资产保护</button>
+                        <button onclick="showMobileScene(5)" class="mobile-btn px-3 py-1 bg-gray-700 rounded text-sm">场景5:客户确权</button>
+                        <button onclick="showMobileScene(6)" class="mobile-btn px-3 py-1 bg-gray-700 rounded text-sm">场景6:AI推荐</button>
+                        <button onclick="showMobileScene(7)" class="mobile-btn px-3 py-1 bg-gray-700 rounded text-sm">场景7:智能话术</button>
+                        <button onclick="showMobileScene(8)" class="mobile-btn px-3 py-1 bg-gray-700 rounded text-sm">场景8:风险预警</button>
+                    </div>
+                    <div id="mobile-scene-content"></div>
+                </div>
+            `;
+            showMobileScene(1);
+        }
+
+        // 显示移动端场景
+        function showMobileScene(scene) {
+            const buttons = document.querySelectorAll('.mobile-btn');
+            buttons.forEach((btn, idx) => {
+                if (idx + 1 === scene) {
+                    btn.classList.remove('bg-gray-700');
+                    btn.classList.add('bg-blue-600');
+                } else {
+                    btn.classList.remove('bg-blue-600');
+                    btn.classList.add('bg-gray-700');
+                }
+            });
+
+            const sceneContent = document.getElementById('mobile-scene-content');
+            sceneContent.className = 'fade-in';
+
+            const scenes = {
+                1: `<div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold text-green-400 mb-4">场景1：AI拍照盘点</h3>
+                    <div class="bg-gray-900 p-4 rounded border-2 border-green-500">
+                        <div class="text-center mb-4">
+                            <div class="text-6xl mb-2">📸</div>
+                            <div class="text-sm text-gray-400">对准货架拍照...</div>
+                        </div>
+                        <div class="bg-gray-800 p-3 rounded space-y-2 text-sm">
+                            <div class="flex justify-between"><span>识别产品：</span><span class="text-green-400">瓷砖A款 x 120片</span></div>
+                            <div class="flex justify-between"><span>识别产品：</span><span class="text-green-400">瓷砖B款 x 85片</span></div>
+                            <div class="flex justify-between"><span>库存状态：</span><span class="text-yellow-400">A款库存偏低</span></div>
+                            <div class="text-green-400 font-bold mt-3">✓ 自动同步到系统</div>
+                        </div>
+                    </div>
+                </div>`,
+                2: `<div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold text-blue-400 mb-4">场景2：语音作战助手</h3>
+                    <div class="bg-gray-900 p-4 rounded border-2 border-blue-500">
+                        <div class="text-center mb-4">
+                            <div class="text-6xl mb-2">🎤</div>
+                            <div class="text-sm text-gray-400">正在录音...</div>
+                        </div>
+                        <div class="bg-blue-900 bg-opacity-30 p-3 rounded mb-3">
+                            <div class="text-sm italic">"今天拜访了合肥王总，他说最近工程款回不来，资金压力大，对新品有兴趣但要等下个月..."</div>
+                        </div>
+                        <div class="bg-gray-800 p-3 rounded space-y-2 text-sm">
+                            <div class="text-green-400 font-bold">AI自动提取：</div>
+                            <div>• 客户：合肥王总</div>
+                            <div>• 痛点：资金压力、工程款回款慢</div>
+                            <div>• 意向：对新品有兴趣</div>
+                            <div>• 跟进时间：下个月初</div>
+                        </div>
+                    </div>
+                </div>`,
+                3: `<div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold text-orange-400 mb-4">场景3：意向温度计</h3>
+                    <div class="bg-gray-900 p-4 rounded border-2 border-orange-500">
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="font-bold">固始李名扬</span>
+                                    <span class="text-red-400">🌡️ 15°C 冰冷</span>
+                                </div>
+                                <div class="bg-gray-700 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-blue-500 to-red-500 h-full" style="width: 15%"></div>
+                                </div>
+                                <div class="text-xs text-gray-400 mt-1">30天未联系，销售下滑90%</div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="font-bold">武汉张总</span>
+                                    <span class="text-yellow-400">🌡️ 55°C 温热</span>
+                                </div>
+                                <div class="bg-gray-700 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-blue-500 to-red-500 h-full" style="width: 55%"></div>
+                                </div>
+                                <div class="text-xs text-gray-400 mt-1">已报价，等待决策</div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="font-bold">合肥刘总</span>
+                                    <span class="text-red-400">🌡️ 85°C 火热</span>
+                                </div>
+                                <div class="bg-gray-700 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-blue-500 to-red-500 h-full" style="width: 85%"></div>
+                                </div>
+                                <div class="text-xs text-gray-400 mt-1">已签合同，准备打款</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`,
+                4: `<div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold text-purple-400 mb-4">场景4：资产保护区</h3>
+                    <div class="bg-gray-900 p-4 rounded border-2 border-purple-500">
+                        <div class="bg-purple-900 bg-opacity-30 p-4 rounded mb-4">
+                            <div class="text-lg font-bold mb-2">🛡️ 客户资产保护机制</div>
+                            <div class="text-sm text-gray-300">所有客户数据加密存储，权限分级管理</div>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="bg-gray-800 p-3 rounded">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="font-bold">数据加密</div>
+                                        <div class="text-xs text-gray-400">AES-256加密算法</div>
+                                    </div>
+                                    <div class="text-green-400 text-2xl">✓</div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-800 p-3 rounded">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="font-bold">权限控制</div>
+                                        <div class="text-xs text-gray-400">角色分级，最小权限原则</div>
+                                    </div>
+                                    <div class="text-green-400 text-2xl">✓</div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-800 p-3 rounded">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="font-bold">操作日志</div>
+                                        <div class="text-xs text-gray-400">所有操作可追溯审计</div>
+                                    </div>
+                                    <div class="text-green-400 text-2xl">✓</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`,
+                5: `<div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold text-red-400 mb-4">场景5：客户资产确权（核心能力）</h3>
+                    <div class="bg-gray-900 p-4 rounded border-2 border-red-500">
+                        <div class="mb-4">
+                            <div class="text-center text-yellow-400 font-bold mb-2">⚠️ 销售"张伟"已离职</div>
+                            <div class="text-center text-sm text-gray-400">系统自动触发客户流转...</div>
+                        </div>
+                        <div id="customer-card" class="bg-blue-900 bg-opacity-50 p-4 rounded mb-4">
+                            <div class="font-bold text-lg">客户：武汉李总</div>
+                            <div class="text-sm text-gray-300">原负责人：张伟</div>
+                            <div class="text-sm text-gray-300">年度销售：280万</div>
+                        </div>
+                        <div class="text-center mb-4">
+                            <div class="text-4xl">⬇️</div>
+                            <div class="text-sm text-green-400">自动流转到公海池</div>
+                            <div class="text-xs text-gray-400 mt-2">保护期剩余：<span class="text-yellow-400 font-bold">14天</span></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 mt-4">
+                            <div class="bg-red-900 bg-opacity-30 p-3 rounded">
+                                <div class="text-xs text-gray-400 mb-1">传统方式</div>
+                                <div class="text-sm">❌ 销售离职→客户流失→企业损失</div>
+                            </div>
+                            <div class="bg-green-900 bg-opacity-30 p-3 rounded">
+                                <div class="text-xs text-gray-400 mb-1">CRM方式</div>
+                                <div class="text-sm">✅ 客户属于公司→自动分配→持续跟进</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 text-center">
+                            <div class="text-2xl font-bold text-green-400">客户资产沉淀率：35% → 87%</div>
+                        </div>
+                    </div>
+                </div>`,
+                6: `<div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold text-green-400 mb-4">场景6：AI下一步行动推荐（AI决策层）</h3>
+                    <div class="bg-gray-900 p-4 rounded border-2 border-green-500">
+                        <div class="bg-gray-800 p-4 rounded mb-4">
+                            <div class="font-bold text-lg mb-2">客户：固始李名扬</div>
+                            <div class="text-sm text-gray-300 space-y-1">
+                                <div>• 2024年销售：18万（↓90%）</div>
+                                <div>• 主营：工程渠道</div>
+                                <div>• 状态：工程烂尾，资金压力大</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="text-sm text-gray-400 mb-2">🤖 AI分析结果：</div>
+                            <div class="bg-blue-900 bg-opacity-30 p-3 rounded text-sm">
+                                客户面临工程回款困难，销售大幅下滑，存在流失风险。建议立即介入，提供零售转型方案。
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="bg-red-900 bg-opacity-50 p-3 rounded border-l-4 border-red-500">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-bold">🔴 紧急行动</div>
+                                        <div class="text-sm text-gray-300">48小时内电话回访，了解资金缺口</div>
+                                    </div>
+                                    <div class="text-xs text-gray-400">优先级：高</div>
+                                </div>
+                            </div>
+                            <div class="bg-yellow-900 bg-opacity-50 p-3 rounded border-l-4 border-yellow-500">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-bold">🟡 重要行动</div>
+                                        <div class="text-sm text-gray-300">推荐零售渠道转型方案</div>
+                                    </div>
+                                    <div class="text-xs text-gray-400">优先级：中</div>
+                                </div>
+                            </div>
+                            <div class="bg-green-900 bg-opacity-50 p-3 rounded border-l-4 border-green-500">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-bold">🟢 建议行动</div>
+                                        <div class="text-sm text-gray-300">邀请参加下月经销商大会</div>
+                                    </div>
+                                    <div class="text-xs text-gray-400">优先级：低</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="w-full mt-4 bg-blue-600 hover:bg-blue-700 py-2 rounded font-bold">
+                            生成智能话术 →
+                        </button>
+                    </div>
+                </div>`,
+                7: `<div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold text-cyan-400 mb-4">场景7：智能话术生成</h3>
+                    <div class="bg-gray-900 p-4 rounded border-2 border-cyan-500">
+                        <div class="mb-3 text-sm text-gray-400">基于客户画像自动生成沟通话术</div>
+                        <div class="space-y-3">
+                            <div class="bg-gray-800 p-3 rounded">
+                                <div class="text-xs text-cyan-400 mb-2">💬 同理心开场</div>
+                                <div class="text-sm italic">"李总，听说最近工程回款压力大，这确实是很多经销商都面临的问题。我们有几个客户通过调整策略，成功度过了难关..."</div>
+                            </div>
+                            <div class="bg-gray-800 p-3 rounded">
+                                <div class="text-xs text-green-400 mb-2">💡 解决方案</div>
+                                <div class="text-sm italic">"我们有几个经销商通过零售转型，在工程不景气的情况下，反而实现了业绩增长。比如信阳的王总，去年零售做了50万，今年目标是翻倍..."</div>
+                            </div>
+                            <div class="bg-gray-800 p-3 rounded">
+                                <div class="text-xs text-yellow-400 mb-2">🎯 促成行动</div>
+                                <div class="text-sm italic">"下周我带几个成功案例过来，咱们坐下来聊聊，看看有没有适合您的方案。周三下午您方便吗？"</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex space-x-2">
+                            <button class="flex-1 bg-blue-600 hover:bg-blue-700 py-2 rounded text-sm">复制话术</button>
+                            <button class="flex-1 bg-gray-700 hover:bg-gray-600 py-2 rounded text-sm">重新生成</button>
+                        </div>
+                    </div>
+                </div>`,
+                8: `<div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold text-red-400 mb-4">场景8：风险预警</h3>
+                    <div class="bg-gray-900 p-4 rounded border-2 border-red-500">
+                        <div class="mb-3 text-sm text-gray-400">实时监控客户状态，智能预警推送</div>
+                        <div class="space-y-3">
+                            <div class="bg-red-900 bg-opacity-30 p-3 rounded border-l-4 border-red-500">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="font-bold text-red-400 mb-1">⚠️ 高风险预警</div>
+                                        <div class="text-sm">固始李名扬 - 连续3个月销售下滑>50%</div>
+                                        <div class="text-xs text-gray-400 mt-1">建议：立即电话回访</div>
+                                    </div>
+                                    <div class="text-xs text-gray-500">2小时前</div>
+                                </div>
+                            </div>
+                            <div class="bg-orange-900 bg-opacity-30 p-3 rounded border-l-4 border-orange-500">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="font-bold text-orange-400 mb-1">⚠️ 流失预警</div>
+                                        <div class="text-sm">巢湖汤昌 - 30天未联系，竞品活跃</div>
+                                        <div class="text-xs text-gray-400 mt-1">建议：安排上门拜访</div>
+                                    </div>
+                                    <div class="text-xs text-gray-500">5小时前</div>
+                                </div>
+                            </div>
+                            <div class="bg-yellow-900 bg-opacity-30 p-3 rounded border-l-4 border-yellow-500">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="font-bold text-yellow-400 mb-1">⚠️ 商机停滞</div>
+                                        <div class="text-sm">合肥王总 - 报价单已发送15天未跟进</div>
+                                        <div class="text-xs text-gray-400 mt-1">建议：电话确认进度</div>
+                                    </div>
+                                    <div class="text-xs text-gray-500">1天前</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 bg-gray-800 p-3 rounded text-center">
+                            <div class="text-sm text-gray-400">本月已预警</div>
+                            <div class="text-2xl font-bold text-red-400">23个高风险客户</div>
+                        </div>
+                    </div>
+                </div>`
+            };
+
+            sceneContent.innerHTML = scenes[scene] || scenes[1];
+        }
+
+        // 渲染销售漏斗
+        function renderFunnel(content) {
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-bold text-blue-400 mb-4">销售漏斗 - 管理过程控制</h2>
+                    <div class="bg-gray-800 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-green-400 mb-4">漏斗可视化</h3>
+                        <div class="space-y-3">
+                            <div class="relative">
+                                <div class="bg-blue-600 h-20 flex items-center justify-between px-6 rounded" style="width: 100%">
+                                    <span class="font-bold text-lg">线索池</span>
+                                    <span class="text-2xl font-bold">320个</span>
+                                </div>
+                            </div>
+                            <div class="text-center text-sm text-gray-400">↓ 转化率 48.8%</div>
+                            <div class="relative">
+                                <div class="bg-green-600 h-20 flex items-center justify-between px-6 rounded" style="width: 75%">
+                                    <span class="font-bold text-lg">商机</span>
+                                    <span class="text-2xl font-bold">156个</span>
+                                </div>
+                            </div>
+                            <div class="text-center text-sm text-gray-400">↓ 转化率 26.9%</div>
+                            <div class="relative">
+                                <div class="bg-purple-600 h-20 flex items-center justify-between px-6 rounded" style="width: 50%">
+                                    <span class="font-bold text-lg">成交</span>
+                                    <span class="text-2xl font-bold">42个</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-6 bg-gray-900 p-4 rounded">
+                            <div class="text-center">
+                                <div class="text-sm text-gray-400">平均成交周期</div>
+                                <div class="text-3xl font-bold text-yellow-400">45天</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-red-400 mb-4">停滞预警列表</h3>
+                        <div class="text-sm text-gray-400 mb-3">超过7天未跟进的商机</div>
+                        <div class="space-y-2">
+                            <div class="bg-gray-900 p-3 rounded flex justify-between items-center">
+                                <div>
+                                    <div class="font-bold">合肥王总</div>
+                                    <div class="text-xs text-gray-400">最后跟进：15天前</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-red-400 font-bold">停滞15天</div>
+                                    <div class="text-xs text-gray-400">负责人：张伟</div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-900 p-3 rounded flex justify-between items-center">
+                                <div>
+                                    <div class="font-bold">武汉李总</div>
+                                    <div class="text-xs text-gray-400">最后跟进：12天前</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-orange-400 font-bold">停滞12天</div>
+                                    <div class="text-xs text-gray-400">负责人：王芳</div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-900 p-3 rounded flex justify-between items-center">
+                                <div>
+                                    <div class="font-bold">郑州赵总</div>
+                                    <div class="text-xs text-gray-400">最后跟进：9天前</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-yellow-400 font-bold">停滞9天</div>
+                                    <div class="text-xs text-gray-400">负责人：李明</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 渲染数据驱动决策
+        function renderPrediction(content) {
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-bold text-blue-400 mb-4">数据驱动决策 - 预测功能</h2>
+                    <div class="bg-gray-800 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-red-400 mb-4">客户流失预测</h3>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="bg-red-900 bg-opacity-30 p-4 rounded text-center">
+                                <div class="text-3xl font-bold text-red-400">23家</div>
+                                <div class="text-sm text-gray-300 mt-2">高风险客户（流失概率>70%）</div>
+                            </div>
+                            <div class="bg-orange-900 bg-opacity-30 p-4 rounded text-center">
+                                <div class="text-3xl font-bold text-orange-400">45家</div>
+                                <div class="text-sm text-gray-300 mt-2">中风险客户（流失概率40-70%）</div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-900 p-4 rounded">
+                            <div class="text-sm text-gray-400 mb-2">预测依据：</div>
+                            <div class="space-y-1 text-sm">
+                                <div>• 购买频率下降 ↓</div>
+                                <div>• 沟通频率下降 ↓</div>
+                                <div>• 竞品活跃度上升 ↑</div>
+                                <div>• 投诉未及时处理</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-green-400 mb-4">成交概率预测</h3>
+                        <div class="bg-gray-900 p-4 rounded mb-4">
+                            <div class="text-center mb-3">
+                                <div class="text-sm text-gray-400">预计本月成交金额</div>
+                                <div class="text-4xl font-bold text-green-400">280万</div>
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-400 mb-2">TOP10高概率商机（>80%成交概率）：</div>
+                        <div class="space-y-2">
+                            <div class="bg-gray-900 p-3 rounded flex justify-between">
+                                <span>武汉张总</span>
+                                <span class="text-green-400 font-bold">92%</span>
+                            </div>
+                            <div class="bg-gray-900 p-3 rounded flex justify-between">
+                                <span>合肥刘总</span>
+                                <span class="text-green-400 font-bold">88%</span>
+                            </div>
+                            <div class="bg-gray-900 p-3 rounded flex justify-between">
+                                <span>长沙陈总</span>
+                                <span class="text-green-400 font-bold">85%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-blue-400 mb-4">动态画像趋势</h3>
+                        <div class="bg-gray-900 p-4 rounded">
+                            <div class="mb-4">
+                                <div class="text-sm text-gray-400 mb-2">客户意向温度变化（近6个月）</div>
+                                <svg viewBox="0 0 300 100" class="w-full h-24">
+                                    <polyline points="0,80 50,70 100,50 150,45 200,30 250,20 300,15" 
+                                        fill="none" stroke="#10B981" stroke-width="2"/>
+                                    <circle cx="300" cy="15" r="4" fill="#10B981"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-400 mb-2">互动频率变化（近6个月）</div>
+                                <svg viewBox="0 0 300 100" class="w-full h-24">
+                                    <polyline points="0,50 50,45 100,40 150,55 200,50 250,35 300,25" 
+                                        fill="none" stroke="#3B82F6" stroke-width="2"/>
+                                    <circle cx="300" cy="25" r="4" fill="#3B82F6"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 渲染销售作战标准化
+        function renderSOP(content) {
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-bold text-blue-400 mb-4">销售作战标准化</h2>
+                    <div class="bg-gray-800 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-yellow-400 mb-4">销冠最佳实践</h3>
+                        <div class="bg-gradient-to-r from-yellow-900 to-orange-900 p-4 rounded mb-4">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold">🏆 TOP销售：李明</div>
+                                <div class="text-sm text-gray-300 mt-2">年度业绩：1200万 | 成交率：68%</div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-900 p-4 rounded">
+                            <div class="text-sm text-gray-400 mb-3">从线索到成交的7个关键动作：</div>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex items-start">
+                                    <span class="text-blue-400 font-bold mr-2">1.</span>
+                                    <div>
+                                        <div class="font-bold">首次接触（2小时内）</div>
+                                        <div class="text-gray-400 text-xs">话术："您好，我是欧神诺的李明..."</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-blue-400 font-bold mr-2">2.</span>
+                                    <div>
+                                        <div class="font-bold">需求挖掘（第1次拜访）</div>
+                                        <div class="text-gray-400 text-xs">关键问题：目前主营渠道？年度目标？</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-blue-400 font-bold mr-2">3.</span>
+                                    <div>
+                                        <div class="font-bold">方案呈现（3天内）</div>
+                                        <div class="text-gray-400 text-xs">提供定制化解决方案</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-blue-400 font-bold mr-2">4.</span>
+                                    <div>
+                                        <div class="font-bold">异议处理（及时响应）</div>
+                                        <div class="text-gray-400 text-xs">常见异议：价格、账期、支持力度</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-blue-400 font-bold mr-2">5.</span>
+                                    <div>
+                                        <div class="font-bold">促成签约（第2次拜访）</div>
+                                        <div class="text-gray-400 text-xs">限时优惠、成功案例分享</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-blue-400 font-bold mr-2">6.</span>
+                                    <div>
+                                        <div class="font-bold">首单跟进（签约后7天）</div>
+                                        <div class="text-gray-400 text-xs">确保首单顺利，建立信任</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-blue-400 font-bold mr-2">7.</span>
+                                    <div>
+                                        <div class="font-bold">持续维护（月度回访）</div>
+                                        <div class="text-gray-400 text-xs">定期拜访，挖掘复购机会</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-green-400 mb-4">SOP智能引导</h3>
+                        <div class="mb-4">
+                            <div class="bg-blue-900 bg-opacity-30 p-3 rounded mb-3">
+                                <div class="font-bold mb-2">📋 新客户跟进SOP（5步）</div>
+                                <div class="space-y-2 text-sm">
+                                    <div class="bg-gray-800 p-2 rounded">
+                                        <div class="font-bold text-blue-400">步骤1：建立联系</div>
+                                        <div class="text-xs text-gray-400">做什么：2小时内电话/微信联系</div>
+                                        <div class="text-xs text-gray-400">怎么说："您好，我是欧神诺..."</div>
+                                    </div>
+                                    <div class="bg-gray-800 p-2 rounded">
+                                        <div class="font-bold text-blue-400">步骤2：了解需求</div>
+                                        <div class="text-xs text-gray-400">做什么：安排上门拜访</div>
+                                        <div class="text-xs text-gray-400">注意：准备客户画像资料</div>
+                                    </div>
+                                    <div class="bg-gray-800 p-2 rounded">
+                                        <div class="font-bold text-blue-400">步骤3：方案呈现</div>
+                                        <div class="text-xs text-gray-400">做什么：提供定制化方案</div>
+                                    </div>
+                                    <div class="bg-gray-800 p-2 rounded">
+                                        <div class="font-bold text-blue-400">步骤4：促成签约</div>
+                                        <div class="text-xs text-gray-400">做什么：推动决策，处理异议</div>
+                                    </div>
+                                    <div class="bg-gray-800 p-2 rounded">
+                                        <div class="font-bold text-blue-400">步骤5：首单服务</div>
+                                        <div class="text-xs text-gray-400">做什么：确保首单体验</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-green-900 bg-opacity-30 p-3 rounded">
+                                <div class="font-bold mb-2">🔄 老客户复购SOP（3步）</div>
+                                <div class="space-y-2 text-sm">
+                                    <div class="bg-gray-800 p-2 rounded">
+                                        <div class="font-bold text-green-400">步骤1：定期回访</div>
+                                        <div class="text-xs text-gray-400">频率：每月至少1次</div>
+                                    </div>
+                                    <div class="bg-gray-800 p-2 rounded">
+                                        <div class="font-bold text-green-400">步骤2：需求挖掘</div>
+                                        <div class="text-xs text-gray-400">关注：库存、新品需求</div>
+                                    </div>
+                                    <div class="bg-gray-800 p-2 rounded">
+                                        <div class="font-bold text-green-400">步骤3：促成下单</div>
+                                        <div class="text-xs text-gray-400">策略：优惠活动、新品推荐</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 渲染客户旅程
+        function renderJourney(content) {
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-bold text-blue-400 mb-4">完整客户旅程演示</h2>
+                    <div class="space-y-4">
+                        <div class="bg-gray-800 p-4 rounded-lg border-l-4 border-blue-500">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="font-bold text-lg text-blue-400">阶段1：获客</div>
+                                <div class="text-sm text-gray-400">成功率提升 +35%</div>
+                            </div>
+                            <div class="text-sm text-gray-300 mb-2">来源：展会、转介绍、线上推广</div>
+                            <div class="bg-gray-900 p-3 rounded text-sm">
+                                <div class="text-green-400 mb-1">CRM如何提升效率：</div>
+                                <div>• 自动记录线索来源和渠道</div>
+                                <div>• 线索质量评分，优先跟进高质量线索</div>
+                                <div>• 关键数据：线索转化率从12%提升到35%</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-800 p-4 rounded-lg border-l-4 border-green-500">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="font-bold text-lg text-green-400">阶段2：首次接触</div>
+                                <div class="text-sm text-gray-400">响应速度 +80%</div>
+                            </div>
+                            <div class="text-sm text-gray-300 mb-2">2小时内建立联系</div>
+                            <div class="bg-gray-900 p-3 rounded text-sm">
+                                <div class="text-green-400 mb-1">CRM如何提升效率：</div>
+                                <div>• AI推荐最佳联系话术</div>
+                                <div>• 自动提醒销售及时跟进</div>
+                                <div>• 关键数据：首次响应时间从8小时缩短到1.5小时</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-800 p-4 rounded-lg border-l-4 border-yellow-500">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="font-bold text-lg text-yellow-400">阶段3：需求挖掘</div>
+                                <div class="text-sm text-gray-400">效率提升 +60%</div>
+                            </div>
+                            <div class="text-sm text-gray-300 mb-2">深度了解客户需求</div>
+                            <div class="bg-gray-900 p-3 rounded text-sm">
+                                <div class="text-green-400 mb-1">CRM如何提升效率：</div>
+                                <div>• 语音转结构化数据，自动提取关键信息</div>
+                                <div>• 客户画像自动生成</div>
+                                <div>• 关键数据：需求挖掘完整度从45%提升到92%</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-800 p-4 rounded-lg border-l-4 border-purple-500">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="font-bold text-lg text-purple-400">阶段4：方案呈现</div>
+                                <div class="text-sm text-gray-400">转化率 +45%</div>
+                            </div>
+                            <div class="text-sm text-gray-300 mb-2">提供定制化解决方案</div>
+                            <div class="bg-gray-900 p-3 rounded text-sm">
+                                <div class="text-green-400 mb-1">CRM如何提升效率：</div>
+                                <div>• 文档追踪：客户是否查看方案</div>
+                                <div>• 智能提醒：方案发送后3天自动提醒跟进</div>
+                                <div>• 关键数据：方案接受率从38%提升到55%</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-800 p-4 rounded-lg border-l-4 border-red-500">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="font-bold text-lg text-red-400">阶段5：成交</div>
+                                <div class="text-sm text-gray-400">周期缩短 -30%</div>
+                            </div>
+                            <div class="text-sm text-gray-300 mb-2">签约并完成首单</div>
+                            <div class="bg-gray-900 p-3 rounded text-sm">
+                                <div class="text-green-400 mb-1">CRM如何提升效率：</div>
+                                <div>• 订单自动同步到系统</div>
+                                <div>• 合同电子化签署</div>
+                                <div>• 关键数据：成交周期从65天缩短到45天</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-800 p-4 rounded-lg border-l-4 border-cyan-500">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="font-bold text-lg text-cyan-400">阶段6：复购</div>
+                                <div class="text-sm text-gray-400">复购率 +55%</div>
+                            </div>
+                            <div class="text-sm text-gray-300 mb-2">持续维护，挖掘复购机会</div>
+                            <div class="bg-gray-900 p-3 rounded text-sm">
+                                <div class="text-green-400 mb-1">CRM如何提升效率：</div>
+                                <div>• 意向温度计预警：客户温度下降自动提醒</div>
+                                <div>• 智能推荐复购时机和产品</div>
+                                <div>• 关键数据：客户复购率从28%提升到65%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 更新提词器内容
+        function updatePrompter(tab) {
+            const prompter = document.getElementById('prompter-content');
+            const prompts = {
+                architecture: `
+                    <div class="space-y-3">
+                        <p class="font-bold text-green-400">【系统架构】演示话术：</p>
+                        <p>"欧神诺CRM采用三层架构设计："</p>
+                        <p>"1️⃣ <span class="text-blue-400">输入端</span>：AI拍照、语音录入，让销售零感知录入数据"</p>
+                        <p>"2️⃣ <span class="text-green-400">引擎端</span>：AI决策引擎分析客户画像，预测流失风险"</p>
+                        <p>"3️⃣ <span class="text-purple-400">输出端</span>：智能推荐下一步行动，生成话术"</p>
+                        <p class="mt-4 font-bold text-yellow-400">核心价值：</p>
+                        <p>"我们重点解决四大能力："</p>
+                        <p>"• 客户资产沉淀：从35%提升到87%"</p>
+                        <p>"• AI决策层：成交率提升40%"</p>
+                        <p>"• 销售标准化：新人上手时间减少60%"</p>
+                        <p>"• 数据驱动：提前30天预警流失"</p>
+                    </div>
+                `,
+                analysis: `
+                    <div class="space-y-3">
+                        <p class="font-bold text-green-400">【华中运营分析】演示话术：</p>
+                        <p>"我们先看华中区域的真实数据："</p>
+                        <p>"• 159家经销商"</p>
+                        <p>"• 52%是夫妻店，管理相对粗放"</p>
+                        <p>"• 73%多品牌经营，忠诚度挑战大"</p>
+                        <p>"• 只有5%实现二代接班"</p>
+                        <p class="mt-4 font-bold text-yellow-400">零感知录入：</p>
+                        <p>"销售最怕的就是录数据，我们通过AI技术："</p>
+                        <p>"• 通话记录自动同步"</p>
+                        <p>"• 微信聊天智能提取"</p>
+                        <p>"• 让销售专注客户沟通，不用担心录入"</p>
+                    </div>
+                `,
+                mobile: `
+                    <div class="space-y-3">
+                        <p class="font-bold text-green-400">【移动端演练】演示话术：</p>
+                        <p>"我们设计了8个真实场景："</p>
+                        <p class="mt-2 font-bold">场景1-4（基础能力）：</p>
+                        <p>"• AI拍照盘点：对准货架，自动识别库存"</p>
+                        <p>"• 语音助手：说话就能记录客户信息"</p>
+                        <p>"• 意向温度计：客户热度一目了然"</p>
+                        <p>"• 资产保护：数据加密，权限管控"</p>
+                        <p class="mt-2 font-bold text-red-400">场景5（客户资产确权）：</p>
+                        <p>"这是核心！销售离职，客户自动流转到公海池，保护期14天，客户永远属于公司！"</p>
+                        <p class="mt-2 font-bold text-green-400">场景6-7（AI决策层）：</p>
+                        <p>"• AI分析客户状态，推荐下一步行动"</p>
+                        <p>"• 自动生成沟通话术，提升成交率"</p>
+                        <p class="mt-2 font-bold text-yellow-400">场景8（风险预警）：</p>
+                        <p>"实时监控，提前30天预警流失风险"</p>
+                    </div>
+                `,
+                funnel: `
+                    <div class="space-y-3">
+                        <p class="font-bold text-green-400">【销售漏斗】演示话术：</p>
+                        <p>"这是管理过程控制能力的体现："</p>
+                        <p>"• 320个线索 → 156个商机（转化率48.8%）"</p>
+                        <p>"• 156个商机 → 42个成交（转化率26.9%）"</p>
+                        <p>"• 平均成交周期：45天"</p>
+                        <p class="mt-4 font-bold text-red-400">停滞预警：</p>
+                        <p>"系统自动识别超过7天未跟进的商机，推送给管理者，避免商机流失"</p>
+                        <p class="mt-4 font-bold text-yellow-400">价值：</p>
+                        <p>"让管理者清楚看到每个阶段的转化率，及时发现问题，优化流程"</p>
+                    </div>
+                `,
+                prediction: `
+                    <div class="space-y-3">
+                        <p class="font-bold text-green-400">【数据驱动决策】演示话术：</p>
+                        <p>"这是预测能力的体现："</p>
+                        <p class="mt-2 font-bold text-red-400">客户流失预测：</p>
+                        <p>"• 23家高风险客户（流失概率>70%）"</p>
+                        <p>"• 45家中风险客户（流失概率40-70%）"</p>
+                        <p>"• 预测依据：购买频率↓、沟通频率↓、竞品活跃度↑"</p>
+                        <p class="mt-2 font-bold text-green-400">成交概率预测：</p>
+                        <p>"• TOP10高概率商机，预计本月成交280万"</p>
+                        <p>"• 帮助销售优先跟进高价值客户"</p>
+                        <p class="mt-2 font-bold text-blue-400">动态画像趋势：</p>
+                        <p>"• 客户意向温度变化趋势"</p>
+                        <p>"• 互动频率变化趋势"</p>
+                        <p>"让管理者提前30天预警，及时干预"</p>
+                    </div>
+                `,
+                sop: `
+                    <div class="space-y-3">
+                        <p class="font-bold text-green-400">【销售作战标准化】演示话术：</p>
+                        <p>"这是复制销冠能力的关键："</p>
+                        <p class="mt-2 font-bold text-yellow-400">销冠最佳实践：</p>
+                        <p>"我们把TOP销售李明的成功路径固化到系统："</p>
+                        <p>"• 从线索到成交的7个关键动作"</p>
+                        <p>"• 每个动作的最佳话术和时机"</p>
+                        <p>"• 新人可以直接学习和复制"</p>
+                        <p class="mt-2 font-bold text-green-400">SOP智能引导：</p>
+                        <p>"• 新客户跟进SOP（5步）"</p>
+                        <p>"• 老客户复购SOP（3步）"</p>
+                        <p>"• 每步都有：做什么、怎么说、注意事项"</p>
+                        <p class="mt-4 font-bold text-yellow-400">价值：</p>
+                        <p>"新人上手时间从3个月缩短到1个月，减少60%"</p>
+                    </div>
+                `,
+                journey: `
+                    <div class="space-y-3">
+                        <p class="font-bold text-green-400">【客户旅程】演示话术：</p>
+                        <p>"我们把完整的客户旅程分为6个阶段："</p>
+                        <p class="mt-2">"<span class="text-blue-400">阶段1-获客</span>：线索转化率从12%提升到35%"</p>
+                        <p>"<span class="text-green-400">阶段2-首次接触</span>：响应时间从8小时缩短到1.5小时"</p>
+                        <p>"<span class="text-yellow-400">阶段3-需求挖掘</span>：需求完整度从45%提升到92%"</p>
+                        <p>"<span class="text-purple-400">阶段4-方案呈现</span>：方案接受率从38%提升到55%"</p>
+                        <p>"<span class="text-red-400">阶段5-成交</span>：成交周期从65天缩短到45天"</p>
+                        <p>"<span class="text-cyan-400">阶段6-复购</span>：客户复购率从28%提升到65%"</p>
+                        <p class="mt-4 font-bold text-yellow-400">核心价值：</p>
+                        <p>"每个阶段都有CRM的智能辅助，全流程提升效率和转化率"</p>
+                    </div>
+                `
+            };
+            prompter.innerHTML = prompts[tab] || prompts.architecture;
+        }
+
+        // 页面加载时初始化
+        window.onload = function() {
+            renderTab('architecture');
+            updatePrompter('architecture');
+        };
+    </script>
+</body>
+</html>

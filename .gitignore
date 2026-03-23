@@ -1,0 +1,16 @@
+# 忽略不需要的文件
+.DS_Store
+node_modules/
+*.log
+.env
+*.pyc
+__pycache__/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.claude/
+oceano-crm-demo/
+generate_crm.py
+deploy-github.sh
