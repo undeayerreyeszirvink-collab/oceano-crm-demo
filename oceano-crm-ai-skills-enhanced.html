@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>欧神诺AI-Native CRM - Skills全景演示（增强版）</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        .slide-in { animation: slideIn 0.4s ease-out; }
+        .pulse-slow { animation: pulse 2s ease-in-out infinite; }
+        .skill-card { transition: all 0.3s ease; }
+        .skill-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3); }
+        .skill-card.active { border-width: 3px; box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+        .chat-bubble { max-width: 80%; word-wrap: break-word; }
+        .typing-indicator span { animation: pulse 1.4s infinite; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans">
+    <nav class="bg-slate-900 border-b border-slate-800 px-6 py-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                    <span class="text-2xl">🤖</span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-semibold">欧神诺AI-Native CRM</h1>
+                    <p class="text-xs text-slate-400">AI Agent驱动的全场景Skills系统 - 增强交互版</p>
+                </div>
+            </div>
+            <button onclick="toggleChat()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium">
+                💬 打开对话演示
+            </button>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6">
+        <div class="mb-8 fade-in">
+            <h2 class="text-2xl font-bold mb-2">🎯 AI Skills 全景架构</h2>
+            <p class="text-slate-400 mb-6">点击任意Skill查看详情，或点击"体验对话"进行交互演示</p>
+
+            <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                <div class="grid grid-cols-5 gap-4">
+                    <div id="card-market" onclick="showSkill('market')" class="skill-card cursor-pointer bg-gradient-to-br from-blue-900 to-blue-800 rounded-lg p-4 border-2 border-blue-700 active">
+                        <div class="text-3xl mb-2">📢</div>
+                        <h3 class="font-semibold mb-1">市场运营</h3>
+                        <p class="text-xs text-slate-300 mb-2">/market-ops</p>
+                        <div class="text-xs text-slate-400">
+                            <div>• 线索分析</div>
+                            <div>• 活动预警</div>
+                        </div>
+                    </div>
+                    <div id="card-sales" onclick="showSkill('sales')" class="skill-card cursor-pointer bg-gradient-to-br from-green-900 to-green-800 rounded-lg p-4 border-2 border-green-700">
+                        <div class="text-3xl mb-2">💼</div>
+                        <h3 class="font-semibold mb-1">销售运营</h3>
+                        <p class="text-xs text-slate-300 mb-2">/sales-ops</p>
+                        <div class="text-xs text-slate-400">
+                            <div>• 商机分析</div>
+                            <div>• 进度预警</div>
+                        </div>
+                    </div>
+                    <div id="card-dealer" onclick="showSkill('dealer')" class="skill-card cursor-pointer bg-gradient-to-br from-purple-900 to-purple-800 rounded-lg p-4 border-2 border-purple-700">
+                        <div class="text-3xl mb-2">🏪</div>
+                        <h3 class="font-semibold mb-1">经销商运营</h3>
+                        <p class="text-xs text-slate-300 mb-2">/dealer-ops</p>
+                        <div class="text-xs text-slate-400">
+                            <div>• 经营分析</div>
+                            <div>• 异常预警</div>
+                        </div>
+                    </div>
+                    <div id="card-service" onclick="showSkill('service')" class="skill-card cursor-pointer bg-gradient-to-br from-amber-900 to-amber-800 rounded-lg p-4 border-2 border-amber-700">
+                        <div class="text-3xl mb-2">🛠️</div>
+                        <h3 class="font-semibold mb-1">服务运营</h3>
+                        <p class="text-xs text-slate-300 mb-2">/service-ops</p>
+                        <div class="text-xs text-slate-400">
+                            <div>• 工单分析</div>
+                            <div>• 服务预警</div>
+                        </div>
+                    </div>
+                    <div id="card-project" onclick="showSkill('project')" class="skill-card cursor-pointer bg-gradient-to-br from-red-900 to-red-800 rounded-lg p-4 border-2 border-red-700">
+                        <div class="text-3xl mb-2">🎯</div>
+                        <h3 class="font-semibold mb-1">项目运营</h3>
+                        <p class="text-xs text-slate-300 mb-2">/project-ops</p>
+                        <div class="text-xs text-slate-400">
+                            <div>• 项目分析</div>
+                            <div>• 风险预警</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="skill-detail" class="space-y-6"></div>
+    </div>
+
+    <!-- 对话演示窗口 -->
+    <div id="chat-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 rounded-xl w-full max-w-4xl max-h-[80vh] flex flex-col border border-slate-700">
+            <div class="flex items-center justify-between p-4 border-b border-slate-800">
+                <div class="flex items-center space-x-2">
+                    <span class="text-2xl">💬</span>
+                    <h3 class="text-lg font-semibold">AI Agent 对话演示</h3>
+                </div>
+                <button onclick="toggleChat()" class="text-slate-400 hover:text-slate-200">✕</button>
+            </div>
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+            <div class="p-4 border-t border-slate-800">
+                <div class="flex flex-wrap gap-2 mb-3">
+                    <button onclick="quickQuery('sales', '帮我记录刚才跟王总的拜访')" class="px-3 py-1 bg-green-950 hover:bg-green-900 rounded text-xs border border-green-800">
+                        🎙️ 拜访录入
+                    </button>
+                    <button onclick="quickQuery('sales', '帮我生成今天的日报')" class="px-3 py-1 bg-green-950 hover:bg-green-900 rounded text-xs border border-green-800">
+                        📝 生成日报
+                    </button>
+                    <button onclick="quickQuery('sales', '给广州保利项目出个报价9折')" class="px-3 py-1 bg-green-950 hover:bg-green-900 rounded text-xs border border-green-800">
+                        📋 生成报价
+                    </button>
+                    <button onclick="quickQuery('market', '最近的线索质量怎么样？')" class="px-3 py-1 bg-blue-900 hover:bg-blue-800 rounded text-xs">
+                        线索质量分析
+                    </button>
+                    <button onclick="quickQuery('sales', '本月重点商机有哪些？')" class="px-3 py-1 bg-green-900 hover:bg-green-800 rounded text-xs">
+                        商机分析
+                    </button>
+                    <button onclick="quickQuery('dealer', '华南区经销商情况？')" class="px-3 py-1 bg-purple-900 hover:bg-purple-800 rounded text-xs">
+                        经销商分析
+                    </button>
+                    <button onclick="quickQuery('service', '本周工单处理情况怎么样？')" class="px-3 py-1 bg-amber-900 hover:bg-amber-800 rounded text-xs">
+                        工单分析
+                    </button>
+                    <button onclick="quickQuery('project', '在建项目进度如何？')" class="px-3 py-1 bg-red-900 hover:bg-red-800 rounded text-xs">
+                        项目进度
+                    </button>
+                </div>
+                <div class="flex space-x-2">
+                    <input type="text" id="chat-input" placeholder="输入您的问题..." 
+                           class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-600"
+                           onkeypress="if(event.key==='Enter') sendMessage()">
+                    <button onclick="sendMessage()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium">
+                        发送
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // BUG1 FIX: Pre-define color class maps for Tailwind (dynamic interpolation doesn't work)
+        const colorClasses = {
+            blue:   { btn: 'bg-blue-600 hover:bg-blue-700', btnAlt: 'bg-blue-900 hover:bg-blue-800', alertBg: 'bg-blue-950', alertBorder: 'border-blue-900', alertText: 'text-blue-400', alertBadgeBg: 'bg-blue-900', alertBadgeText: 'text-blue-300' },
+            green:  { btn: 'bg-green-600 hover:bg-green-700', btnAlt: 'bg-green-900 hover:bg-green-800', alertBg: 'bg-green-950', alertBorder: 'border-green-900', alertText: 'text-green-400', alertBadgeBg: 'bg-green-900', alertBadgeText: 'text-green-300' },
+            purple: { btn: 'bg-purple-600 hover:bg-purple-700', btnAlt: 'bg-purple-900 hover:bg-purple-800', alertBg: 'bg-purple-950', alertBorder: 'border-purple-900', alertText: 'text-purple-400', alertBadgeBg: 'bg-purple-900', alertBadgeText: 'text-purple-300' },
+            amber:  { btn: 'bg-amber-600 hover:bg-amber-700', btnAlt: 'bg-amber-900 hover:bg-amber-800', alertBg: 'bg-amber-950', alertBorder: 'border-amber-900', alertText: 'text-amber-400', alertBadgeBg: 'bg-amber-900', alertBadgeText: 'text-amber-300' },
+            red:    { btn: 'bg-red-600 hover:bg-red-700', btnAlt: 'bg-red-900 hover:bg-red-800', alertBg: 'bg-red-950', alertBorder: 'border-red-900', alertText: 'text-red-400', alertBadgeBg: 'bg-red-900', alertBadgeText: 'text-red-300' }
+        };
+        const alertColorMap = { '高': 'red', '中': 'amber', '低': 'slate' };
+
+        const skillsData = {
+            market: {
+                name: '市场运营 Skill',
+                icon: '📢',
+                color: 'blue',
+                description: '智能管理市场活动、销售线索、网络留言，AI自动分析转化效果并优化策略',
+                capabilities: [
+                    { 
+                        name: '线索智能分析', 
+                        icon: '🔍', 
+                        desc: 'AI评估线索质量，智能画像生成，ROI分析',
+                        demo: {
+                            query: '最近的线索质量怎么样？',
+                            response: '近7天共采集线索320个：\n\n📊 渠道分布：\n• 展会：120个（高质量37%）\n• 官网：85个（高质量22%）\n• 抖音：75个（高质量15%）\n• 小红书：40个（高质量10%）\n\n🎯 AI评估：\n展会线索质量最高，建议优先跟进。抖音线索虽多但转化率低，建议优化内容策略。\n\n💡 建议行动：\n1. 48小时内跟进37个高质量展会线索\n2. 调整抖音内容，增加产品应用场景展示'
+                        }
+                    },
+                    { 
+                        name: '活动效果预警', 
+                        icon: '⚠️', 
+                        desc: '活动进度监控，预算超支预警，ROI异常检测',
+                        alert: {
+                            level: '中',
+                            title: '华南建材展活动ROI低于预期',
+                            content: '预算：50万 | 实际：48万\n线索数：120个 | 预期：200个\n转化率：8% | 预期：15%\n\n建议：增加现场互动环节，优化展位设计'
+                        }
+                    },
+                    { 
+                        name: '转化策略建议', 
+                        icon: '💡', 
+                        desc: 'AI生成跟进话术，最佳联系时间推荐'
+                    },
+                    { 
+                        name: '行动自动追踪', 
+                        icon: '✅', 
+                        desc: '任务自动创建，未跟进提醒，漏斗追踪'
+                    }
+                ]
+            },
+            sales: {
+                name: '销售运营 Skill',
+                icon: '💼',
+                color: 'green',
+                description: '智能管理销售全流程：SFA零感知录入 + 商机分析 + AI辅助决策，让一线销售专注销售',
+                capabilities: [
+                    {
+                        name: 'SFA零感知录入',
+                        icon: '🎙️',
+                        desc: '语音录入拜访记录、AI自动生成日报、GPS签到免打表、对话式数据归档',
+                        demo: {
+                            query: '帮我记录刚才跟王总的拜访',
+                            response: '好的，请简单描述拜访情况，我来帮你整理归档。\n\n📍 已检测到您在���广州天河万科城附近\n⏱️ 拜访时长：约45分钟\n\n您说：「王总对800x800哑光系列很感兴趣，下周要做方案，价格敏感，竞品联系过他」\n\n✅ AI已生成拜访记录：\n━━━━━━━━━━━━━━\n客户：王建国（广州万科城项目）\n时间：2026-03-24 14:30\n地点：广州天河\n意向产品：800x800哑光系列\n客户状态：🔥 高意向\n竞争风险：有竞品介入\n下一步：3月31日前提交方案\n━━━━━━━━━━━━━━\n\n📌 已自动创建任务：3月31日前发方案给王总\n💡 已纳入今日日报草稿'
+                        }
+                    },
+                    {
+                        name: '报价智能生成',
+                        icon: '📋',
+                        desc: '一句话生成报价单，自动套用折扣政策，历史成交价参考，微信一键发送',
+                        demo: {
+                            query: '给广州保利项目出个报价9折',
+                            response: '正在为广州保利项目生成报价单...\n\n📋 报价单草稿：\n━━━━━━━━━━━━━━\n客户：广州保利天悦项目\n报价日期：2026-03-24\n折扣：9折（已核查：您有权限）\n\n产品清单：\n• 800x800 雅典娜白 × 2000㎡\n  单价¥128 → 折后¥115.2\n• 600x1200 浮雕灰 × 500㎡\n  单价¥168 → 折后¥151.2\n\n合计金额：¥ 306,000\n━━━━━━━━━━━━━━\n\n⚠️ 提示：同类项目历史成交价¥295,000（9.5折）\n建议此项目控制在¥300,000以上保护利润\n\n📤 操作：[确认发送] [调整价格] [添加产品]'
+                        }
+                    },
+                    {
+                        name: '日报自动生成',
+                        icon: '📝',
+                        desc: 'AI从当天活动记录自动汇总日报，一键确认发送，无需手动填写',
+                        demo: {
+                            query: '帮我生成今天的日报',
+                            response: '根据您今天的活动记录，已自动生成日报草稿：\n\n📊 今日工作日报（2026-03-24）\n━━━━━━━━━━━━━━\n👤 销售：李明\n\n【拜访记录】（3次）\n• 09:30 广州万科城 - 王建国\n  意向：800x800哑光系列，高意向\n• 14:30 广州保利天悦 - 张经理\n  进展：报价已发，等待回复\n• 17:00 电话：深圳碧桂园 - 陈总\n  状态：本周五约面谈\n\n【商机更新】\n• 保利天悦：推进到报价阶段 ↑\n• 万科城：新增高意向线索 +1\n\n【明日计划】\n• 10:00 跟进保利天悦报价结果\n• 15:00 深圳碧桂园面谈\n━━━━━━━━━━━━━━\n\n📤 [一键发给主管] [修改后发送]'
+                        }
+                    },
+                    {
+                        name: '商机分析预警',
+                        icon: '🎯',
+                        desc: '商机自动评分，停滞预警，成交概率预测，竞争态势分析',
+                        demo: {
+                            query: '本月重点商机有哪些？',
+                            response: '本月TOP商机（按成交概率排序）：\n\n🔥 高概率（>80%）：\n1. 深圳万科项目 - ¥380万 - 92%\n   状态：已报价，等待决策\n   建议：本周内电话确认进度\n\n2. 广州保利项目 - ¥320万 - 88%\n   状态：方案已认可，谈价格\n   建议：适当让利促成签约\n\n🟡 中概率（50-80%）：\n3. 东莞碧桂园 - ¥280万 - 65%\n   状态：竞争激烈，价格敏感\n   建议：强调服务优势和案例\n\n⚠️ 停滞预警：\n深圳万科已15天未跟进，竞品可能介入！'
+                        },
+                        alert: {
+                            level: '高',
+                            title: '深圳万科项目已停滞15天',
+                            content: '上次跟进：15天前\n当前阶段：等待决策\n预计金额：¥380万\n\n风险：竞品可能已介入\n建议：立即电话跟进'
+                        }
+                    }
+                ]
+            },
+            dealer: {
+                name: '经销商运营 Skill',
+                icon: '🏪',
+                color: 'purple',
+                description: '智能管理经销商全生命周期，从招商到日常运营，AI全方位赋能',
+                capabilities: [
+                    { 
+                        name: '经营数据分析', 
+                        icon: '📊', 
+                        desc: '销售数据分析，库存周转监控，回款状态追踪',
+                        demo: {
+                            query: '华南区经销商整体情况？',
+                            response: '华南区47家经销商本月表现：\n\n📊 整体数据：\n• 销售额：¥1,280万（同比+12%，环比-3%）\n• 平均库存周转：52天\n• 回款及时率：85%\n\n🏆 TOP 5表现：\n1. 深圳李总 - ¥380万（+18%）\n2. 广州王总 - ¥320万（+15%）\n3. 东莞陈总 - ¥280万（+22%）\n\n⚠️ 需要关注：\n• 佛山张总：销量下滑18%\n• 珠海刘总：库存积压严重\n• 中山周总：回款逾期30天'
+                        }
+                    },
+                    { 
+                        name: '异常智能预警', 
+                        icon: '⚠️', 
+                        desc: '销量下滑预警，库存积压提醒，回款逾期预警',
+                        alert: {
+                            level: '高',
+                            title: '佛山张总建材销量异常下滑',
+                            content: '本月销售：¥18万（↓18%）\n连续下滑：2个月\n库存周转：45天\n\n🤖 AI分析：\n主营工程渠道，近期工程烂尾导致资金压力大\n\n💡 建议行动：\n1. 48小时内电话回访\n2. 推荐零售渠道转型方案\n3. 提供资金支持政策'
+                        }
+                    },
+                    { 
+                        name: '政策智能建议', 
+                        icon: '💡', 
+                        desc: '补货计划生成，促销方案推荐，信用额度调整'
+                    },
+                    { 
+                        name: '运营行动追踪', 
+                        icon: '✅', 
+                        desc: '拜访计划安排，政策执行追踪，培训任务监控'
+                    }
+                ]
+            },
+            service: {
+                name: '服务运营 Skill',
+                icon: '🛠️',
+                color: 'amber',
+                description: '智能管理售后服务全流程，提升客户满意度，降低服务成本',
+                capabilities: [
+                    {
+                        name: '工单智能分析',
+                        icon: '📋',
+                        desc: '工单自动分类，响应时效分析，问题根因识别',
+                        demo: {
+                            query: '本周工单处理情况怎么样？',
+                            response: '本周工单处理概况：\n\n📋 工单统计：\n• 新增工单：68个\n• 已处理：52个（处理率76%）\n• 待处理：16个\n• 平均响应时间：2.3小时\n\n📊 分类分布：\n• 安装服务：28个（41%）\n• 质量投诉：15个（22%）\n• 退换货：12个（18%）\n• 咨询类：13个（19%）\n\n⚠️ 需关注：\n• 5个工单超48小时未处理\n• 质量投诉环比上升30%，集中在800x800规格\n\n💡 建议：\n1. 优先处理5个超时工单\n2. 排查800x800规格质量批次问题'
+                        }
+                    },
+                    {
+                        name: '服务质量预警',
+                        icon: '⚠️',
+                        desc: '响应超时预警，投诉升级提醒，满意度异常检测',
+                        alert: {
+                            level: '高',
+                            title: '深圳龙华项目投诉升级',
+                            content: '客户：深圳龙华万科项目\n投诉：瓷砖色差严重，要求退换\n已超时：72小时未处理\n\n建议：立即安排技术人员上门核实'
+                        }
+                    },
+                    { name: '服务优化建议', icon: '💡', desc: 'AI生成解决方案，流程优化建议，知识库推荐' },
+                    { name: '服务全程追踪', icon: '✅', desc: '工单状态追踪，人员绩效分析，回访自动提醒' }
+                ]
+            },
+            project: {
+                name: '项目运营 Skill',
+                icon: '🎯',
+                color: 'red',
+                description: '智能管理工程项目全生命周期，从立项到交付，AI全程风险管控',
+                capabilities: [
+                    {
+                        name: '项目智能分析',
+                        icon: '📊',
+                        desc: '进度实时追踪，成本收益分析，资源利用监控',
+                        demo: {
+                            query: '在建项目进度如何？',
+                            response: '当前在建项目 12个：\n\n🟢 进度正常（7个）：\n1. 广州天河万科城 - 进度85% - 预计4月交付\n2. 深圳南山华润城 - 进度72% - 预计5月交付\n3. 佛山顺德碧桂园 - 进度60% - 预计6月交付\n\n🟡 轻微延期（3个）：\n4. 东莞松山湖项目 - 进度45% - 延期7天\n   原因：材料到货延迟\n5. 珠海横琴项目 - 进度38% - 延期5天\n   原因：施工人员不足\n\n🔴 严重延期（2个）：\n6. 中山翠亨项目 - 进度30% - 延期21天\n   原因：设计变更，需重新排产\n\n💡 建议：\n1. 中山项目需紧急协调设计确认\n2. 东莞项目催促供应商发货\n3. 珠海项目增派施工人员'
+                        }
+                    },
+                    {
+                        name: '风险智能预警',
+                        icon: '⚠️',
+                        desc: '进度延期预警，成本超支提醒，质量问题识别',
+                        alert: {
+                            level: '高',
+                            title: '中山翠亨项目严重延期',
+                            content: '项目进度：30%（计划51%）\n延期天数：21天\n预算使用：68%\n\n风险：可能导致违约赔偿\n建议：召开紧急项目协调会'
+                        }
+                    },
+                    { name: '资源优化建议', icon: '💡', desc: '人员调配建议，材料采购优化，施工计划调整' },
+                    { name: '项目全程追踪', icon: '✅', desc: '里程碑监控，变更管理追踪，验收标准检查' }
+                ]
+            }
+        };
+
+        let currentSkill = 'market';
+
+        function showSkill(skillKey) {
+            currentSkill = skillKey;
+            const skill = skillsData[skillKey];
+            const detail = document.getElementById('skill-detail');
+
+            // 更新卡片激活状态
+            document.querySelectorAll('.skill-card').forEach(card => card.classList.remove('active'));
+            document.getElementById(`card-${skillKey}`).classList.add('active');
+
+            const cc = colorClasses[skill.color];
+
+            let html = `
+                <div class="fade-in">
+                    <div class="bg-slate-900 rounded-xl p-6 border border-slate-800 mb-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-4xl">${skill.icon}</div>
+                                <div>
+                                    <h2 class="text-2xl font-bold">${skill.name}</h2>
+                                    <p class="text-slate-400">${skill.description}</p>
+                                </div>
+                            </div>
+                            <button onclick="openChat()" class="px-4 py-2 ${cc.btn} rounded-lg text-sm font-medium">
+                                💬 体验对话
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+            `;
+
+            skill.capabilities.forEach((cap, i) => {
+                html += `
+                    <div class="bg-slate-900 rounded-xl p-6 border border-slate-800 slide-in" style="animation-delay: ${i * 0.1}s">
+                        <div class="flex items-center space-x-2 mb-3">
+                            <span class="text-2xl">${cap.icon}</span>
+                            <h3 class="text-lg font-semibold">${cap.name}</h3>
+                        </div>
+                        <p class="text-sm text-slate-300 mb-4">${cap.desc}</p>
+                `;
+
+                if (cap.demo) {
+                    html += `
+                        <div class="mt-4 pt-4 border-t border-slate-700">
+                            <button onclick="quickQuery('${skillKey}', '${cap.demo.query}')"
+                                    class="w-full px-4 py-2 ${cc.btnAlt} rounded-lg text-sm">
+                                💬 体验对话：${cap.demo.query}
+                            </button>
+                        </div>
+                    `;
+                }
+
+                if (cap.alert) {
+                    const ac = colorClasses[alertColorMap[cap.alert.level]] || colorClasses['amber'];
+                    html += `
+                        <div class="mt-4 pt-4 border-t border-slate-700">
+                            <div class="${ac.alertBg} border ${ac.alertBorder} rounded-lg p-3">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-semibold ${ac.alertText}">⚠️ 预警示例</span>
+                                    <span class="px-2 py-0.5 ${ac.alertBadgeBg} ${ac.alertBadgeText} rounded text-xs">${cap.alert.level}</span>
+                                </div>
+                                <p class="text-xs text-slate-300">${cap.alert.title}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += `</div>`;
+            });
+
+            html += '</div></div>';
+            detail.innerHTML = html;
+        }
+
+        function toggleChat() {
+            const modal = document.getElementById('chat-modal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                const messages = document.getElementById('chat-messages');
+                if (messages.children.length === 0) {
+                    addMessage('agent', '你好！我是AI运营助手。我可以帮你分析数据、预警异常、生成建议。请问有什么可以帮你的？');
+                }
+            }
+        }
+
+        // BUG2 FIX: openChat only opens, never closes
+        function openChat() {
+            const modal = document.getElementById('chat-modal');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                const messages = document.getElementById('chat-messages');
+                if (messages.children.length === 0) {
+                    addMessage('agent', '你好！我是AI运营助手。我可以帮你分析数据、预警异常、生成建议。请问有什么可以帮你的？');
+                }
+            }
+        }
+
+        function addMessage(sender, text) {
+            const container = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} slide-in`;
+
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble px-4 py-3 rounded-lg ${
+                sender === 'user'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-800 text-slate-200 border border-slate-700'
+            }`;
+            bubble.style.whiteSpace = 'pre-wrap';
+            bubble.textContent = text;
+
+            messageDiv.appendChild(bubble);
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showTyping() {
+            const container = document.getElementById('chat-messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typing-indicator';
+            typingDiv.className = 'flex justify-start';
+            typingDiv.innerHTML = `
+                <div class="chat-bubble px-4 py-3 rounded-lg bg-slate-800 border border-slate-700">
+                    <div class="typing-indicator flex space-x-1">
+                        <span class="w-2 h-2 bg-slate-500 rounded-full"></span>
+                        <span class="w-2 h-2 bg-slate-500 rounded-full"></span>
+                        <span class="w-2 h-2 bg-slate-500 rounded-full"></span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(typingDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function hideTyping() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addMessage('user', message);
+            input.value = '';
+
+            showTyping();
+            setTimeout(() => {
+                hideTyping();
+                handleQuery(currentSkill, message);
+            }, 1500);
+        }
+
+        function quickQuery(skillKey, query) {
+            currentSkill = skillKey;
+            showSkill(skillKey);
+            openChat(); // BUG2 FIX: use openChat instead of toggleChat
+            setTimeout(() => {
+                addMessage('user', query);
+                showTyping();
+                setTimeout(() => {
+                    hideTyping();
+                    handleQuery(skillKey, query);
+                }, 1500);
+            }, 300);
+        }
+
+        function handleQuery(skillKey, query) {
+            const skill = skillsData[skillKey];
+            let response = '';
+
+            // BUG4 FIX: Use keyword matching instead of fragile substring
+            for (const cap of skill.capabilities) {
+                if (cap.demo) {
+                    const keywords = cap.demo.query.replace(/[？?！!。，,]/g, '').split('');
+                    const matchCount = keywords.filter(char => query.includes(char)).length;
+                    if (matchCount / keywords.length > 0.5) {
+                        response = cap.demo.response;
+                        break;
+                    }
+                }
+            }
+
+            // BUG5 FIX: Use actual newlines in fallback response
+            if (!response) {
+                response = "我理解你想了解" + skill.name + "相关的信息。\n\n我可以帮你：\n• 分析数据和趋势\n• 预警异常情况\n• 生成行动建议\n• 追踪执行进度\n\n请具体说明你想了解什么？";
+            }
+
+            addMessage('agent', response);
+        }
+
+        window.onload = () => showSkill('market');
+    </script>
+</body>
+</html>
