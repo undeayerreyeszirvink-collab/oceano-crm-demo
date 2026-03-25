@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>法务智能审阅系统 — OVBI 架构演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideLeft { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideRight { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+        @keyframes flowLine { 0% { stroke-dashoffset: 200; } 100% { stroke-dashoffset: 0; } }
+        @keyframes skillPop { 0% { transform: scale(0.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes toastIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        @keyframes hitlPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); } 50% { box-shadow: 0 0 0 8px rgba(245,158,11,0); } }
+        @keyframes scanLine { 0% { top: 0; opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        .slide-left { animation: slideLeft 0.4s ease-out forwards; }
+        .slide-right { animation: slideRight 0.4s ease-out forwards; }
+        .skill-pop { animation: skillPop 0.3s cubic-bezier(.34,1.56,.64,1) forwards; }
+        .pulse-slow { animation: pulse 2.5s ease-in-out infinite; }
+        .hitl-pulse { animation: hitlPulse 2s ease-in-out infinite; }
+
+        /* Layer badges */
+        .badge-l1 { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.35); }
+        .badge-l2 { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.35); }
+        .badge-l3 { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.35); }
+        .badge-cli { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.35); }
+        .badge-hitl { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.35); }
+        .badge-ontology { background: rgba(236,72,153,0.15); color: #f472b6; border: 1px solid rgba(236,72,153,0.35); }
+
+        /* Risk badges */
+        .risk-high { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .risk-mid  { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+        .risk-low  { background: rgba(34,197,94,0.12);  color: #4ade80;  border: 1px solid rgba(34,197,94,0.3); }
+
+        .risk-highlight { background: rgba(245,158,11,0.25); border-bottom: 2px dashed #f59e0b; padding: 1px 3px; border-radius: 3px; cursor: pointer; }
+        .risk-highlight:hover { background: rgba(245,158,11,0.4); }
+        .risk-highlight.active { background: rgba(245,158,11,0.45); box-shadow: 0 0 0 2px rgba(245,158,11,0.3); }
+        .diff-add { background: rgba(34,197,94,0.18); border-bottom: 2px solid #22c55e; padding: 1px 2px; border-radius: 2px; }
+        .diff-del { background: rgba(239,68,68,0.18); text-decoration: line-through; padding: 1px 2px; border-radius: 2px; color: #fca5a5; }
+
+        /* Skill node */
+        .skill-node { transition: all 0.2s ease; border: 1px solid transparent; }
+        .skill-node:hover { transform: translateY(-2px); }
+        .skill-node.active-l1 { border-color: rgba(139,92,246,0.6); background: rgba(139,92,246,0.08); }
+        .skill-node.active-l2 { border-color: rgba(59,130,246,0.6); background: rgba(59,130,246,0.08); }
+        .skill-node.active-l3 { border-color: rgba(16,185,129,0.6); background: rgba(16,185,129,0.08); }
+        .skill-node.done { opacity: 0.5; }
+
+        /* Exec step */
+        .exec-step { transition: all 0.25s ease; }
+        .exec-step.running { border-left: 3px solid #60a5fa; background: rgba(59,130,246,0.06); }
+        .exec-step.done-step { border-left: 3px solid #34d399; background: rgba(16,185,129,0.05); }
+        .exec-step.waiting { border-left: 3px solid #f59e0b; background: rgba(245,158,11,0.06); }
+        .exec-step.pending { border-left: 3px solid transparent; }
+
+        /* Contract text */
+        .contract-text { line-height: 1.9; font-size: 13.5px; }
+
+        /* Tab */
+        .tab-btn { border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .tab-btn.active { border-bottom-color: #60a5fa; color: #93c5fd; }
+
+        /* Flow connector */
+        .flow-arrow { color: #475569; font-size: 18px; display: flex; align-items: center; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+        .card-hover { transition: all 0.2s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+
+        .shimmer {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        .toast { animation: toastIn 0.4s cubic-bezier(.22,1,.36,1) forwards; }
+
+        /* HITL interrupt box */
+        .hitl-box { animation: hitlPulse 2s ease-in-out infinite; }
+
+        /* Ontology entity pill */
+        .entity-pill { display: inline-flex; align-items: center; gap: 4px; background: rgba(236,72,153,0.1); border: 1px solid rgba(236,72,153,0.25); color: #f9a8d4; border-radius: 999px; padding: 2px 10px; font-size: 11px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen">
+
+<!-- ═══════ NAVBAR ═══════ -->
+<nav class="bg-slate-900/95 backdrop-blur border-b border-slate-800 px-5 py-3 sticky top-0 z-50">
+    <div class="max-w-screen-2xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-lg flex items-center justify-center text-base">⚖️</div>
+            <div>
+                <h1 class="text-sm font-bold leading-tight">法务智能审阅系统</h1>
+                <p class="text-xs text-slate-500">OVBI 架构演示 · L1/L2/L3 Skills · Ontology 先行 · HITL 闭环</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <!-- Layer legend -->
+            <div class="hidden lg:flex items-center gap-2 text-xs">
+                <span class="badge-ontology rounded-full px-2 py-0.5 text-xs">Ontology</span>
+                <span class="badge-l1 rounded-full px-2 py-0.5 text-xs">L1 原子</span>
+                <span class="badge-l2 rounded-full px-2 py-0.5 text-xs">L2 行业</span>
+                <span class="badge-l3 rounded-full px-2 py-0.5 text-xs">L3 企业</span>
+                <span class="badge-cli rounded-full px-2 py-0.5 text-xs">CLI</span>
+                <span class="badge-hitl rounded-full px-2 py-0.5 text-xs">HITL</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-slate-400">法务专员：航航</span>
+                <div class="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-xs font-bold">航</div>
+                <div class="w-2 h-2 rounded-full bg-emerald-400 pulse-slow"></div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ═══════ HERO STRIP ═══════ -->
+<div class="bg-gradient-to-r from-violet-950/60 via-slate-900 to-indigo-950/60 border-b border-slate-800 px-5 py-3">
+    <div class="max-w-screen-2xl mx-auto flex flex-wrap gap-4 items-center justify-between">
+        <div class="flex flex-wrap gap-2">
+            <div class="flex items-center gap-2 bg-slate-800/60 rounded-lg px-3 py-1.5 text-xs border border-slate-700/60">
+                <span class="text-red-400">●</span> 低效重复：人工逐条比对 2-4h/份
+            </div>
+            <div class="flex items-center gap-2 bg-slate-800/60 rounded-lg px-3 py-1.5 text-xs border border-slate-700/60">
+                <span class="text-amber-400">●</span> 信息孤岛：历史纠纷无法实时联动
+            </div>
+            <div class="flex items-center gap-2 bg-slate-800/60 rounded-lg px-3 py-1.5 text-xs border border-slate-700/60">
+                <span class="text-amber-400">●</span> 合规困境：风险与进度难以平衡
+            </div>
+        </div>
+        <div class="flex items-center gap-3 text-sm">
+            <div class="text-center"><div class="font-bold text-red-400">🚒 救火员</div><div class="text-xs text-slate-500">被动应对</div></div>
+            <div class="text-slate-500 text-xl">→</div>
+            <div class="text-center"><div class="font-bold text-emerald-400">🧭 导航员</div><div class="text-xs text-slate-500">主动防控</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════ MAIN LAYOUT ═══════ -->
+<div class="max-w-screen-2xl mx-auto p-4 space-y-4">
+
+    <!-- ── ROW 1: Ontology Layer ── -->
+    <div class="bg-slate-900/70 rounded-2xl border border-pink-900/40 p-4 slide-left">
+        <div class="flex items-center gap-2 mb-3">
+            <span class="badge-ontology rounded-full px-2.5 py-0.5 text-xs font-bold">Ontology 先行</span>
+            <span class="text-xs text-slate-400">业务世界模型 — Skill 在此约束下执行，而非替代</span>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <!-- Entity group -->
+            <div class="bg-slate-800/60 rounded-xl p-3 border border-pink-900/30">
+                <div class="text-xs text-pink-400 font-semibold mb-2">实体 Entities</div>
+                <div class="flex flex-wrap gap-1">
+                    <span class="entity-pill">合同文本</span>
+                    <span class="entity-pill">条款</span>
+                    <span class="entity-pill">供应商</span>
+                    <span class="entity-pill">风险点</span>
+                    <span class="entity-pill">意见书</span>
+                </div>
+            </div>
+            <div class="bg-slate-800/60 rounded-xl p-3 border border-pink-900/30">
+                <div class="text-xs text-pink-400 font-semibold mb-2">角色 Roles</div>
+                <div class="flex flex-wrap gap-1">
+                    <span class="entity-pill">法务专员</span>
+                    <span class="entity-pill">销售/采购</span>
+                    <span class="entity-pill">法务负责人</span>
+                    <span class="entity-pill">业务负责人</span>
+                </div>
+            </div>
+            <div class="bg-slate-800/60 rounded-xl p-3 border border-pink-900/30">
+                <div class="text-xs text-pink-400 font-semibold mb-2">状态 Statuses</div>
+                <div class="flex flex-wrap gap-1">
+                    <span class="entity-pill">待预扫描</span>
+                    <span class="entity-pill">审阅中</span>
+                    <span class="entity-pill">意见书生成</span>
+                    <span class="entity-pill">审批完成</span>
+                </div>
+            </div>
+            <div class="bg-slate-800/60 rounded-xl p-3 border border-pink-900/30">
+                <div class="text-xs text-pink-400 font-semibold mb-2">规则约束 Rules</div>
+                <div class="flex flex-wrap gap-1">
+                    <span class="entity-pill">付款周期≤30天</span>
+                    <span class="entity-pill">高风险必审批</span>
+                    <span class="entity-pill">HITL前不替换</span>
+                </div>
+            </div>
+            <div class="bg-slate-800/60 rounded-xl p-3 border border-pink-900/30">
+                <div class="text-xs text-pink-400 font-semibold mb-2">自动标红项</div>
+                <div class="flex flex-wrap gap-1">
+                    <span class="entity-pill">背靠背条款</span>
+                    <span class="entity-pill">上限删除</span>
+                    <span class="entity-pill">管辖变更</span>
+                </div>
+            </div>
+            <div class="bg-slate-800/60 rounded-xl p-3 border border-pink-900/30">
+                <div class="text-xs text-pink-400 font-semibold mb-2">禁止事项</div>
+                <div class="flex flex-wrap gap-1">
+                    <span class="entity-pill">L1不操作系统</span>
+                    <span class="entity-pill">无HITL不替换</span>
+                    <span class="entity-pill">高风险不绕审</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── ROW 2: Skills Architecture Visual ── -->
+    <div class="bg-slate-900/70 rounded-2xl border border-slate-800 p-4 fade-in">
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+                <span class="text-sm font-bold">Skills 执行架构</span>
+                <span class="text-xs text-slate-500">L3 编排 L2，L2 调用 L1，Agent 平台装配任务</span>
+            </div>
+            <button onclick="runSimulation()" id="run-btn" class="bg-violet-600 hover:bg-violet-500 text-white text-xs rounded-lg px-4 py-2 font-semibold transition-all">
+                ▶ 运行演示
+            </button>
+        </div>
+
+        <!-- Architecture flow -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-3 items-start">
+
+            <!-- L1 Column -->
+            <div>
+                <div class="flex items-center gap-1.5 mb-2">
+                    <span class="badge-l1 rounded-full px-2 py-0.5 text-xs font-bold">L1 基础原子</span>
+                    <span class="text-xs text-slate-500">跨行业复用</span>
+                </div>
+                <div class="space-y-2">
+                    <div id="sk-l1-parse" class="skill-node bg-slate-800/60 rounded-xl p-3 border border-slate-700/50">
+                        <div class="text-xs font-semibold text-violet-300">contract-parse</div>
+                        <div class="text-xs text-slate-500 mt-0.5">文档结构解析</div>
+                        <div class="text-xs text-slate-600 mt-1">输入→条款结构树</div>
+                    </div>
+                    <div id="sk-l1-diff" class="skill-node bg-slate-800/60 rounded-xl p-3 border border-slate-700/50">
+                        <div class="text-xs font-semibold text-violet-300">contract-diff</div>
+                        <div class="text-xs text-slate-500 mt-0.5">版本差异比对</div>
+                        <div class="text-xs text-slate-600 mt-1">输出→变更清单</div>
+                    </div>
+                    <div id="sk-l1-extract" class="skill-node bg-slate-800/60 rounded-xl p-3 border border-slate-700/50">
+                        <div class="text-xs font-semibold text-violet-300">field-extraction</div>
+                        <div class="text-xs text-slate-500 mt-0.5">关键字段提取</div>
+                        <div class="text-xs text-slate-600 mt-1">付款周期/金额等</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow 1 -->
+            <div class="hidden lg:flex flex-col items-center justify-center pt-16 gap-1 text-slate-600">
+                <div class="text-xs text-slate-600">调用</div>
+                <div class="text-xl">→</div>
+            </div>
+
+            <!-- L2 Column -->
+            <div>
+                <div class="flex items-center gap-1.5 mb-2">
+                    <span class="badge-l2 rounded-full px-2 py-0.5 text-xs font-bold">L2 行业能力</span>
+                    <span class="text-xs text-slate-500">法律行业通用</span>
+                </div>
+                <div class="space-y-2">
+                    <div id="sk-l2-risk" class="skill-node bg-slate-800/60 rounded-xl p-3 border border-slate-700/50">
+                        <div class="text-xs font-semibold text-blue-300">legal-risk-eval</div>
+                        <div class="text-xs text-slate-500 mt-0.5">法律风险评估</div>
+                        <div class="text-xs text-slate-600 mt-1">高/中/低 + 偏离度%</div>
+                    </div>
+                    <div id="sk-l2-clause" class="skill-node bg-slate-800/60 rounded-xl p-3 border border-slate-700/50">
+                        <div class="text-xs font-semibold text-blue-300">clause-standard-match</div>
+                        <div class="text-xs text-slate-500 mt-0.5">标准条款匹配</div>
+                        <div class="text-xs text-slate-600 mt-1">生成替代文本建议</div>
+                    </div>
+                    <div id="sk-l2-credit" class="skill-node bg-slate-800/60 rounded-xl p-3 border border-slate-700/50">
+                        <div class="text-xs font-semibold text-blue-300">credit-policy-check</div>
+                        <div class="text-xs text-slate-500 mt-0.5">信用政策校验</div>
+                        <div class="text-xs text-slate-600 mt-1">付款周期合规性</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow 2 -->
+            <div class="hidden lg:flex flex-col items-center justify-center pt-16 gap-1 text-slate-600">
+                <div class="text-xs text-slate-600">编排</div>
+                <div class="text-xl">→</div>
+            </div>
+
+            <!-- L3 Column -->
+            <div>
+                <div class="flex items-center gap-1.5 mb-2">
+                    <span class="badge-l3 rounded-full px-2 py-0.5 text-xs font-bold">L3 企业专属</span>
+                    <span class="text-xs text-slate-500">欧神诺私有流程</span>
+                </div>
+                <div id="sk-l3-main" class="skill-node bg-slate-800/60 rounded-xl p-4 border border-slate-700/50">
+                    <div class="text-xs font-semibold text-emerald-300 mb-1">tenant-legal-review-process</div>
+                    <div class="text-xs text-slate-400 mb-2">完整合同审阅闭环</div>
+                    <div class="space-y-1 text-xs text-slate-500">
+                        <div id="step-1" class="exec-step pending rounded px-2 py-1">1. 供应商纠纷库检索</div>
+                        <div id="step-2" class="exec-step pending rounded px-2 py-1">2. 信用政策合规校验</div>
+                        <div id="step-3" class="exec-step pending rounded px-2 py-1">3. 风险点逐条确认 ⬡HITL</div>
+                        <div id="step-4" class="exec-step pending rounded px-2 py-1">4. 意见书生成 ⬡HITL</div>
+                        <div id="step-5" class="exec-step pending rounded px-2 py-1">5. OA高风险审批触发 ⬡HITL</div>
+                    </div>
+                    <!-- CLI deps -->
+                    <div class="mt-3 pt-2 border-t border-slate-700">
+                        <div class="text-xs text-slate-600 mb-1">CLI 依赖</div>
+                        <div class="flex flex-wrap gap-1">
+                            <span class="badge-cli rounded px-1.5 py-0.5 text-xs">SupplierDB.query</span>
+                            <span class="badge-cli rounded px-1.5 py-0.5 text-xs">DocGen.export</span>
+                            <span class="badge-cli rounded px-1.5 py-0.5 text-xs">OA.submit</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── ROW 3: Main Working Area ── -->
+    <div class="grid grid-cols-12 gap-4">
+
+        <!-- LEFT: Dashboard -->
+        <div class="col-span-12 lg:col-span-3 space-y-3 slide-left">
+
+            <!-- Stats -->
+            <div class="grid grid-cols-2 gap-2">
+                <div class="bg-slate-900 rounded-xl p-3 border border-slate-800 text-center card-hover">
+                    <div class="text-2xl font-bold text-red-400">3</div>
+                    <div class="text-xs text-slate-500 mt-0.5">高风险待审</div>
+                </div>
+                <div class="bg-slate-900 rounded-xl p-3 border border-slate-800 text-center card-hover">
+                    <div class="text-2xl font-bold text-amber-400">7</div>
+                    <div class="text-xs text-slate-500 mt-0.5">今日待办</div>
+                </div>
+                <div class="bg-slate-900 rounded-xl p-3 border border-slate-800 text-center card-hover">
+                    <div class="text-2xl font-bold text-emerald-400">12</div>
+                    <div class="text-xs text-slate-500 mt-0.5">本周完成</div>
+                </div>
+                <div class="bg-slate-900 rounded-xl p-3 border border-slate-800 text-center card-hover">
+                    <div class="text-2xl font-bold text-blue-400">87%</div>
+                    <div class="text-xs text-slate-500 mt-0.5">AI预处理率</div>
+                </div>
+            </div>
+
+            <!-- Contract list -->
+            <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+                <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+                    <span class="text-sm font-semibold">📋 法务工作台</span>
+                    <span class="text-xs text-slate-500 bg-slate-800 rounded-full px-2 py-0.5">AI已预扫描</span>
+                </div>
+                <div class="flex border-b border-slate-800 px-3 pt-2 gap-3">
+                    <button onclick="filterTab('all')" id="t-all" class="tab-btn active text-xs pb-2 text-slate-300">全部(7)</button>
+                    <button onclick="filterTab('sales')" id="t-sales" class="tab-btn text-xs pb-2 text-slate-400">销售(4)</button>
+                    <button onclick="filterTab('purchase')" id="t-purchase" class="tab-btn text-xs pb-2 text-slate-400">采购(3)</button>
+                </div>
+                <div id="contract-list" class="divide-y divide-slate-800/60 max-h-80 overflow-y-auto"></div>
+            </div>
+
+            <!-- Knowledge panel -->
+            <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+                <div class="px-4 py-3 border-b border-slate-800 flex items-center gap-2">
+                    <span class="text-sm font-semibold">🔗 知识库联动</span>
+                    <span class="badge-l3 rounded-full px-1.5 py-0.5 text-xs">CLI: SupplierDB</span>
+                </div>
+                <div class="p-3 space-y-2">
+                    <div class="rounded-lg bg-red-950/30 border border-red-800/40 p-3 text-xs">
+                        <div class="flex items-center gap-1.5 mb-1.5">
+                            <span class="text-red-400 font-semibold">⚠ 历史纠纷预警</span>
+                            <span class="badge-cli rounded px-1.5 py-0.5 text-xs ml-auto">SupplierDB.query</span>
+                        </div>
+                        <div class="text-slate-300">深圳迈科建材 · 2024年质量纠纷 · 货款拖欠43万</div>
+                        <button onclick="showHistoryModal()" class="mt-2 text-red-300 hover:text-red-200 underline">查看历史纠纷 →</button>
+                    </div>
+                    <div class="rounded-lg bg-slate-800/40 border border-slate-700/50 p-3 text-xs">
+                        <div class="text-slate-500 mb-1">行业标准库 (L2)</div>
+                        <div class="text-slate-300">付款周期标准：净30天 · 违约金上限：5%</div>
+                    </div>
+                    <div class="rounded-lg bg-blue-950/30 border border-blue-800/40 p-3 text-xs">
+                        <div class="text-slate-500 mb-1">关联历史版本</div>
+                        <div class="text-slate-300">3份同供应商历史合同，条款相似度78%</div>
+                        <button class="mt-1 text-blue-300 hover:text-blue-200 underline">查看对比 →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER: Smart Editor -->
+        <div class="col-span-12 lg:col-span-6 space-y-3 fade-in">
+
+            <!-- Contract header -->
+            <div class="bg-slate-900 rounded-xl border border-slate-800 p-4">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1 flex-wrap">
+                            <span class="risk-high text-xs rounded-full px-2 py-0.5 font-bold">高风险</span>
+                            <span class="text-xs text-slate-400 bg-slate-800 rounded-full px-2 py-0.5">销售合同</span>
+                            <span class="text-xs text-slate-500">客户修改版 · 共修改12处</span>
+                        </div>
+                        <h2 class="text-sm font-bold">陶瓷材料采购合同（客户修改版）</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">深圳迈科建材有限公司 · ¥850,000 · 销售张伟提交 · 2小时前</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="generateReport()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-lg px-3 py-2 font-semibold transition-all">
+                            📄 一键生成意见书
+                        </button>
+                        <button onclick="triggerApproval()" class="bg-red-700 hover:bg-red-600 text-white text-xs rounded-lg px-3 py-2 font-semibold transition-all">
+                            🚨 触发高风险审批
+                        </button>
+                    </div>
+                </div>
+                <!-- AI scan status -->
+                <div class="mt-3 flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/20 border border-emerald-800/30 rounded-lg px-3 py-2">
+                    <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span>
+                        <strong class="badge-l1 rounded px-1.5 py-0.5 mr-1">L1</strong> contract-parse 完成 ·
+                        <strong class="badge-l1 rounded px-1.5 py-0.5 mr-1">L1</strong> contract-diff 识别12处变更 ·
+                        <strong class="badge-l2 rounded px-1.5 py-0.5 mr-1">L2</strong> legal-risk-eval 标记<strong class="text-red-300">5处风险</strong> · 耗时22秒
+                    </span>
+                </div>
+            </div>
+
+            <!-- Dual pane editor -->
+            <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+                <div class="flex border-b border-slate-800">
+                    <div class="flex-1 px-4 py-2.5 text-xs font-semibold text-slate-400 border-r border-slate-800 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-slate-600"></span> 公司标准版本
+                        <span class="ml-auto badge-l1 rounded px-1.5 py-0.5 text-xs">L1 原文</span>
+                    </div>
+                    <div class="flex-1 px-4 py-2.5 text-xs font-semibold text-amber-300 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-amber-400"></span> 客户修改版本
+                        <span class="ml-auto badge-l2 rounded px-1.5 py-0.5 text-xs">L2 风险标注</span>
+                    </div>
+                </div>
+                <div class="flex">
+                    <!-- Original -->
+                    <div class="flex-1 p-4 border-r border-slate-800 contract-text text-slate-300 overflow-y-auto max-h-96">
+                        <p class="text-slate-600 text-xs mb-2 font-mono">§4 付款方式</p>
+                        <p class="mb-3">买方应在收到增值税专用发票后 <strong class="text-slate-200">三十（30）日内</strong>，以银行转账方式支付合同款项。</p>
+                        <p class="text-slate-600 text-xs mb-2 font-mono">§8 违约责任</p>
+                        <p class="mb-3">任何一方违反本合同约定，应向守约方支付合同总价款 <strong class="text-slate-200">5%</strong> 的违约金；如实际损失超过违约金，违约方应赔偿全部实际损失。</p>
+                        <p class="text-slate-600 text-xs mb-2 font-mono">§12 争议解决</p>
+                        <p class="mb-3">协商不成的，提交 <strong class="text-slate-200">广州仲裁委员会</strong> 仲裁。</p>
+                        <p class="text-slate-600 text-xs mb-2 font-mono">§15 质量保证</p>
+                        <p class="mb-3">提供 <strong class="text-slate-200">十二（12）个月</strong> 质量保修期；买方有权要求卖方缴纳合同金额 <strong class="text-slate-200">10%</strong> 的质量保证金。</p>
+                        <p class="text-slate-600 text-xs mb-2 font-mono">§18 背靠背条款</p>
+                        <p class="text-slate-600 text-sm">（标准版本无此条款）</p>
+                    </div>
+                    <!-- Modified with risk marks -->
+                    <div class="flex-1 p-4 contract-text text-slate-300 overflow-y-auto max-h-96">
+                        <p class="text-slate-600 text-xs mb-2 font-mono">§4 付款方式</p>
+                        <p class="mb-3">买方应在收到增值税专用发票后
+                            <span class="diff-del">三十（30）日内</span>
+                            <span class="diff-add">六十（60）日内</span>，以银行转账方式支付合同款项。
+                            <span id="r1" class="risk-highlight active ml-1" onclick="selectRisk(1)">⚠ 付款周期延长30天</span>
+                        </p>
+                        <p class="text-slate-600 text-xs mb-2 font-mono">§8 违约责任</p>
+                        <p class="mb-3">应向守约方支付合同总价款
+                            <span class="diff-del">5%</span>
+                            <span class="diff-add">2%</span> 的违约金；
+                            <span class="diff-del">如实际损失超过违约金，违约方应赔偿全部实际损失。</span>
+                            <span id="r2" class="risk-highlight ml-1" onclick="selectRisk(2)">⚠ 违约上限条款删除</span>
+                        </p>
+                        <p class="text-slate-600 text-xs mb-2 font-mono">§12 争议解决</p>
+                        <p class="mb-3">协商不成的，提交
+                            <span class="diff-del">广州仲裁委员会</span>
+                            <span class="diff-add">深圳市福田区人民法院</span> 管辖。
+                            <span id="r3" class="risk-highlight ml-1" onclick="selectRisk(3)">⚠ 管辖地变更</span>
+                        </p>
+                        <p class="text-slate-600 text-xs mb-2 font-mono">§15 质量保证</p>
+                        <p class="mb-3">提供
+                            <span class="diff-del">十二（12）个月</span>
+                            <span class="diff-add">六（6）个月</span> 质量保修期。
+                            <span class="diff-del">买方有权要求卖方缴纳合同金额10%的质量保证金。</span>
+                            <span id="r4" class="risk-highlight ml-1" onclick="selectRisk(4)">⚠ 质保期缩短+保证金删除</span>
+                        </p>
+                        <p class="text-slate-600 text-xs mb-2 font-mono">§18 背靠背条款（新增）</p>
+                        <p class="mb-2">
+                            <span class="diff-add">买方向卖方付款的时间及金额，以买方收到其上游客户付款为前提条件。若买方未收到上游付款，买方有权延期支付或拒绝支付本合同款项。</span>
+                            <span id="r5" class="risk-highlight ml-1" onclick="selectRisk(5)">⚠ 背靠背条款新增</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inline suggestion -->
+            <div id="inline-suggestion" class="hidden bg-amber-950/40 border border-amber-700/50 rounded-xl p-4 space-y-3 fade-in">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-amber-400 font-semibold text-xs">💡 AI 替代建议</span>
+                    <span id="suggestion-layer" class="badge-l2 rounded px-1.5 py-0.5 text-xs">L2 clause-standard-match</span>
+                    <span id="suggestion-badge" class="text-xs rounded-full px-2 py-0.5"></span>
+                </div>
+                <p id="suggestion-text" class="text-slate-300 text-sm"></p>
+                <div class="bg-slate-800/60 rounded-lg p-3 text-xs text-slate-400 border border-slate-700/50">
+                    <span class="text-slate-500">替代条款：</span>
+                    <span id="suggestion-clause" class="text-slate-200"></span>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <div class="flex items-center gap-1.5 text-xs text-amber-400 bg-amber-950/30 rounded-lg px-3 py-1.5 border border-amber-800/40">
+                        <span class="hitl-pulse w-2 h-2 rounded-full bg-amber-400 inline-block"></span>
+                        HITL 确认点 — 需航航点击确认后方可替换
+                    </div>
+                    <button onclick="applyReplace()" class="bg-amber-600 hover:bg-amber-500 text-white text-xs rounded-lg px-3 py-2 font-semibold transition-all">
+                        ⚡ 确认替换为标准条款
+                    </button>
+                    <button onclick="dismissSuggestion()" class="text-xs text-slate-400 hover:text-slate-200 px-2">忽略</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Risk Panel -->
+        <div class="col-span-12 lg:col-span-3 space-y-3 slide-right">
+
+            <!-- Risk overview -->
+            <div class="bg-slate-900 rounded-xl border border-slate-800 p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm font-semibold">⚡ 风险详情面板</span>
+                    <span class="text-xs text-slate-500">5个风险点</span>
+                </div>
+                <!-- Progress -->
+                <div class="mb-4">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-slate-500">综合风险偏离度</span>
+                        <span class="text-red-400 font-bold">73%</span>
+                    </div>
+                    <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div id="risk-bar" class="h-full bg-gradient-to-r from-amber-500 to-red-500 rounded-full transition-all duration-1000" style="width:0%"></div>
+                    </div>
+                </div>
+                <!-- Risk items -->
+                <div id="risk-items" class="space-y-2"></div>
+            </div>
+
+            <!-- Active risk detail -->
+            <div id="risk-detail" class="bg-slate-900 rounded-xl border border-amber-800/40 p-4 space-y-3 fade-in">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-semibold text-amber-300">📌 风险详情</span>
+                    <span id="detail-level" class="text-xs rounded-full px-2 py-0.5 risk-high font-bold">高风险</span>
+                    <span id="detail-skill" class="badge-l2 rounded px-1.5 py-0.5 text-xs ml-auto">L2</span>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-500 mb-1">问题描述</div>
+                    <p id="detail-desc" class="text-sm text-slate-200">付款周期从30天延长至60天，超出公司信用政策30天，资金占用风险高。</p>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-500 mb-1">业务影响</div>
+                    <p id="detail-impact" class="text-sm text-amber-300">预计多占用资金约¥42.5万，增加坏账风险。</p>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-500 mb-1">L2 建议</div>
+                    <p id="detail-suggestion" class="text-sm text-emerald-300">建议维持净30天付款周期；如客户坚持，要求补充历史付款信用证明。</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="showInlineSuggestion()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-lg px-3 py-2 font-semibold transition-all">
+                        ⚡ 查看替换建议
+                    </button>
+                    <button onclick="showHistoryModal()" class="text-xs border border-slate-600 hover:border-slate-400 text-slate-300 hover:text-white rounded-lg px-3 py-2 transition-all">
+                        历史纠纷
+                    </button>
+                </div>
+            </div>
+
+            <!-- HITL status -->
+            <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+                <div class="px-4 py-3 border-b border-slate-800">
+                    <span class="text-sm font-semibold">🔐 HITL 人工确认节点</span>
+                </div>
+                <div class="p-3 space-y-2">
+                    <div id="hitl-1" class="flex items-center gap-2 p-2 rounded-lg bg-slate-800/40 text-xs">
+                        <span class="w-2 h-2 rounded-full bg-slate-600 flex-shrink-0"></span>
+                        <span class="text-slate-400 flex-1">风险点逐条确认</span>
+                        <span class="text-slate-600">待触发</span>
+                    </div>
+                    <div id="hitl-2" class="flex items-center gap-2 p-2 rounded-lg bg-slate-800/40 text-xs">
+                        <span class="w-2 h-2 rounded-full bg-slate-600 flex-shrink-0"></span>
+                        <span class="text-slate-400 flex-1">条款替换前确认</span>
+                        <span class="text-slate-600">待触发</span>
+                    </div>
+                    <div id="hitl-3" class="flex items-center gap-2 p-2 rounded-lg bg-slate-800/40 text-xs">
+                        <span class="w-2 h-2 rounded-full bg-slate-600 flex-shrink-0"></span>
+                        <span class="text-slate-400 flex-1">意见书生成确认</span>
+                        <span class="text-slate-600">待触发</span>
+                    </div>
+                    <div id="hitl-4" class="flex items-center gap-2 p-2 rounded-lg bg-red-950/30 border border-red-800/30 text-xs">
+                        <span class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 pulse-slow"></span>
+                        <span class="text-red-300 flex-1">OA高风险审批触发</span>
+                        <span class="text-red-400 font-semibold">必须确认</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════ HISTORY MODAL ═══════ -->
+<div id="history-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-lg w-full mx-4 fade-in">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <span class="text-base font-bold">⚠ 供应商历史纠纷</span>
+                <span class="badge-cli rounded px-1.5 py-0.5 text-xs">CLI: SupplierDB.query</span>
+            </div>
+            <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-white text-xl leading-none">×</button>
+        </div>
+        <div class="bg-red-950/30 border border-red-800/40 rounded-xl p-3 mb-4 text-sm">
+            <div class="font-semibold text-red-300 mb-1">深圳迈科建材有限公司</div>
+            <div class="text-slate-400 text-xs">命中欧神诺供应商历史纠纷库 · 共3条记录</div>
+        </div>
+        <div class="space-y-3">
+            <div class="bg-slate-800/60 rounded-xl p-3 text-xs border border-slate-700/50">
+                <div class="flex justify-between mb-1">
+                    <span class="font-semibold text-red-300">2024-03 质量纠纷</span>
+                    <span class="risk-high rounded px-1.5 py-0.5">高风险</span>
+                </div>
+                <div class="text-slate-400">供应货物规格不符，拒绝退款，最终仲裁裁决 · 货款拖欠 ¥430,000</div>
+            </div>
+            <div class="bg-slate-800/60 rounded-xl p-3 text-xs border border-slate-700/50">
+                <div class="flex justify-between mb-1">
+                    <span class="font-semibold text-amber-300">2023-09 付款争议</span>
+                    <span class="risk-mid rounded px-1.5 py-0.5">中风险</span>
+                </div>
+                <div class="text-slate-400">付款延期超90天，需法务介入催款 · 最终足额回收</div>
+            </div>
+            <div class="bg-slate-800/60 rounded-xl p-3 text-xs border border-slate-700/50">
+                <div class="flex justify-between mb-1">
+                    <span class="font-semibold text-amber-300">2022-11 条款争议</span>
+                    <span class="risk-mid rounded px-1.5 py-0.5">中风险</span>
+                </div>
+                <div class="text-slate-400">单方面变更合同条款，要求增加背靠背付款条件 · 协商解决</div>
+            </div>
+        </div>
+        <div class="mt-4 bg-amber-950/30 border border-amber-800/40 rounded-lg p-3 text-xs text-amber-300">
+            🔍 L2 建议：根据历史纠纷记录，建议在合同中增加质量保证金条款，并明确争议解决为仲裁（非诉讼）。
+        </div>
+        <button onclick="closeHistoryModal()" class="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white rounded-lg py-2 text-sm font-semibold transition-all">关闭</button>
+    </div>
+</div>
+
+<!-- ═══════ REPORT MODAL ═══════ -->
+<div id="report-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-indigo-800/50 rounded-2xl p-6 max-w-xl w-full mx-4 fade-in max-h-[85vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <span class="text-base font-bold">📄 法务审阅意见书</span>
+                <span class="badge-cli rounded px-1.5 py-0.5 text-xs">CLI: DocGen.export</span>
+                <span class="badge-hitl rounded px-1.5 py-0.5 text-xs">HITL 确认后生成</span>
+            </div>
+            <button onclick="closeReportModal()" class="text-slate-400 hover:text-white text-xl leading-none">×</button>
+        </div>
+        <div class="space-y-4 text-sm">
+            <div class="bg-slate-800/60 rounded-xl p-4 border border-slate-700/50">
+                <div class="text-xs text-slate-500 mb-2 font-mono">基本信息</div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div><span class="text-slate-500">合同名称：</span><span class="text-slate-200">陶瓷材料采购合同</span></div>
+                    <div><span class="text-slate-500">合同金额：</span><span class="text-slate-200">¥850,000</span></div>
+                    <div><span class="text-slate-500">审查日期：</span><span class="text-slate-200">2026-03-25</span></div>
+                    <div><span class="text-slate-500">审阅人：</span><span class="text-slate-200">航航</span></div>
+                </div>
+            </div>
+            <div class="bg-red-950/20 border border-red-800/30 rounded-xl p-4">
+                <div class="text-xs text-red-400 font-semibold mb-2">风险总览</div>
+                <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div class="bg-red-950/40 rounded-lg p-2"><div class="text-xl font-bold text-red-400">3</div><div class="text-slate-400">高风险</div></div>
+                    <div class="bg-amber-950/40 rounded-lg p-2"><div class="text-xl font-bold text-amber-400">1</div><div class="text-slate-400">中风险</div></div>
+                    <div class="bg-emerald-950/40 rounded-lg p-2"><div class="text-xl font-bold text-emerald-400">1</div><div class="text-slate-400">低风险</div></div>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <div class="text-xs text-slate-500 font-semibold">主要风险项及修改建议</div>
+                <div class="bg-slate-800/40 rounded-lg p-3 text-xs border-l-2 border-red-500">
+                    <div class="flex gap-2 mb-1"><span class="risk-high rounded px-1.5 py-0.5">高风险</span><span class="font-semibold">§4 付款周期延长</span></div>
+                    <div class="text-slate-400">建议恢复净30天付款；如客户坚持，须补充信用证明且调整定金比例。</div>
+                </div>
+                <div class="bg-slate-800/40 rounded-lg p-3 text-xs border-l-2 border-red-500">
+                    <div class="flex gap-2 mb-1"><span class="risk-high rounded px-1.5 py-0.5">高风险</span><span class="font-semibold">§18 背靠背条款</span></div>
+                    <div class="text-slate-400">强烈建议删除。该条款将使公司付款风险转嫁至上游不确定因素，不可接受。</div>
+                </div>
+                <div class="bg-slate-800/40 rounded-lg p-3 text-xs border-l-2 border-amber-500">
+                    <div class="flex gap-2 mb-1"><span class="risk-mid rounded px-1.5 py-0.5">中风险</span><span class="font-semibold">§8 违约金上限删除</span></div>
+                    <div class="text-slate-400">建议恢复5%违约金条款及损失赔偿条款。</div>
+                </div>
+            </div>
+            <div class="bg-slate-800/40 rounded-lg p-3 text-xs">
+                <div class="text-slate-500 mb-1">审查结论</div>
+                <div class="text-slate-200">本合同存在重大法律风险，综合偏离度73%。建议在供应商接受上述修改意见后方可签署。鉴于该供应商历史纠纷记录，建议法务负责人复核后方可推进。</div>
+            </div>
+        </div>
+        <div class="mt-4 flex gap-2">
+            <button onclick="doTriggerApproval()" class="flex-1 bg-red-700 hover:bg-red-600 text-white rounded-lg py-2 text-sm font-semibold transition-all">🚨 触发OA高风险审批节点</button>
+            <button onclick="closeReportModal()" class="bg-slate-700 hover:bg-slate-600 text-white rounded-lg px-4 py-2 text-sm transition-all">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════ TOAST ═══════ -->
+<div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
+
+<script>
+// ── Data ──
+const contracts = [
+    { id:1, name:'陶瓷材料采购合同（客户修改版）', co:'深圳迈科建材', type:'sales', risk:'high', label:'高风险', amount:'85万', time:'2小时前', changes:12 },
+    { id:2, name:'工程项目销售框架合同', co:'成都锦城装饰工程', type:'sales', risk:'mid', label:'中风险', amount:'230万', time:'4小时前', changes:5 },
+    { id:3, name:'软件服务采购协议', co:'深圳联云科技', type:'purchase', risk:'low', label:'低风险', amount:'18万', time:'昨天', changes:2 },
+    { id:4, name:'原材料长期供应合同', co:'佛山顺德陶土供应', type:'purchase', risk:'high', label:'高风险', amount:'450万', time:'昨天', changes:9 },
+    { id:5, name:'工程承包服务合同', co:'广州立信建设集团', type:'sales', risk:'mid', label:'中风险', amount:'128万', time:'2天前', changes:6 },
+    { id:6, name:'品牌授权合作协议', co:'北京华兴贸易', type:'sales', risk:'low', label:'低风险', amount:'36万', time:'2天前', changes:1 },
+    { id:7, name:'IT运维服务采购合同', co:'上海云擎网络', type:'purchase', risk:'mid', label:'中风险', amount:'24万', time:'3天前', changes:4 },
+];
+
+const risks = [
+    { id:1, title:'付款周期延长30天', clause:'§4', level:'高风险', cls:'risk-high', deviate:'60%',
+      desc:'付款周期从30天延长至60天，超出公司信用政策30天，资金占用风险高。',
+      impact:'预计多占用资金约¥42.5万，增加坏账风险。',
+      suggestion:'建议维持净30天付款周期；如客户坚持，要求补充历史付款信用证明。',
+      clause_text:'买方应在收到增值税专用发票后三十（30）日内，以银行转账方式支付合同款项。',
+    },
+    { id:2, title:'违约上限条款删除', clause:'§8', level:'高风险', cls:'risk-high', deviate:'80%',
+      desc:'客户删除了"实际损失超过违约金应全额赔偿"条款，并将违约金从5%降至2%。',
+      impact:'公司在实际损失超过违约金时将无法获得足额赔偿，损失风险敞口大。',
+      suggestion:'强烈建议恢复违约金5%条款及损失赔偿上限，否则建议拒绝签署。',
+      clause_text:'任何一方违反本合同约定，应向守约方支付合同总价款5%的违约金；如实际损失超过违约金，违约方应赔偿全部实际损失。',
+    },
+    { id:3, title:'争议管辖地变更', clause:'§12', level:'高风险', cls:'risk-high', deviate:'70%',
+      desc:'将管辖由广州仲裁委员会改为深圳市福田区人民法院，且混合约定仲裁与诉讼。',
+      impact:'一旦发生纠纷，诉讼成本和时间将大幅增加，且混合约定存在管辖无效风险。',
+      suggestion:'建议恢复广州仲裁委员会仲裁，删除法院管辖条款，避免仲裁诉讼并存。',
+      clause_text:'协商不成的，提交广州仲裁委员会仲裁，仲裁裁决为终局裁决。',
+    },
+    { id:4, title:'质保期缩短+保证金删除', clause:'§15', level:'中风险', cls:'risk-mid', deviate:'50%',
+      desc:'质量保修期从12个月缩短为6个月，并删除质量保证金条款。',
+      impact:'质量风险窗口缩短，且无保证金保障，一旦出现质量问题追索困难。',
+      suggestion:'建议恢复12个月质保期；保证金可协商降至5%，但不应低于此比例。',
+      clause_text:'卖方保证所供货物符合国家标准GB/T4100-2015，并提供十二（12）个月质量保修期；买方有权要求卖方缴纳合同金额10%的质量保证金。',
+    },
+    { id:5, title:'背靠背条款新增', clause:'§18', level:'高风险', cls:'risk-high', deviate:'90%',
+      desc:'客户新增背靠背付款条款，将其上游付款作为向本公司付款的前提。',
+      impact:'公司收款将完全依赖第三方链条，存在拒付风险，属于重大法律风险。',
+      suggestion:'Ontology规则：背靠背条款属于自动标红项，强烈建议删除，不接受任何变通方案。',
+      clause_text:'删除§18全文，恢复无条件付款义务。',
+    },
+];
+
+let activeRisk = 1;
+let currentTab = 'all';
+let simRunning = false;
+
+// ── Init ──
+window.onload = () => {
+    renderContracts('all');
+    renderRisks();
+    setTimeout(() => { document.getElementById('risk-bar').style.width = '73%'; }, 300);
+};
+
+// ── Contract List ──
+function renderContracts(tab) {
+    const list = document.getElementById('contract-list');
+    const filtered = tab === 'all' ? contracts : contracts.filter(c => c.type === tab);
+    list.innerHTML = filtered.map(c => `
+        <div onclick="selectContract(${c.id})" class="px-4 py-3 cursor-pointer hover:bg-slate-800/40 transition-all ${c.id===1?'bg-slate-800/30 border-l-2 border-violet-500':''}">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="${c.cls||riskCls(c.risk)} text-xs rounded-full px-2 py-0.5">${c.label}</span>
+                <span class="text-xs text-slate-500">${c.type==='sales'?'销售':'采购'}</span>
+                <span class="text-xs text-slate-600 ml-auto">${c.time}</span>
+            </div>
+            <div class="text-xs font-semibold text-slate-200 truncate">${c.name}</div>
+            <div class="text-xs text-slate-500 mt-0.5">${c.co} · ¥${c.amount} · 修改${c.changes}处</div>
+        </div>
+    `).join('');
+}
+
+function riskCls(r) {
+    return r==='high'?'risk-high':r==='mid'?'risk-mid':'risk-low';
+}
+
+function filterTab(tab) {
+    currentTab = tab;
+    ['all','sales','purchase'].forEach(t => {
+        document.getElementById('t-'+t).className = 'tab-btn text-xs pb-2 ' + (t===tab?'active text-slate-300':'text-slate-400');
+    });
+    renderContracts(tab);
+}
+
+function selectContract(id) { showToast('已切换合同 #' + id, 'info'); }
+
+// ── Risks ──
+function renderRisks() {
+    const el = document.getElementById('risk-items');
+    el.innerHTML = risks.map(r => `
+        <div onclick="selectRisk(${r.id})" class="flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-slate-800/50 transition-all ${r.id===activeRisk?'bg-slate-800/50 border border-slate-700/60':''}">
+            <span class="${r.cls} text-xs rounded px-1.5 py-0.5 flex-shrink-0">${r.level}</span>
+            <div class="flex-1 min-w-0">
+                <div class="text-xs font-semibold text-slate-200 truncate">${r.clause} ${r.title}</div>
+                <div class="text-xs text-slate-500">偏离度 ${r.deviate}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function selectRisk(id) {
+    activeRisk = id;
+    const r = risks.find(x => x.id === id);
+    // Update highlights
+    risks.forEach(x => {
+        const el = document.getElementById('r'+x.id);
+        if(el) el.classList.toggle('active', x.id===id);
+    });
+    // Update detail
+    document.getElementById('detail-level').textContent = r.level;
+    document.getElementById('detail-level').className = 'text-xs rounded-full px-2 py-0.5 ' + r.cls + ' font-bold';
+    document.getElementById('detail-desc').textContent = r.desc;
+    document.getElementById('detail-impact').textContent = r.impact;
+    document.getElementById('detail-suggestion').textContent = r.suggestion;
+    renderRisks();
+    // Hide suggestion if showing different risk
+    document.getElementById('inline-suggestion').classList.add('hidden');
+}
+
+// ── Inline suggestion ──
+function showInlineSuggestion() {
+    const r = risks.find(x => x.id === activeRisk);
+    document.getElementById('suggestion-text').textContent = r.suggestion;
+    document.getElementById('suggestion-clause').textContent = r.clause_text;
+    document.getElementById('suggestion-badge').textContent = r.level;
+    document.getElementById('suggestion-badge').className = 'text-xs rounded-full px-2 py-0.5 ' + r.cls;
+    const el = document.getElementById('inline-suggestion');
+    el.classList.remove('hidden');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // Update HITL-2
+    updateHITL('hitl-2', 'waiting', '等待确认');
+}
+
+function applyReplace() {
+    showToast('⚡ 条款已替换为标准版本（HITL确认完成）', 'success');
+    document.getElementById('inline-suggestion').classList.add('hidden');
+    updateHITL('hitl-2', 'done', '已完成');
+}
+
+function dismissSuggestion() {
+    document.getElementById('inline-suggestion').classList.add('hidden');
+}
+
+// ── Report ──
+function generateReport() {
+    updateHITL('hitl-3', 'waiting', '等待确认');
+    showToast('📄 生成意见书需要HITL确认，请在弹窗中确认...', 'warn');
+    setTimeout(() => {
+        document.getElementById('report-modal').classList.remove('hidden');
+        document.getElementById('report-modal').classList.add('flex');
+        updateHITL('hitl-3', 'done', '已确认');
+    }, 600);
+}
+
+function closeReportModal() {
+    document.getElementById('report-modal').classList.add('hidden');
+    document.getElementById('report-modal').classList.remove('flex');
+}
+
+// ── Approval ──
+function triggerApproval() {
+    updateHITL('hitl-4', 'waiting', '航航确认中...');
+    if (confirm('⚠ 即将向OA系统插入"法务确认"审批节点，通知法务负责人。\n\n此操作不可撤销，请确认。')) {
+        doTriggerApproval();
+    }
+}
+
+function doTriggerApproval() {
+    closeReportModal();
+    updateHITL('hitl-4', 'done', '已提交OA');
+    showToast('🚨 OA审批节点已插入，法务负责人已收到通知（CLI: OA.submit）', 'danger');
+}
+
+// ── History Modal ──
+function showHistoryModal() {
+    document.getElementById('history-modal').classList.remove('hidden');
+    document.getElementById('history-modal').classList.add('flex');
+}
+function closeHistoryModal() {
+    document.getElementById('history-modal').classList.add('hidden');
+    document.getElementById('history-modal').classList.remove('flex');
+}
+
+// ── HITL ──
+function updateHITL(id, state, label) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const dot = el.querySelector('span:first-child');
+    const lbl = el.querySelector('span:last-child');
+    if (state === 'waiting') {
+        el.className = 'flex items-center gap-2 p-2 rounded-lg bg-amber-950/30 border border-amber-800/40 text-xs';
+        dot.className = 'w-2 h-2 rounded-full bg-amber-400 flex-shrink-0 pulse-slow';
+        lbl.className = 'text-amber-400 font-semibold';
+    } else if (state === 'done') {
+        el.className = 'flex items-center gap-2 p-2 rounded-lg bg-emerald-950/20 border border-emerald-800/30 text-xs';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0';
+        lbl.className = 'text-emerald-400';
+    }
+    lbl.textContent = label;
+}
+
+// ── Simulation ──
+const simSteps = [
+    { id:'sk-l1-parse', stepEl:'step-1', msg:'L1 contract-parse：解析合同文档结构...', delay:0 },
+    { id:'sk-l1-diff',  stepEl:'step-1', msg:'L1 contract-diff：与标准版本比对，发现12处变更...', delay:1200 },
+    { id:'sk-l1-extract',stepEl:'step-1', msg:'L1 field-extraction：提取付款周期、违约金等关键字段...', delay:2400 },
+    { id:'sk-l2-risk',  stepEl:'step-1', msg:'L2 legal-risk-eval：逐条评估法律风险等级...', delay:3600 },
+    { id:'sk-l2-clause',stepEl:'step-2', msg:'L2 clause-standard-match：匹配标准条款库，生成替代建议...', delay:4800 },
+    { id:'sk-l2-credit',stepEl:'step-2', msg:'L2 credit-policy-check：检测付款周期超出30天信用政策...', delay:6000, hitl:'hitl-2' },
+    { id:'sk-l3-main',  stepEl:'step-3', msg:'CLI: SupplierDB.query → 发现3条历史纠纷记录，推送预警...', delay:7200, hitl:'hitl-1' },
+    { id:null,          stepEl:'step-4', msg:'HITL → 等待航航逐条确认风险点...', delay:8600 },
+    { id:null,          stepEl:'step-5', msg:'CLI: OA.submit → 高风险合同，插入法务确认审批节点', delay:10000, hitl:'hitl-4' },
+];
+
+function runSimulation() {
+    if (simRunning) return;
+    simRunning = true;
+    document.getElementById('run-btn').disabled = true;
+    document.getElementById('run-btn').textContent = '⏳ 运行中...';
+
+    // Reset
+    ['sk-l1-parse','sk-l1-diff','sk-l1-extract','sk-l2-risk','sk-l2-clause','sk-l2-credit','sk-l3-main'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.className = el.className.replace(/active-l\d|done/g,'').trim() + ' skill-node';
+    });
+    ['step-1','step-2','step-3','step-4','step-5'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.className = 'exec-step pending rounded px-2 py-1';
+    });
+
+    simSteps.forEach((s, i) => {
+        setTimeout(() => {
+            // Activate skill node
+            if (s.id) {
+                const el = document.getElementById(s.id);
+                if (el) {
+                    const lvl = s.id.startsWith('sk-l1') ? 'l1' : s.id.startsWith('sk-l2') ? 'l2' : 'l3';
+                    el.className = el.className.replace(/active-l\d|done/g,'').trim() + ' active-' + lvl;
+                }
+            }
+            // Update exec step
+            const step = document.getElementById(s.stepEl);
+            if (step) step.className = 'exec-step running rounded px-2 py-1';
+            // HITL
+            if (s.hitl) updateHITL(s.hitl, 'waiting', '等待确认');
+            // Toast
+            showToast(s.msg, i < 5 ? 'info' : i < 7 ? 'warn' : 'danger');
+
+            // Last step
+            if (i === simSteps.length - 1) {
+                setTimeout(() => {
+                    ['step-1','step-2','step-3','step-4','step-5'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if(el) el.className = 'exec-step done-step rounded px-2 py-1';
+                    });
+                    document.getElementById('run-btn').disabled = false;
+                    document.getElementById('run-btn').textContent = '▶ 再次运行';
+                    simRunning = false;
+                    showToast('✅ L3流程完成 · 意见书已生成 · OA审批已触发', 'success');
+                }, 1500);
+            }
+        }, s.delay);
+    });
+}
+
+// ── Toast ──
+function showToast(msg, type = 'info') {
+    const colors = {
+        info: 'bg-slate-800 border-slate-600 text-slate-200',
+        success: 'bg-emerald-900/80 border-emerald-700 text-emerald-100',
+        warn: 'bg-amber-900/80 border-amber-700 text-amber-100',
+        danger: 'bg-red-900/80 border-red-700 text-red-100',
+    };
+    const el = document.createElement('div');
+    el.className = `toast text-xs px-4 py-2.5 rounded-lg border max-w-xs shadow-lg ${colors[type]}`;
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.4s'; setTimeout(() => el.remove(), 400); }, 3500);
+}
+</script>
+</body>
+</html>
