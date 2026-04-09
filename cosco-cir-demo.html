@@ -182,11 +182,80 @@
   .tab-btn { padding: 8px 16px; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; color: var(--muted); transition: all .2s; }
   .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 600; }
 
-  /* RESPONSIVE */
+  /* RESPONSIVE - tablet */
   @media (max-width: 1100px) {
     .stats-row { grid-template-columns: repeat(3, 1fr); }
     .two-col { grid-template-columns: 1fr; }
     .three-col { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* RESPONSIVE - mobile */
+  @media (max-width: 768px) {
+    body { font-size: 13px; }
+
+    .nav { padding: 0 12px; height: 52px; gap: 0; flex-wrap: wrap; }
+    .nav-logo { font-size: 15px; gap: 6px; }
+    .nav-badge { display: none; }
+    .nav-tabs { gap: 2px; margin-left: 0; width: 100%; overflow-x: auto; padding: 4px 0; scrollbar-width: none; }
+    .nav-tabs::-webkit-scrollbar { display: none; }
+    .nav-tab { padding: 5px 10px; font-size: 12px; white-space: nowrap; }
+    .nav-user { display: none; }
+    .nav { height: auto; padding: 8px 12px 4px; }
+
+    .page { padding: 12px; }
+
+    .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+    .stat-card { padding: 14px 12px; }
+    .stat-value { font-size: 22px; }
+    .stat-sub, .stat-trend { font-size: 11px; }
+
+    .two-col { grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; }
+    .three-col { grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; }
+
+    .card-header { padding: 12px 14px; }
+    .card-title { font-size: 13px; }
+    .card-body { padding: 12px 14px; }
+
+    .alert-banner { padding: 12px 14px; gap: 10px; flex-wrap: wrap; }
+    .alert-icon { font-size: 20px; }
+    .alert-text h3 { font-size: 13px; }
+    .alert-text p { font-size: 12px; }
+    .alert-cta { width: 100%; text-align: center; margin-left: 0; }
+
+    .signal-item { padding: 10px 0; gap: 8px; }
+    .signal-item:hover { margin: 0 -14px; padding: 10px 14px; }
+    .signal-title { font-size: 12px; }
+    .signal-meta { font-size: 11px; gap: 6px; flex-wrap: wrap; }
+    .signal-score { font-size: 12px; }
+
+    .opp-card { padding: 12px; }
+    .opp-name { font-size: 14px; }
+    .opp-score-badge { font-size: 12px; padding: 2px 10px; }
+    .opp-meta { flex-wrap: wrap; gap: 8px; }
+
+    table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    th, td { padding: 8px 10px; font-size: 12px; white-space: nowrap; }
+
+    .modal { width: calc(100vw - 24px); max-height: 90vh; border-radius: 12px; }
+    .modal-header { padding: 14px 16px; }
+    .modal-title { font-size: 15px; }
+    .modal-body { padding: 16px; }
+    .info-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .funnel { gap: 6px; }
+    .funnel-bar { font-size: 14px; }
+    .funnel-label { font-size: 11px; }
+
+    .tab-btn { padding: 6px 12px; font-size: 12px; }
+
+    .action-btn { padding: 8px 14px; font-size: 12px; }
+    .btn-outline { margin-left: 6px; }
+  }
+
+  @media (max-width: 400px) {
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .stat-value { font-size: 20px; }
+    .info-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
