@@ -302,18 +302,19 @@ let currentSkill = 'radar';
 // ── Welcome messages ──────────────────────────────────────────────────────────
 function getWelcome(skill) {
   const w = {
-    radar: `<p>早上好，王经理！今日 <b>雷达站</b> 扫描完成。</p>
-      <div class="dcard">
-        <div class="dcard-title">📡 今日信号汇总 · 2026-04-09</div>
-        <div class="drow"><span class="dlabel">高价值信号</span><span class="dval red">7 条</span></div>
-        <div class="drow"><span class="dlabel">中等优先级</span><span class="dval warn">18 条</span></div>
-        <div class="drow"><span class="dlabel">低优先级</span><span class="dval blue">9 条</span></div>
-        <div class="drow"><span class="dlabel">自动去重</span><span class="dval green">11 条</span></div>
-        <div class="drow"><span class="dlabel">监控客户数</span><span class="dval blue">247 家</span></div>
+    radar: `<p>早上好，王经理！<b>特运信息晨报</b> 已完成今日网络爬取，共抓取 <b>34 条</b> 有效信号，去重后高价值信号 <b>7 条</b>。</p>
+      <div class="dcard" style="border-left-color:var(--cosco-red);background:linear-gradient(135deg,#FFF5F5,#FFF0F0);border-color:#F5C0C0">
+        <div class="dcard-title">📰 特运信息晨报 · 2026-04-10 &nbsp;<span style="font-size:11px;font-weight:400;color:var(--muted)">06:30 自动生成</span></div>
+        <div class="drow"><span class="dlabel">🌬️ 风电设备</span><span class="dval red">3 条高优信号</span></div>
+        <div class="drow"><span class="dlabel">🔋 储能/新能源</span><span class="dval red">2 条高优信号</span></div>
+        <div class="drow"><span class="dlabel">🏗️ 工程机械</span><span class="dval warn">1 条高优信号</span></div>
+        <div class="drow"><span class="dlabel">🚗 商品车</span><span class="dval warn">1 条高优信号</span></div>
+        <div class="drow"><span class="dlabel">🌲 纸浆/林产品</span><span class="dval blue">0 条高优信号</span></div>
+        <div class="drow" style="border-top:1px dashed rgba(0,80,143,.15);margin-top:4px;padding-top:8px"><span class="dlabel">监控客户总数</span><span class="dval blue">247 家</span></div>
       </div>
-      <p style="margin-top:10px;font-size:13px;color:var(--muted)">⚡ 远景能源、宁德时代、三一重工出现高优信号，建议优先跟进。</p>
+      <p style="margin-top:10px;font-size:13px;color:var(--muted)">⚡ 远景能源、宁德时代出现紧急窗口期信号，建议今日优先跟进。</p>
       <div class="quick-wrap">
-        <div class="qbtn" onclick="clickQuick('查看高优信号')">查看高优信号</div>
+        <div class="qbtn" onclick="clickQuick('查看高优信号')">查看今日晨报</div>
         <div class="qbtn" onclick="clickQuick('远景能源详情')">远景能源详情</div>
         <div class="qbtn" onclick="clickQuick('宁德时代动态')">宁德时代动态</div>
         <div class="qbtn" onclick="clickQuick('生成今日日报')">生成今日日报</div>
@@ -376,36 +377,150 @@ function getWelcome(skill) {
 
 // ── Response templates ─────────────────────────────────────────────────────────
 function resp_radarHigh() {
-  return `<p>今日 <b>7 条高价值信号</b>（按优先级排序）：</p>
-    <div class="dcard">
-      <div class="dcard-title">🔴 高优信号列表</div>
-      <div class="signal-row"><div class="sdot high"></div><div class="signal-info"><div class="signal-name">远景能源 · 内蒙古4GW风电产能基地开工</div><div class="signal-meta">上交所公告 · 07:23 · 涉及金额38亿 <span class="tag tag-red">产能扩张</span></div></div><div class="signal-score">92</div></div>
-      <div class="signal-row"><div class="sdot high"></div><div class="signal-info"><div class="signal-name">宁德时代 · 匈牙利工厂二期扩建获批</div><div class="signal-meta">深交所公告 · 08:41 · €12亿 <span class="tag tag-red">海外建厂</span></div></div><div class="signal-score">88</div></div>
-      <div class="signal-row"><div class="sdot mid"></div><div class="signal-info"><div class="signal-name">三一重工 · 中标沙特阿美EPC项目21亿</div><div class="signal-meta">财联社 · 昨日16:05 · 18个月交货 <span class="tag tag-gold">重大中标</span></div></div><div class="signal-score">79</div></div>
-      <div class="signal-row"><div class="sdot mid"></div><div class="signal-info"><div class="signal-name">晨鸣纸业 · 印尼工厂30万吨纸浆产线招标</div><div class="signal-meta">中国招标网 · 昨日10:30 <span class="tag tag-gold">产能扩张</span></div></div><div class="signal-score">71</div></div>
-      <div class="signal-row"><div class="sdot low"></div><div class="signal-info"><div class="signal-name">比亚迪 · 泰国工厂竣工验收，首批商品车下线</div><div class="signal-meta">行业媒体 · 昨日14:20 <span class="tag tag-blue">出口目的地</span></div></div><div class="signal-score">65</div></div>
+  return `<p><b>特运信息晨报 · 2026-04-10</b> &nbsp;今日高价值信号 7 条，按货类分类如下：</p>
+
+    <div class="dcard" style="margin-top:10px">
+      <div class="dcard-title">🌬️ 一、风电设备 &nbsp;<span style="font-size:11px;font-weight:400;color:var(--muted)">3 条信号</span></div>
+      <div class="signal-row">
+        <div class="sdot high"></div>
+        <div class="signal-info">
+          <div class="signal-name">远景能源 · 内蒙古4GW风电产能基地正式开工</div>
+          <div class="signal-meta">
+            <span class="tag tag-red">产能扩张</span>
+            投资38亿 · 预计货量 8,000 CBM · 路线：内蒙古→天津港→欧洲<br>
+            来源：上交所公告 · 2026-04-10 07:23
+          </div>
+        </div>
+        <div class="signal-score">92</div>
+      </div>
+      <div class="signal-row">
+        <div class="sdot high"></div>
+        <div class="signal-info">
+          <div class="signal-name">金风科技 · 中标巴西里约州500MW海上风电项目</div>
+          <div class="signal-meta">
+            <span class="tag tag-red">重大中标</span>
+            合同额约22亿 · 叶片+机舱罩出口 · 路线：天津→桑托斯港<br>
+            来源：财联社 · 2026-04-09 16:40
+          </div>
+        </div>
+        <div class="signal-score">85</div>
+      </div>
+      <div class="signal-row">
+        <div class="sdot mid"></div>
+        <div class="signal-info">
+          <div class="signal-name">明阳智能 · 欧洲海上风电项目设备采购招标</div>
+          <div class="signal-meta">
+            <span class="tag tag-gold">招标预警</span>
+            预计货量 5,200 CBM · 截标日期：2026-04-25 · 路线：广州→鹿特丹<br>
+            来源：中国招标网 · 2026-04-09 10:15
+          </div>
+        </div>
+        <div class="signal-score">76</div>
+      </div>
     </div>
+
+    <div class="dcard" style="margin-top:10px">
+      <div class="dcard-title">🔋 二、储能/新能源 &nbsp;<span style="font-size:11px;font-weight:400;color:var(--muted)">2 条信号</span></div>
+      <div class="signal-row">
+        <div class="sdot high"></div>
+        <div class="signal-info">
+          <div class="signal-name">宁德时代 · 匈牙利工厂二期扩建获批，设备采购启动</div>
+          <div class="signal-meta">
+            <span class="tag tag-red">海外建厂</span>
+            投资€12亿 · 预计货量 12,000 CBM · 路线：青岛→汉堡→德布勒森<br>
+            来源：深交所公告 · 2026-04-10 08:41
+          </div>
+        </div>
+        <div class="signal-score">88</div>
+      </div>
+      <div class="signal-row">
+        <div class="sdot mid"></div>
+        <div class="signal-info">
+          <div class="signal-name">亿纬锂能 · 马来西亚储能工厂首批生产线设备发运</div>
+          <div class="signal-meta">
+            <span class="tag tag-gold">设备出口</span>
+            预计货量 3,800 CBM · 路线：惠州→巴生港 · 计划发运：2026-05<br>
+            来源：公司官网 · 2026-04-09 14:00
+          </div>
+        </div>
+        <div class="signal-score">72</div>
+      </div>
+    </div>
+
+    <div class="dcard" style="margin-top:10px">
+      <div class="dcard-title">🏗️ 三、工程机械 &nbsp;<span style="font-size:11px;font-weight:400;color:var(--muted)">1 条信号</span></div>
+      <div class="signal-row">
+        <div class="sdot mid"></div>
+        <div class="signal-info">
+          <div class="signal-name">三一重工 · 中标沙特阿美EPC项目，合同额21亿</div>
+          <div class="signal-meta">
+            <span class="tag tag-gold">重大中标</span>
+            重型泵车+起重设备 · 预计货量 3,500 CBM · 路线：长沙→上海→吉达<br>
+            来源：财联社 · 2026-04-09 16:05 · 交货周期18个月
+          </div>
+        </div>
+        <div class="signal-score">79</div>
+      </div>
+    </div>
+
+    <div class="dcard" style="margin-top:10px">
+      <div class="dcard-title">🚗 四、商品车 &nbsp;<span style="font-size:11px;font-weight:400;color:var(--muted)">1 条信号</span></div>
+      <div class="signal-row">
+        <div class="sdot mid"></div>
+        <div class="signal-info">
+          <div class="signal-name">比亚迪 · 泰国工厂竣工验收，首批商品车下线</div>
+          <div class="signal-meta">
+            <span class="tag tag-blue">出口目的地</span>
+            首批5,000辆 · 东南亚本地分销 · 后续欧洲出口需求待确认<br>
+            来源：行业媒体 · 2026-04-09 14:20
+          </div>
+        </div>
+        <div class="signal-score">65</div>
+      </div>
+    </div>
+
     <div class="quick-wrap">
       <div class="qbtn" onclick="clickQuick('远景能源详情')">远景能源详情</div>
       <div class="qbtn" onclick="clickQuick('宁德时代动态')">宁德时代动态</div>
+      <div class="qbtn" onclick="clickQuick('三一重工商机详情')">三一重工商机</div>
       <div class="qbtn" onclick="clickQuick('生成今日日报')">生成日报</div>
     </div>`;
 }
 
 function resp_yuanjing() {
-  return `<p><b>远景能源</b> 今日情报汇总（3条信号）：</p>
+  return `<p><b>远景能源</b> 今日情报汇总（3条爬取信号）：</p>
     <div class="dcard">
-      <div class="dcard-title">🏭 远景能源 · 最新动态</div>
+      <div class="dcard-title">🏭 远景能源 · 客户档案</div>
       <div class="drow"><span class="dlabel">客户等级</span><span class="dval blue">S 级战略客户</span></div>
+      <div class="drow"><span class="dlabel">货物类型</span><span class="dval blue">风电叶片、轮毂、机舱罩（超限重件）</span></div>
       <div class="drow"><span class="dlabel">今日信号评分</span><span class="dval red">92 分</span></div>
-      <div class="drow"><span class="dlabel">预计货量</span><span class="dval green">8,000 CBM</span></div>
-      <div class="drow"><span class="dlabel">决策窗口</span><span class="dval red">仅剩 7 天</span></div>
+      <div class="drow"><span class="dlabel">预计货量</span><span class="dval green">8,000 CBM（首批）</span></div>
+      <div class="drow"><span class="dlabel">主要航线</span><span class="dval blue">内蒙古→天津港→欧洲/中东</span></div>
+      <div class="drow"><span class="dlabel">决策窗口</span><span class="dval red">仅剩 7 天 ⚠️</span></div>
     </div>
     <div class="dcard gold" style="margin-top:10px">
-      <div class="dcard-title">📋 核心动态</div>
-      <div class="signal-row"><div class="sdot high"></div><div class="signal-info"><div class="signal-name">内蒙古4GW风电产能基地开工（38亿投资）</div><div class="signal-meta">来源：上交所公告 · 今日07:23</div></div></div>
-      <div class="signal-row"><div class="sdot mid"></div><div class="signal-info"><div class="signal-name">完成A轮融资50亿，明确海外扩张计划</div><div class="signal-meta">来源：路透社 · 3天前</div></div></div>
-      <div class="signal-row"><div class="sdot low"></div><div class="signal-info"><div class="signal-name">招聘海外物流BD经理（欧洲区）</div><div class="signal-meta">来源：猎聘网 · 5天前</div></div></div>
+      <div class="dcard-title">📡 爬取信号明细 &nbsp;<span style="font-size:11px;font-weight:400;color:var(--muted)">2026-04-10 晨报</span></div>
+      <div class="signal-row">
+        <div class="sdot high"></div>
+        <div class="signal-info">
+          <div class="signal-name">内蒙古4GW风电产能基地正式开工，投资38亿元</div>
+          <div class="signal-meta">📌 来源：上交所公告 &nbsp;|&nbsp; 爬取时间：今日 07:23 &nbsp;|&nbsp; <span class="tag tag-red">高优</span></div>
+        </div>
+      </div>
+      <div class="signal-row">
+        <div class="sdot mid"></div>
+        <div class="signal-info">
+          <div class="signal-name">完成新一轮融资50亿，明确欧洲海外扩张计划</div>
+          <div class="signal-meta">📌 来源：路透社中文版 &nbsp;|&nbsp; 爬取时间：3天前 &nbsp;|&nbsp; <span class="tag tag-gold">中优</span></div>
+        </div>
+      </div>
+      <div class="signal-row">
+        <div class="sdot low"></div>
+        <div class="signal-info">
+          <div class="signal-name">招聘海外物流BD经理（欧洲区），JD含"重件出口"</div>
+          <div class="signal-meta">📌 来源：猎聘网 &nbsp;|&nbsp; 爬取时间：5天前 &nbsp;|&nbsp; <span class="tag tag-blue">辅助信号</span></div>
+        </div>
+      </div>
     </div>
     <div class="action-box">
       <div class="action-box-title">⚡ CIR建议行动</div>
@@ -418,15 +533,34 @@ function resp_yuanjing() {
 }
 
 function resp_ningde() {
-  return `<p><b>宁德时代</b> 今日情报更新：</p>
+  return `<p><b>宁德时代</b> 今日情报更新（2条爬取信号）：</p>
     <div class="dcard">
-      <div class="dcard-title">🔋 宁德时代 · 匈牙利项目</div>
+      <div class="dcard-title">🔋 宁德时代 · 客户档案</div>
       <div class="drow"><span class="dlabel">客户等级</span><span class="dval blue">S 级战略客户</span></div>
-      <div class="drow"><span class="dlabel">项目类型</span><span class="dval warn">海外建厂 · 二期扩建</span></div>
+      <div class="drow"><span class="dlabel">货物类型</span><span class="dval blue">生产线设备、变压器、储能模组（重件）</span></div>
+      <div class="drow"><span class="dlabel">项目类型</span><span class="dval warn">海外建厂 · 匈牙利二期扩建</span></div>
       <div class="drow"><span class="dlabel">投资规模</span><span class="dval red">€12 亿</span></div>
-      <div class="drow"><span class="dlabel">预计投产</span><span class="dval blue">2027 Q1</span></div>
+      <div class="drow"><span class="dlabel">主要航线</span><span class="dval blue">青岛→汉堡→德布勒森工厂</span></div>
       <div class="drow"><span class="dlabel">预计货量</span><span class="dval green">12,000 CBM</span></div>
-      <div class="drow"><span class="dlabel">决策窗口</span><span class="dval warn">14 天</span></div>
+      <div class="drow"><span class="dlabel">预计投产</span><span class="dval blue">2027 Q1</span></div>
+      <div class="drow"><span class="dlabel">决策窗口</span><span class="dval warn">14 天 ⚠️</span></div>
+    </div>
+    <div class="dcard gold" style="margin-top:10px">
+      <div class="dcard-title">📡 爬取信号明细 &nbsp;<span style="font-size:11px;font-weight:400;color:var(--muted)">2026-04-10 晨报</span></div>
+      <div class="signal-row">
+        <div class="sdot high"></div>
+        <div class="signal-info">
+          <div class="signal-name">匈牙利工厂二期扩建项目获匈牙利政府审批通过</div>
+          <div class="signal-meta">📌 来源：深交所公告 &nbsp;|&nbsp; 爬取时间：今日 08:41 &nbsp;|&nbsp; <span class="tag tag-red">高优</span></div>
+        </div>
+      </div>
+      <div class="signal-row">
+        <div class="sdot mid"></div>
+        <div class="signal-info">
+          <div class="signal-name">在匈牙利德布勒森发布大型设备运输招标公告</div>
+          <div class="signal-meta">📌 来源：匈牙利政府采购网 &nbsp;|&nbsp; 爬取时间：昨日 11:30 &nbsp;|&nbsp; <span class="tag tag-gold">招标预警</span></div>
+        </div>
+      </div>
     </div>
     <div class="action-box">
       <div class="action-box-title">⚡ CIR建议行动</div>
