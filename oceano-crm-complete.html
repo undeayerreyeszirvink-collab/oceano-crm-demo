@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>欧神诺CRM演示系统 - 完整版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'deep-blue': '#0F172A',
+                        'smart-blue': '#2563EB',
+                        'neon-green': '#10B981'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif; }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        .scan-line { animation: scan 2s ease-in-out; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in-card { animation: fadeInUp 0.5s ease-out forwards; opacity: 0; }
+        @keyframes ripple { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+        .ripple { animation: ripple 1.5s ease-out infinite; }
+        @keyframes fillTemp { from { height: 0%; } to { height: 70%; } }
+        .temp-fill { animation: fillTemp 2s ease-out forwards; }
+        @keyframes flow { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
+        .flow-arrow { animation: flow 2s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .pulse-slow { animation: pulse 2s ease-in-out infinite; }
+        .tab-content { transition: opacity 0.3s ease-in-out; }
+        .iphone-container { width: 375px; height: 667px; border-radius: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); position: relative; overflow: hidden; background: #1a1a1a; }
+        .iphone-notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 150px; height: 25px; background: #0F172A; border-radius: 0 0 20px 20px; z-index: 10; }
+    </style>
+</head>
+<body class="bg-[#0F172A] text-white min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-center mb-2">欧神诺 CRM 演示系统</h1>
+            <p class="text-center text-gray-400">客户经营操作系统 - 完整版</p>
+        </header>
+        <nav class="flex justify-center gap-2 mb-8 flex-wrap">
+            <button onclick="switchTab('architecture')" id="tab-architecture" class="px-4 py-2 rounded-lg bg-[#2563EB] font-semibold transition-all text-sm">架构视图</button>
+            <button onclick="switchTab('mobile')" id="tab-mobile" class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 font-semibold transition-all text-sm">移动端演练</button>

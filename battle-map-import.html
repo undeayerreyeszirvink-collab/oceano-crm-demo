@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作战地图导入</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- SheetJS：直接读Excel，不需要任何后端 -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+body { background:#0b0f1a; font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes spin { to{transform:rotate(360deg)} }
+.fade-up { animation:fadeUp .3s ease-out forwards }
+.spin { animation:spin 1s linear infinite }
+
+.drop-zone { border:2px dashed #1e3a5f; transition:all .2s; }
+.drop-zone.over { border-color:#6366f1; background:rgba(99,102,241,.06); }
+
+::-webkit-scrollbar { width:4px }
+::-webkit-scrollbar-thumb { background:#1e2d3d; border-radius:2px }
+
+.grade-badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px }
+.g-Aplus { background:rgba(245,158,11,.15); color:#fbbf24; border:1px solid rgba(245,158,11,.3) }
+.g-A     { background:rgba(16,185,129,.12); color:#34d399; border:1px solid rgba(16,185,129,.25) }
+.g-B     { background:rgba(59,130,246,.12); color:#60a5fa; border:1px solid rgba(59,130,246,.25) }
+.g-C     { background:rgba(100,116,139,.15); color:#94a3b8; border:1px solid rgba(100,116,139,.25) }
+.g-none  { background:rgba(239,68,68,.1); color:#f87171; border:1px solid rgba(239,68,68,.2) }
+
+.dealer-row { border-bottom:1px solid rgba(255,255,255,.04); transition:background .1s; }
+.dealer-row:hover { background:rgba(255,255,255,.02); }
+
+.editable { border-bottom:1px dashed transparent; transition:border .15s; cursor:text; }
+.editable:hover { border-bottom-color:rgba(99,102,241,.4); }
+.editable:focus { outline:none; border-bottom-color:#6366f1; }
+
+.gap-chip { font-size:11px; font-weight:700; padding:1px 7px; border-radius:8px }
+.gap-hot  { background:rgba(239,68,68,.15); color:#fca5a5 }
+.gap-warn { background:rgba(245,158,11,.15); color:#fcd34d }
+.gap-ok   { background:rgba(16,185,129,.12); color:#6ee7b7 }
+.gap-down { background:rgba(100,116,139,.1); color:#94a3b8 }
+
+input[type=file] { display:none }
+</style>
+</head>
+<body class="text-slate-200 min-h-screen">
+
+<!-- 顶栏 -->
+<div class="px-6 py-4 border-b border-slate-900 flex items-center justify-between" style="background:#070c14">
+  <div>
+    <div class="font-bold">华南2026作战地图 · Excel直接导入</div>
+    <div class="text-xs text-slate-500 mt-0.5">拖入Excel文件，自动解析，不需要手动填一个字</div>
+  </div>
+  <div id="top-actions" class="hidden flex items-center gap-3">
+    <div id="summary-bar" class="text-xs text-slate-500"></div>
+    <button onclick="document.getElementById('file-input').click()" class="text-xs text-slate-500 border border-slate-700 px-3 py-1.5 rounded-lg hover:border-slate-500 transition-colors">↺ 重新导入</button>
+    <button onclick="exportJSON()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg transition-colors font-semibold">导出 JSON →</button>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept=".xls,.xlsx" onchange="handleFile(this.files[0])">
+
+<!-- 上传区 -->
+<div id="upload-section" class="flex items-center justify-center" style="min-height:calc(100vh - 65px)">
+  <div class="text-center max-w-lg w-full px-6">
+    <div id="drop-zone"
+      class="drop-zone rounded-2xl p-12 mb-6 cursor-pointer"
+      onclick="document.getElementById('file-input').click()"
+      ondragover="event.preventDefault();this.classList.add('over')"
+      ondragleave="this.classList.remove('over')"
+      ondrop="event.preventDefault();this.classList.remove('over');handleFile(event.dataTransfer.files[0])">
+      <div class="text-5xl mb-4">📊</div>
+      <div class="text-lg font-bold mb-2">把Excel拖到这里</div>
+      <div class="text-sm text-slate-500 mb-4">或者点击选择文件</div>
+      <div class="text-xs text-slate-600">支持 .xls 和 .xlsx 格式</div>
+    </div>
+
+    <div class="text-left bg-slate-900/50 rounded-xl p-4 text-xs text-slate-500 space-y-1.5">
+      <div class="font-semibold text-slate-400 mb-2">会自动提取这些字段：</div>
+      <div class="grid grid-cols-2 gap-1">
+        <div>· 销区经理 / 省份 / 城市</div>
+        <div>· 经销商姓名 / 电话</div>
+        <div>· 25年业绩（万）</div>
+        <div>· 26年目标（万）</div>
+        <div>· 零售 / 整装 / 工程目标拆分</div>
+        <div>· 经营等级（A/B/C）</div>
+      </div>
+      <div class="mt-2 text-slate-600">其余字段（卡点、品牌情况等）导入后可在线补充</div>
+    </div>
+  </div>
+</div>
+
+<!-- 解析中 -->
+<div id="loading-section" class="hidden fixed inset-0 bg-slate-950/80 flex items-center justify-center z-50">
+  <div class="text-center">
+    <div class="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full spin mx-auto mb-4"></div>
+    <div class="text-sm text-slate-300">正在解析Excel...</div>
+    <div id="loading-msg" class="text-xs text-slate-500 mt-1"></div>
+  </div>
+</div>
+
+<!-- 结果表格 -->
+<div id="result-section" class="hidden">
+  <!-- 汇总统计 -->
+  <div id="stats-row" class="px-6 py-3 grid grid-cols-5 gap-3 border-b border-slate-900" style="background:#080d18"></div>
+
+  <!-- 工具栏 -->
+  <div class="px-6 py-2 border-b border-slate-900 flex items-center gap-3" style="background:#080d18">
+    <input type="text" id="search-box" placeholder="搜索城市 / 经销商 / 销区经理" oninput="filterTable()"
+      class="text-xs bg-slate-900 border border-slate-800 text-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-600 transition-colors" style="width:240px">
+    <div class="flex gap-1.5 ml-2">
+      <button onclick="filterGrade('all')" id="fg-all" class="text-xs px-2.5 py-1 rounded-full bg-indigo-600 text-white">全部</button>
+      <button onclick="filterGrade('A+')" id="fg-A+" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 hover:bg-slate-700">A+</button>
+      <button onclick="filterGrade('A')"  id="fg-A"  class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 hover:bg-slate-700">A</button>
+      <button onclick="filterGrade('B')"  id="fg-B"  class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 hover:bg-slate-700">B</button>
+      <button onclick="filterGrade('C')"  id="fg-C"  class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 hover:bg-slate-700">C/未达</button>
+      <button onclick="filterGrade('hot')" id="fg-hot" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-red-400 hover:bg-red-950">⚡ 高风险</button>
+    </div>
+    <div class="ml-auto text-xs text-slate-600" id="filter-count"></div>
+  </div>
+
+  <!-- 表头 -->
+  <div class="px-6 py-2 grid text-xs text-slate-600 font-semibold border-b border-slate-900 uppercase tracking-wider" style="background:#080d18;grid-template-columns:40px 1fr 100px 80px 90px 90px 90px 90px 90px 120px">
+    <div>#</div>
+    <div>城市 · 经销商</div>
+    <div>销区经理</div>
+    <div>等级</div>
+    <div class="text-right">25年业绩</div>
+    <div class="text-right">26年目标</div>
+    <div class="text-right">零售</div>
+    <div class="text-right">整装</div>
+    <div class="text-right">工程</div>
+    <div class="text-center">增幅 · 缺口</div>
+  </div>
+
+  <!-- 数据行 -->
+  <div id="table-body" class="overflow-y-auto" style="max-height:calc(100vh - 220px)"></div>
+</div>
+
+<!-- 字段映射调整弹层（当列偏移时用） -->
+<div id="mapping-panel" class="hidden fixed top-0 right-0 h-full w-80 border-l border-slate-800 z-40 overflow-y-auto p-5" style="background:#0c1220">
+  <div class="flex items-center justify-between mb-4">
+    <div class="font-semibold text-sm">字段映射调整</div>
+    <button onclick="document.getElementById('mapping-panel').classList.add('hidden')" class="text-slate-500 hover:text-slate-300">×</button>
+  </div>
+  <div class="text-xs text-slate-500 mb-4">如果某列数据对不上，在这里修改列号（从0开始）</div>
+  <div id="mapping-fields" class="space-y-3"></div>
+  <button onclick="reparse()" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold py-2 rounded-lg transition-colors">重新解析</button>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// 列映射配置（根据华南作战地图.xls的实际列位置）
+// 如果其他版本的Excel列位置不同，点「字段映射调整」修改
+// ══════════════════════════════════════
+let COL_MAP = {
+  seq:        0,   // 序号
+  manager:    1,   // 销区经理
+  province:   2,   // 省份
+  city:       3,   // 所属地级市
+  dealerCity: 7,   // 经销商城市名称
+  dealer:     10,  // 经销商姓名
+  phone:      11,  // 联系电话
+  perf25:     56,  // 25年工厂提货总业绩
+  target26:   67,  // 26年计划总目标
+  grade:      69,  // 经营等级（A/B/C）
+  retail26:   70,  // 26年零售目标
+  home26:     71,  // 26年整装目标
+  eng26:      72,  // 26年工程目标
+};
+
+let RAW_SHEET = null;   // 保留原始sheet，用于重新解析
+let ALL_DEALERS = [];
+let FILTERED = [];
+let currentGradeFilter = 'all';
+
+// ══════════════════════════════════════
+// 文件读取
+// ══════════════════════════════════════
+function handleFile(file) {
+  if (!file) return;
+  document.getElementById('loading-section').classList.remove('hidden');
+  document.getElementById('loading-msg').textContent = '读取文件: ' + file.name;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      document.getElementById('loading-msg').textContent = '解析工作表...';
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type:'uint8array', cellDates:true });
+      const sheetName = wb.SheetNames[0];
+      document.getElementById('loading-msg').textContent = '工作表: ' + sheetName;
+      RAW_SHEET = wb.Sheets[sheetName];
+      parseSheet(RAW_SHEET);
+    } catch(err) {
+      document.getElementById('loading-section').classList.add('hidden');
+      alert('文件解析失败：' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ══════════════════════════════════════
+// 解析Sheet
+// ══════════════════════════════════════
+function parseSheet(sheet) {
+  const rows = XLSX.utils.sheet_to_json(sheet, { header:1, defval:'' });
+  document.getElementById('loading-msg').textContent = `共 ${rows.length} 行，解析中...`;
+
+  const dealers = [];
+
+  // 跳过前5行（标题+表头区域），从第6行开始（index 5）
+  for (let r = 5; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row || row.length < 12) continue;
+
+    const dealer = clean(row[COL_MAP.dealer]);
+    if (!dealer || dealer.length < 2) continue;  // 空行跳过
+
+    const perf25  = toNum(row[COL_MAP.perf25]);
+    const target26 = toNum(row[COL_MAP.target26]);
+    if (target26 <= 0) continue;  // 没有目标的行跳过
+
+    const retail26 = toNum(row[COL_MAP.retail26]);
+    const home26   = toNum(row[COL_MAP.home26]);
+    const eng26    = toNum(row[COL_MAP.eng26]);
+
+    const grade = cleanGrade(row[COL_MAP.grade]);
+    const city  = clean(row[COL_MAP.dealerCity]) || clean(row[COL_MAP.city]) || '—';
+
+    dealers.push({
+      seq:      toNum(row[COL_MAP.seq]) || (r - 4),
+      manager:  clean(row[COL_MAP.manager]) || '—',
+      province: clean(row[COL_MAP.province]) || '—',
+      city,
+      dealer,
+      phone:    clean(row[COL_MAP.phone]) || '—',
+      perf25,
+      target26,
+      grade,
+      retail26: retail26 || Math.round(target26 * 0.4),
+      home26:   home26   || Math.round(target26 * 0.3),
+      eng26:    eng26    || Math.round(target26 * 0.2),
+      pain: '',     // 卡点字段留空，用户在线补充
+      confirmed: false,
+      _rowIdx: r,
+    });
+  }
+
+  ALL_DEALERS = dealers;
+  FILTERED = [...dealers];
+
+  document.getElementById('loading-section').classList.add('hidden');
+  document.getElementById('upload-section').classList.add('hidden');
+  document.getElementById('result-section').classList.remove('hidden');
+  document.getElementById('top-actions').classList.remove('hidden');
+
+  renderStats();
+  renderTable();
+  buildMappingPanel();
+}
+
+// ══════════════════════════════════════
+// 工具函数
+// ══════════════════════════════════════
+function clean(v) {
+  if (v === null || v === undefined) return '';
+  return String(v).replace(/\n/g,' ').trim();
+}
+
+function toNum(v) {
+  if (v === null || v === undefined || v === '') return 0;
+  const s = String(v).replace(/[万,，\s]/g, '').replace('亿','0000');
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : Math.round(n);
+}
+
+function cleanGrade(v) {
+  const s = clean(v).toUpperCase();
+  if (s.includes('A+') || s.includes('A＋')) return 'A+';
+  if (s === 'A') return 'A';
+  if (s === 'B') return 'B';
+  if (s === 'C') return 'C';
+  if (s.includes('未达')) return '未达C';
+  if (s.includes('达C') || s.includes('达c')) return '未达C';
+  return s || '—';
+}
+
+function gradeClass(g) {
+  if (g === 'A+') return 'g-Aplus';
+  if (g === 'A')  return 'g-A';
+  if (g === 'B')  return 'g-B';
+  if (g === 'C' || g === '未达C') return 'g-C';
+  return 'g-none';
+}
+
+function gapClass(pct) {
+  if (pct > 60) return 'gap-hot';
+  if (pct > 25) return 'gap-warn';
+  if (pct >= 0) return 'gap-ok';
+  return 'gap-down';
+}
+
+function isHighRisk(d) {
+  if (d.perf25 <= 0) return false;
+  const gap = (d.target26 - d.perf25) / d.perf25;
+  return gap > 0.5 && (d.grade === 'C' || d.grade === '未达C');
+}
+
+// ══════════════════════════════════════
+// 统计
+// ══════════════════════════════════════
+function renderStats() {
+  const total25 = ALL_DEALERS.reduce((s, d) => s + d.perf25, 0);
+  const total26 = ALL_DEALERS.reduce((s, d) => s + d.target26, 0);
+  const growth  = total25 > 0 ? Math.round((total26 - total25) / total25 * 100) : 0;
+  const highRisk = ALL_DEALERS.filter(isHighRisk).length;
+  const gradeDist = ['A+','A','B','C','未达C'].map(g => `${g}: ${ALL_DEALERS.filter(d=>d.grade===g).length}`).join(' · ');
+
+  document.getElementById('stats-row').innerHTML = `
+    <div class="bg-slate-900/60 rounded-xl p-3">
+      <div class="text-xs text-slate-500 mb-1">经销商总数</div>
+      <div class="text-xl font-bold">${ALL_DEALERS.length}</div>
+    </div>
+    <div class="bg-slate-900/60 rounded-xl p-3">
+      <div class="text-xs text-slate-500 mb-1">25年基数合计</div>
+      <div class="text-xl font-bold text-slate-300">${total25}<span class="text-sm font-normal text-slate-600">万</span></div>
+    </div>
+    <div class="bg-slate-900/60 rounded-xl p-3">
+      <div class="text-xs text-slate-500 mb-1">26年目标合计</div>
+      <div class="text-xl font-bold text-indigo-300">${total26}<span class="text-sm font-normal text-slate-600">万</span></div>
+    </div>
+    <div class="bg-slate-900/60 rounded-xl p-3">
+      <div class="text-xs text-slate-500 mb-1">整体增幅目标</div>
+      <div class="text-xl font-bold text-emerald-400">+${growth}%</div>
+    </div>
+    <div class="bg-slate-900/60 rounded-xl p-3">
+      <div class="text-xs text-slate-500 mb-1">高风险预警</div>
+      <div class="text-xl font-bold ${highRisk > 0 ? 'text-red-400' : 'text-slate-400'}">${highRisk} 家</div>
+      <div class="text-xs text-slate-700 mt-0.5">${gradeDist}</div>
+    </div>
+  `;
+
+  document.getElementById('summary-bar').textContent = `${ALL_DEALERS.length}家 · 目标${total26}万 · 增幅+${growth}%`;
+}
+
+// ══════════════════════════════════════
+// 表格渲染
+// ══════════════════════════════════════
+function renderTable() {
+  const body = document.getElementById('table-body');
+  document.getElementById('filter-count').textContent = `显示 ${FILTERED.length} / ${ALL_DEALERS.length} 家`;
+
+  if (FILTERED.length === 0) {
+    body.innerHTML = '<div class="text-center py-12 text-slate-600 text-sm">无匹配结果</div>';
+    return;
+  }
+
+  body.innerHTML = FILTERED.map((d, i) => {
+    const gap = d.perf25 > 0 ? Math.round((d.target26 - d.perf25) / d.perf25 * 100) : null;
+    const gapAmt = d.target26 - d.perf25;
+    const gapText = gap !== null ? (gap >= 0 ? '+' + gap + '%' : gap + '%') : '新增';
+    const amtText = d.perf25 > 0 ? (gapAmt >= 0 ? '+' + gapAmt : String(gapAmt)) + '万' : '—';
+    const gc = gapClass(gap ?? 0);
+    const hr = isHighRisk(d);
+
+    return `
+      <div class="dealer-row px-6 py-3 grid items-center ${hr ? 'bg-red-950/5' : ''} fade-up"
+           style="grid-template-columns:40px 1fr 100px 80px 90px 90px 90px 90px 90px 120px;animation-delay:${Math.min(i*0.02,0.3)}s">
+
+        <div class="text-xs text-slate-700">${d.seq}</div>
+
+        <div>
+          <div class="flex items-center gap-1.5">
+            ${hr ? '<span class="text-red-500 text-xs">⚡</span>' : ''}
+            <span class="text-sm font-semibold text-slate-200">${d.city}</span>
+            <span class="text-slate-500 text-xs">·</span>
+            <span class="text-sm text-slate-300">${d.dealer}</span>
+          </div>
+          <div class="text-xs text-slate-600 mt-0.5">${d.province}</div>
+        </div>
+
+        <div class="text-xs text-slate-400">${d.manager}</div>
+
+        <div>
+          <span class="grade-badge ${gradeClass(d.grade)}">${d.grade}</span>
+        </div>
+
+        <div class="text-right">
+          <span class="text-sm ${d.perf25 > 0 ? 'text-slate-300' : 'text-slate-600'} font-mono"
+                contenteditable="true"
+                onblur="updateField(${d._rowIdx},'perf25',this.textContent)"
+                title="点击修改">
+            ${d.perf25 > 0 ? d.perf25 : '—'}
+          </span>
+          ${d.perf25 > 0 ? '' : '<div class="text-xs text-slate-700">点击补充</div>'}
+        </div>
+
+        <div class="text-right">
+          <span class="text-sm text-indigo-300 font-semibold font-mono"
+                contenteditable="true"
+                onblur="updateField(${d._rowIdx},'target26',this.textContent)"
+                title="点击修改">
+            ${d.target26}
+          </span>
+        </div>
+
+        <div class="text-right text-xs text-slate-500 font-mono">${d.retail26 > 0 ? d.retail26 : '—'}</div>
+        <div class="text-right text-xs text-slate-500 font-mono">${d.home26   > 0 ? d.home26   : '—'}</div>
+        <div class="text-right text-xs text-slate-500 font-mono">${d.eng26    > 0 ? d.eng26    : '—'}</div>
+
+        <div class="flex items-center justify-center gap-1.5">
+          <span class="gap-chip ${gc}">${gapText}</span>
+          <span class="text-xs text-slate-600">${amtText}</span>
+        </div>
+
+      </div>
+    `;
+  }).join('');
+}
+
+// ══════════════════════════════════════
+// 在线编辑
+// ══════════════════════════════════════
+function updateField(rowIdx, field, rawVal) {
+  const d = ALL_DEALERS.find(x => x._rowIdx === rowIdx);
+  if (!d) return;
+  const n = toNum(rawVal);
+  if (n > 0) {
+    d[field] = n;
+    renderStats();
+    filterTable(); // re-render
+    flashSave();
+  }
+}
+
+function flashSave() {
+  const badge = document.getElementById('save-badge') || document.createElement('span');
+  // show a brief "已修改" indicator
+}
+
+// ══════════════════════════════════════
+// 筛选
+// ══════════════════════════════════════
+function filterTable() {
+  const q = document.getElementById('search-box').value.toLowerCase().trim();
+  FILTERED = ALL_DEALERS.filter(d => {
+    const matchSearch = !q || [d.city, d.dealer, d.manager, d.province].some(v => v.toLowerCase().includes(q));
+    const matchGrade =
+      currentGradeFilter === 'all' ? true :
+      currentGradeFilter === 'hot' ? isHighRisk(d) :
+      currentGradeFilter === 'C'   ? (d.grade === 'C' || d.grade === '未达C') :
+      d.grade === currentGradeFilter;
+    return matchSearch && matchGrade;
+  });
+  renderTable();
+}
+
+function filterGrade(g) {
+  currentGradeFilter = g;
+  ['all','A+','A','B','C','hot'].forEach(id => {
+    const btn = document.getElementById('fg-' + id);
+    if (!btn) return;
+    const isActive = id === g;
+    btn.className = isActive
+      ? `text-xs px-2.5 py-1 rounded-full ${id==='hot' ? 'bg-red-700 text-white' : 'bg-indigo-600 text-white'}`
+      : `text-xs px-2.5 py-1 rounded-full bg-slate-800 ${id==='hot' ? 'text-red-400 hover:bg-red-950' : 'text-slate-400 hover:bg-slate-700'}`;
+  });
+  filterTable();
+}
+
+// ══════════════════════════════════════
+// 字段映射面板（当列位置不匹配时用）
+// ══════════════════════════════════════
+const COL_LABELS = {
+  seq:'序号', manager:'销区经理', province:'省份', city:'地级市',
+  dealerCity:'经销商城市', dealer:'经销商姓名', phone:'电话',
+  perf25:'25年业绩', target26:'26年目标', grade:'等级',
+  retail26:'零售目标', home26:'整装目标', eng26:'工程目标'
+};
+
+function buildMappingPanel() {
+  document.getElementById('mapping-fields').innerHTML = Object.entries(COL_MAP).map(([k,v]) => `
+    <div class="flex items-center justify-between">
+      <label class="text-xs text-slate-400">${COL_LABELS[k]}</label>
+      <input type="number" min="0" max="200" value="${v}" onchange="COL_MAP['${k}']=parseInt(this.value)"
+        class="w-16 text-xs text-center bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-200 outline-none focus:border-indigo-500">
+    </div>
+  `).join('');
+}
+
+function reparse() {
+  if (!RAW_SHEET) { alert('请先导入Excel文件'); return; }
+  document.getElementById('loading-section').classList.remove('hidden');
+  document.getElementById('loading-msg').textContent = '重新解析...';
+  setTimeout(() => parseSheet(RAW_SHEET), 100);
+}
+
+// ══════════════════════════════════════
+// 导出
+// ══════════════════════════════════════
+function exportJSON() {
+  const out = ALL_DEALERS.map(d => ({
+    城市: d.city, 经销商: d.dealer, 等级: d.grade, 销区经理: d.manager,
+    '25年业绩（万）': d.perf25, '26年目标（万）': d.target26,
+    '零售（万）': d.retail26, '整装（万）': d.home26, '工程（万）': d.eng26,
+  }));
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '华南2026作战地图.json';
+  a.click();
+}
+</script>
+</body>
+</html>

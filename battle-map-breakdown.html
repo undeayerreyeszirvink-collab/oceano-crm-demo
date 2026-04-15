@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作战地图宽表拆解</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body { background:#070c14; font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.fade-up { animation:fadeUp .25s ease-out forwards }
+::-webkit-scrollbar { width:4px; height:4px }
+::-webkit-scrollbar-thumb { background:#1a2a3a; border-radius:2px }
+
+.col-cell {
+  width:14px; height:36px; border-radius:3px; flex-shrink:0; cursor:pointer;
+  transition:transform .1s, box-shadow .1s; position:relative;
+}
+.col-cell:hover { transform:scaleY(1.3) scaleX(1.2); z-index:10; }
+.col-cell.selected { transform:scaleY(1.4) scaleX(1.3); z-index:20; box-shadow:0 0 0 2px white; }
+
+/* 6 data sources */
+.src-auto    { background:#1d4ed8 }  /* 系统自动 blue */
+.src-history { background:#047857 }  /* CRM历史 green */
+.src-zero    { background:#7c3aed }  /* 零感知 purple */
+.src-ai      { background:#b45309 }  /* AI确认 amber */
+.src-voice   { background:#0e7490 }  /* 语音转化 cyan */
+.src-human   { background:#b91c1c }  /* 人工判断 red */
+.src-calc    { background:#374151 }  /* 自动计算 gray */
+
+.src-auto:hover    { background:#2563eb }
+.src-history:hover { background:#059669 }
+.src-zero:hover    { background:#8b5cf6 }
+.src-ai:hover      { background:#d97706 }
+.src-voice:hover   { background:#0891b2 }
+.src-human:hover   { background:#dc2626 }
+.src-calc:hover    { background:#4b5563 }
+
+.legend-dot { width:12px; height:12px; border-radius:3px; flex-shrink:0 }
+
+.detail-panel { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07); border-radius:14px }
+
+.stat-num { font-size:28px; font-weight:800; line-height:1 }
+
+/* section label */
+.section-label { font-size:9px; color:#475569; text-transform:uppercase; letter-spacing:.05em; }
+</style>
+</head>
+<body class="text-slate-300 min-h-screen">
+
+<!-- 顶栏 -->
+<div class="px-6 py-4 border-b border-slate-900 flex items-center justify-between" style="background:#060c16">
+  <div>
+    <div class="font-bold text-white">华南2026经销商作战地图 · 155列宽表拆解</div>
+    <div class="text-xs text-slate-500 mt-0.5">每一列都有它该来的地方。真正需要人打字的，不超过20列。</div>
+  </div>
+  <div class="text-xs text-slate-600">点击任意色块查看该列的详情与采集方式</div>
+</div>
+
+<!-- 统计行 -->
+<div class="px-6 py-4 grid grid-cols-7 gap-3 border-b border-slate-900" style="background:#060c16">
+  <div id="stat-auto"    class="text-center"></div>
+  <div id="stat-history" class="text-center"></div>
+  <div id="stat-zero"    class="text-center"></div>
+  <div id="stat-voice"   class="text-center"></div>
+  <div id="stat-ai"      class="text-center"></div>
+  <div id="stat-calc"    class="text-center"></div>
+  <div id="stat-human"   class="text-center"></div>
+</div>
+
+<!-- 图例 -->
+<div class="px-6 py-3 flex flex-wrap gap-4 border-b border-slate-900" style="background:#060c16">
+  <div class="flex items-center gap-1.5 cursor-pointer" onclick="filterSource('auto')"   id="leg-auto">   <div class="legend-dot src-auto"></div>   <span class="text-xs text-slate-400">系统自动拉取</span></div>
+  <div class="flex items-center gap-1.5 cursor-pointer" onclick="filterSource('history')" id="leg-history"><div class="legend-dot src-history"></div><span class="text-xs text-slate-400">CRM历史沉淀</span></div>
+  <div class="flex items-center gap-1.5 cursor-pointer" onclick="filterSource('zero')"   id="leg-zero">   <div class="legend-dot src-zero"></div>   <span class="text-xs text-slate-400">零感知采集（拍照）</span></div>
+  <div class="flex items-center gap-1.5 cursor-pointer" onclick="filterSource('voice')"  id="leg-voice">  <div class="legend-dot src-voice"></div>  <span class="text-xs text-slate-400">语音转结构化</span></div>
+  <div class="flex items-center gap-1.5 cursor-pointer" onclick="filterSource('ai')"     id="leg-ai">     <div class="legend-dot src-ai"></div>     <span class="text-xs text-slate-400">AI建议确认（点选）</span></div>
+  <div class="flex items-center gap-1.5 cursor-pointer" onclick="filterSource('calc')"   id="leg-calc">   <div class="legend-dot src-calc"></div>   <span class="text-xs text-slate-400">自动计算</span></div>
+  <div class="flex items-center gap-1.5 cursor-pointer" onclick="filterSource('human')"  id="leg-human">  <div class="legend-dot src-human"></div>  <span class="text-xs text-slate-400">人工判断（策略）</span></div>
+  <button onclick="filterSource('all')" class="text-xs text-slate-600 hover:text-slate-400 ml-2">全部显示</button>
+</div>
+
+<div class="flex" style="height:calc(100vh - 200px)">
+
+  <!-- 左：宽表可视化 -->
+  <div class="flex-1 overflow-y-auto px-6 py-5">
+
+    <!-- 宽表色块 -->
+    <div id="col-grid" class="flex flex-wrap gap-1 mb-6">
+      <!-- rendered by JS -->
+    </div>
+
+    <!-- 底部：每个大模块说明 -->
+    <div id="section-summary" class="space-y-2">
+      <!-- rendered by JS -->
+    </div>
+
+  </div>
+
+  <!-- 右：点击详情 -->
+  <div class="w-80 border-l border-slate-900 overflow-y-auto p-4 flex-shrink-0" style="background:#060c16">
+    <div id="detail-default" class="text-center pt-12 text-slate-600">
+      <div class="text-3xl mb-3">👆</div>
+      <div class="text-sm">点击任意色块<br>查看该列详情</div>
+    </div>
+    <div id="detail-content" class="hidden fade-up">
+      <div class="text-xs text-slate-600 mb-2" id="d-colnum"></div>
+      <div class="font-bold text-white text-sm mb-1" id="d-name"></div>
+      <div class="text-xs text-slate-500 mb-4" id="d-section"></div>
+
+      <div class="flex items-center gap-2 mb-4">
+        <div class="legend-dot" id="d-dot"></div>
+        <div class="font-semibold text-sm" id="d-src-label"></div>
+      </div>
+
+      <div class="detail-panel p-4 mb-4">
+        <div class="text-xs text-slate-500 mb-2 font-semibold uppercase tracking-wider">采集方式</div>
+        <div class="text-sm text-slate-300 leading-relaxed" id="d-how"></div>
+      </div>
+
+      <div class="detail-panel p-4 mb-4">
+        <div class="text-xs text-slate-500 mb-2 font-semibold uppercase tracking-wider">实际示例</div>
+        <div class="text-sm text-slate-400 italic leading-relaxed font-mono" id="d-example"></div>
+      </div>
+
+      <div class="detail-panel p-4">
+        <div class="text-xs text-slate-500 mb-2 font-semibold uppercase tracking-wider">业务员需要做什么</div>
+        <div class="text-sm leading-relaxed" id="d-action"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════
+// 155列完整定义
+// src: auto|history|zero|voice|ai|calc|human
+// ══════════════════════════════════════
+const COLS = [
+// ── 基础信息 (0-14) ──
+{ c:0,  name:'序号',         section:'基础信息', src:'auto',    how:'系统自动编号，与BIP经销商档案同步',                    example:'1',               action:'<span class="text-slate-500">无需操作</span>' },
+{ c:1,  name:'销区经理',      section:'基础信息', src:'auto',    how:'从CRM人员分配模块自动带出，变更时系统推送通知',             example:'欧基挺',           action:'<span class="text-slate-500">无需操作</span>' },
+{ c:2,  name:'省份',          section:'基础信息', src:'auto',    how:'从BIP经销商地址档案自动取值',                          example:'广东省',           action:'<span class="text-slate-500">无需操作</span>' },
+{ c:3,  name:'所属地级市',     section:'基础信息', src:'auto',    how:'从BIP经销商地址档案自动取值',                          example:'深圳市',           action:'<span class="text-slate-500">无需操作</span>' },
+{ c:4,  name:'城市线级',      section:'基础信息', src:'auto',    how:'系统内置城市分级数据库，自动匹配',                       example:'1线',             action:'<span class="text-slate-500">无需操作</span>' },
+{ c:5,  name:'城市经销商25年合计业绩', section:'基础信息', src:'auto', how:'汇总该城市所有经销商提货数据，来自BIP出库记录',     example:'1706万',          action:'<span class="text-slate-500">无需操作，系统计算</span>' },
+{ c:6,  name:'城市经营等级',   section:'基础信息', src:'calc',    how:'根据城市合计业绩自动匹配等级规则',                     example:'B',               action:'<span class="text-slate-500">无需操作，规则计算</span>' },
+{ c:7,  name:'经销商城市名称', section:'基础信息', src:'auto',    how:'来自BIP经销商地址档案',                              example:'深圳市',           action:'<span class="text-slate-500">无需操作</span>' },
+{ c:8,  name:'经销商城市级别', section:'基础信息', src:'auto',    how:'系统内置城市分级数据库，自动匹配',                     example:'1线',             action:'<span class="text-slate-500">无需操作</span>' },
+{ c:9,  name:'经营年限',      section:'基础信息', src:'history', how:'首次签约时间来自BIP合同档案，系统自动计算年限',           example:'25年',            action:'<span class="text-slate-500">历史数据，自动更新</span>' },
+{ c:10, name:'经销商姓名',    section:'基础信息', src:'history', how:'CRM历史档案，一次录入永久复用',                       example:'徐增勇',           action:'<span class="text-slate-500">历史沉淀，无需重录</span>' },
+{ c:11, name:'联系电话',      section:'基础信息', src:'history', how:'CRM历史档案，手机号变更时销区经理更新',                 example:'13602660972',     action:'<span class="text-green-500 text-xs">仅变更时更新</span>' },
+{ c:12, name:'主导人性别',    section:'基础信息', src:'history', how:'CRM历史档案',                                     example:'男',              action:'<span class="text-slate-500">历史沉淀，无需重录</span>' },
+{ c:13, name:'年龄',          section:'基础信息', src:'history', how:'CRM历史档案，每年自动+1',                           example:'43岁',            action:'<span class="text-slate-500">自动更新</span>' },
+{ c:14, name:'经营特点',      section:'基础信息', src:'history', how:'历史拜访语音记录中AI提取，沉淀到CRM档案',             example:'团队运作型',       action:'<span class="text-slate-500">历史沉淀，拜访时语音更新</span>' },
+
+// ── 门店信息 (15-28) ──
+{ c:15, name:'自营门店数量',  section:'门店信息', src:'zero',   how:'巡店拍照时AI识别门店数量，或语音："现在4家自营店"',    example:'4个',             action:'📷 <span class="text-purple-300">拍一张照片，AI自动识别</span>' },
+{ c:16, name:'展厅面积明细',  section:'门店信息', src:'zero',   how:'拍照后AI识别各门店面积，或语音按门店说面积',            example:'八卦岭:550 南山:120', action:'📷 <span class="text-purple-300">拍照或语音逐店说明</span>' },
+{ c:17, name:'是否核心商圈',  section:'门店信息', src:'zero',   how:'AI根据门店位置（GPS+POI数据）自动判断',              example:'是',              action:'📷 <span class="text-purple-300">GPS定位自动判断</span>' },
+{ c:18, name:'中国玉展厅',    section:'门店信息', src:'zero',   how:'拍照AI识别中国玉专区标识，或语音确认',               example:'是',              action:'📷 <span class="text-purple-300">拍照自动识别展厅标识</span>' },
+{ c:19, name:'装修年份',      section:'门店信息', src:'zero',   how:'AI分析门店装修风格推断年份，或读取历史改造记录',        example:'2023年',          action:'📷 <span class="text-purple-300">拍照AI分析装修状态</span>' },
+{ c:20, name:'26年升级计划',  section:'门店信息', src:'human',  how:'销区经理与经销商沟通后的决策，需要人工判断',            example:'深圳八卦岭店升级主形象', action:'🔴 <span class="text-red-300">需要销区经理策略判断</span>' },
+{ c:21, name:'升级计划时间',  section:'门店信息', src:'human',  how:'确定升级档期，涉及资金和工期协调',                   example:'2026年7月',       action:'🔴 <span class="text-red-300">需要确认时间节点</span>' },
+{ c:22, name:'分销门店数量',  section:'门店信息', src:'zero',   how:'语音汇报："现在有1家分销门店在沙井"',              example:'1个',             action:'🎤 <span class="text-cyan-300">语音说一句话</span>' },
+{ c:23, name:'分销展厅面积',  section:'门店信息', src:'zero',   how:'语音汇报或拍照识别',                               example:'沙井:200㎡',      action:'🎤 <span class="text-cyan-300">语音说一句话</span>' },
+{ c:24, name:'简易加盟商数量',section:'门店信息', src:'zero',   how:'语音汇报',                                       example:'0',               action:'🎤 <span class="text-cyan-300">语音说一句话</span>' },
+{ c:25, name:'加盟商展厅',    section:'门店信息', src:'zero',   how:'语音汇报',                                       example:'—',               action:'🎤 <span class="text-cyan-300">语音说一句话</span>' },
+{ c:26, name:'门店卡点',      section:'门店信息', src:'ai',     how:'AI根据面积/装修年份/竞品情况自动生成3条卡点供选择',   example:'形象老化，不能体现高端产品优势', action:'🟡 <span class="text-amber-300">从AI建议中点选一条</span>' },
+{ c:27, name:'门店解决措施',  section:'门店信息', src:'ai',     how:'AI配套给出解决方案，销区经理点选确认',               example:'申请高端主形象店费用支持', action:'🟡 <span class="text-amber-300">点选AI建议确认即可</span>' },
+{ c:28, name:'所需资源',      section:'门店信息', src:'ai',     how:'AI根据措施自动匹配资源需求模板',                    example:'公司高层领导赋能', action:'🟡 <span class="text-amber-300">点选AI建议确认即可</span>' },
+
+// ── 团队人员 (29-38) ──
+{ c:29, name:'团队总人数',    section:'团队人员', src:'voice',  how:'语音："店里现在46个人"或语音副官巡店时自动汇总',       example:'46人',            action:'🎤 <span class="text-cyan-300">说一句话</span>' },
+{ c:30, name:'管理人员',      section:'团队人员', src:'voice',  how:'语音汇报各岗位人数，AI自动拆分填入对应字段',           example:'8人',             action:'🎤 <span class="text-cyan-300">说一句话，AI拆解</span>' },
+{ c:31, name:'店长',          section:'团队人员', src:'voice',  how:'同上',                                           example:'4人',             action:'🎤 <span class="text-cyan-300">说一句话，AI拆解</span>' },
+{ c:32, name:'导购',          section:'团队人员', src:'voice',  how:'同上',                                           example:'18人',            action:'🎤 <span class="text-cyan-300">说一句话，AI拆解</span>' },
+{ c:33, name:'设计师',        section:'团队人员', src:'voice',  how:'同上',                                           example:'4人',             action:'🎤 <span class="text-cyan-300">说一句话，AI拆解</span>' },
+{ c:34, name:'售后人员',      section:'团队人员', src:'voice',  how:'同上',                                           example:'3人',             action:'🎤 <span class="text-cyan-300">说一句话，AI拆解</span>' },
+{ c:35, name:'渠道业务',      section:'团队人员', src:'voice',  how:'同上',                                           example:'9人',             action:'🎤 <span class="text-cyan-300">说一句话，AI拆解</span>' },
+{ c:36, name:'工程渠道业务',  section:'团队人员', src:'voice',  how:'同上',                                           example:'—',               action:'🎤 <span class="text-cyan-300">说一句话，AI拆解</span>' },
+{ c:37, name:'人员调整计划',  section:'团队人员', src:'human',  how:'需要销区经理判断缺什么人、加还是减',                   example:'需增加工程业务团队', action:'🔴 <span class="text-red-300">策略判断，说一句话AI记录</span>' },
+{ c:38, name:'调整时间',      section:'团队人员', src:'human',  how:'配合人员调整的时间节点',                            example:'2026年3月',       action:'🔴 <span class="text-red-300">确认时间节点</span>' },
+
+// ── 品牌经营 (39-45) ──
+{ c:39, name:'是否多品牌',    section:'品牌经营', src:'history', how:'CRM历史档案，品牌合同变更时系统更新',                example:'是',              action:'<span class="text-slate-500">历史沉淀</span>' },
+{ c:40, name:'多品牌品类',    section:'品牌经营', src:'history', how:'CRM历史档案，已有记录',                           example:'瓷砖',            action:'<span class="text-slate-500">历史沉淀</span>' },
+{ c:41, name:'其他品牌提货额',section:'品牌经营', src:'voice',   how:'语音："意丽斯今年做了180万"，AI自动填入',            example:'意丽斯:180万',    action:'🎤 <span class="text-cyan-300">说一句话</span>' },
+{ c:42, name:'26年品牌调整计划',section:'品牌经营',src:'human',  how:'是否计划停某个品牌，需要策略判断',                   example:'暂无调整计划',    action:'🔴 <span class="text-red-300">策略判断，语音记录</span>' },
+{ c:43, name:'品牌卡点',      section:'品牌经营', src:'ai',      how:'AI分析多品牌冲突情况自动生成',                      example:'惠泉自营岩板品牌冲击', action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+{ c:44, name:'品牌解决措施',  section:'品牌经营', src:'ai',      how:'AI配套建议',                                     example:'推动店面形象更新',  action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+{ c:45, name:'所需资源',      section:'品牌经营', src:'ai',      how:'AI配套资源需求',                                 example:'领导赋能',         action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+
+// ── 竞品信息 (46-55) ──
+{ c:46, name:'竞品第一名品牌',section:'竞品信息', src:'zero',   how:'拍商场索引图，OCR识别各品牌；或语音汇报竞品情况',      example:'东鹏',            action:'📷 <span class="text-purple-300">拍商场全景图，AI识别</span>' },
+{ c:47, name:'竞品一总提货',  section:'竞品信息', src:'voice',  how:'语音："东鹏这里大概做了4500万"，AI提取数字',         example:'4500万',          action:'🎤 <span class="text-cyan-300">说一句话</span>' },
+{ c:48, name:'竞品一零售额',  section:'竞品信息', src:'voice',  how:'同上，AI拆分渠道结构',                              example:'800万',           action:'🎤 <span class="text-cyan-300">说一句话</span>' },
+{ c:49, name:'竞品一整装额',  section:'竞品信息', src:'voice',  how:'同上',                                           example:'1500万',          action:'🎤 <span class="text-cyan-300">说一句话</span>' },
+{ c:50, name:'竞品一工程额',  section:'竞品信息', src:'voice',  how:'同上',                                           example:'2200万',          action:'🎤 <span class="text-cyan-300">说一句话</span>' },
+{ c:51, name:'竞品第二名品牌',section:'竞品信息', src:'zero',   how:'同竞品第一名识别方式',                              example:'马克',            action:'📷 <span class="text-purple-300">拍照AI识别</span>' },
+{ c:52, name:'竞品二总提货',  section:'竞品信息', src:'voice',  how:'语音汇报',                                       example:'4000万',          action:'🎤 <span class="text-cyan-300">说一句话</span>' },
+{ c:53, name:'竞品二零售',    section:'竞品信息', src:'voice',  how:'同上',                                           example:'900万',           action:'🎤 <span class="text-cyan-300">说一句话</span>' },
+{ c:54, name:'竞品二整装',    section:'竞品信息', src:'voice',  how:'同上',                                           example:'1100万',          action:'🎤 <span class="text-cyan-300">说一句话</span>' },
+{ c:55, name:'竞品二工程',    section:'竞品信息', src:'voice',  how:'同上',                                           example:'2000万',          action:'🎤 <span class="text-cyan-300">说一句话</span>' },
+
+// ── 工厂提货业绩 (56-66) 历史数据 ──
+{ c:56, name:'24年总业绩',    section:'工厂提货', src:'auto',   how:'直接从BIP出库记录汇总，实时同步',                   example:'1313万',          action:'<span class="text-slate-500">BIP自动同步，无需操作</span>' },
+{ c:57, name:'24年高端品',    section:'工厂提货', src:'auto',   how:'同上，按产品系列分类汇总',                         example:'260万',           action:'<span class="text-slate-500">BIP自动同步</span>' },
+{ c:58, name:'24年零售',      section:'工厂提货', src:'auto',   how:'同上',                                           example:'142万',           action:'<span class="text-slate-500">BIP自动同步</span>' },
+{ c:59, name:'24年整装',      section:'工厂提货', src:'auto',   how:'同上',                                           example:'803万',           action:'<span class="text-slate-500">BIP自动同步</span>' },
+{ c:60, name:'24年工程',      section:'工厂提货', src:'auto',   how:'同上',                                           example:'107万',           action:'<span class="text-slate-500">BIP自动同步</span>' },
+{ c:61, name:'25年总业绩',    section:'工厂提货', src:'auto',   how:'BIP实时数据，截止填报日期自动汇总',                  example:'1706万',          action:'<span class="text-slate-500">BIP自动同步，无需操作</span>' },
+{ c:62, name:'25年高端品',    section:'工厂提货', src:'auto',   how:'同上',                                           example:'626万',           action:'<span class="text-slate-500">BIP自动同步</span>' },
+{ c:63, name:'25年零售',      section:'工厂提货', src:'auto',   how:'同上',                                           example:'169万',           action:'<span class="text-slate-500">BIP自动同步</span>' },
+{ c:64, name:'25年整装',      section:'工厂提货', src:'auto',   how:'同上',                                           example:'853万',           action:'<span class="text-slate-500">BIP自动同步</span>' },
+{ c:65, name:'25年工程',      section:'工厂提货', src:'auto',   how:'同上',                                           example:'38万',            action:'<span class="text-slate-500">BIP自动同步</span>' },
+{ c:66, name:'25年双A',       section:'工厂提货', src:'auto',   how:'BIP产品标签系统自动汇总双A系列出库量',               example:'20万',            action:'<span class="text-slate-500">BIP自动同步</span>' },
+
+// ── 26年计划（核心策略区）(67-80) ──
+{ c:67, name:'26年签约合同任务',section:'26年计划', src:'human', how:'作战会上经销商和销区经理共同确认的合同任务额，必须人工输入', example:'2000万',        action:'🔴 <span class="text-red-300">作战会现场填入，这是最重要的一列</span>' },
+{ c:68, name:'享受价格政策',  section:'26年计划', src:'auto',   how:'根据合同任务额自动匹配价格政策档次',                   example:'零售2价 整装2价', action:'<span class="text-slate-500">规则自动匹配</span>' },
+{ c:69, name:'26年经营等级',  section:'26年计划', src:'calc',   how:'根据城市能级和目标额自动计算，或作战会上人工调整',        example:'B',             action:'<span class="text-slate-500">规则计算，可人工覆盖</span>' },
+{ c:70, name:'26年总业绩目标',section:'26年计划', src:'human',  how:'作战会确认，是实际执行依据',                        example:'2000万',          action:'🔴 <span class="text-red-300">作战会现场填入</span>' },
+{ c:71, name:'26年高端品目标',section:'26年计划', src:'human',  how:'高端品专项目标，涉及返点政策',                      example:'700万',           action:'🔴 <span class="text-red-300">作战会现场填入</span>' },
+{ c:72, name:'26年零售目标',  section:'26年计划', src:'human',  how:'零售渠道分解目标',                                example:'240万',           action:'🔴 <span class="text-red-300">作战会现场填入</span>' },
+{ c:73, name:'26年整装目标',  section:'26年计划', src:'human',  how:'整装渠道分解目标',                                example:'950万',           action:'🔴 <span class="text-red-300">作战会现场填入</span>' },
+{ c:74, name:'26年工程目标',  section:'26年计划', src:'human',  how:'工程渠道分解目标',                                example:'100万',           action:'🔴 <span class="text-red-300">作战会现场填入</span>' },
+{ c:75, name:'26年双A目标',   section:'26年计划', src:'human',  how:'双A产品专项目标',                                 example:'10万',            action:'🔴 <span class="text-red-300">作战会现场填入</span>' },
+{ c:76, name:'高端/零售卡点', section:'26年计划', src:'ai',     how:'AI分析历史业绩结构和竞品情况，自动生成卡点描述',         example:'窜货冲击渠道，设计师损失大', action:'🟡 <span class="text-amber-300">从AI建议中点选或补充</span>' },
+{ c:77, name:'解决措施',      section:'26年计划', src:'ai',     how:'AI配套生成解决方案建议',                           example:'推动渠道设计师沙龙', action:'🟡 <span class="text-amber-300">点选AI建议确认即可</span>' },
+{ c:78, name:'所需资源',      section:'26年计划', src:'ai',     how:'AI根据措施匹配资源需求',                           example:'渠道活动推广方案',  action:'🟡 <span class="text-amber-300">点选AI建议确认即可</span>' },
+{ c:79, name:'是否计划换商',  section:'26年计划', src:'human',  how:'经营状况评估后的重大决策，必须人工判断',               example:'否',              action:'🔴 <span class="text-red-300">重大策略判断</span>' },
+{ c:80, name:'换商原因',      section:'26年计划', src:'human',  how:'语音说原因，AI转写即可',                           example:'—',               action:'🎤 <span class="text-cyan-300">语音说原因，AI记录</span>' },
+
+// ── 整装渠道 (81-97) ──
+{ c:81, name:'25年已合作整装数',section:'整装渠道', src:'history', how:'CRM历史整装合作记录，自动汇总',               example:'8家',             action:'<span class="text-slate-500">CRM历史数据</span>' },
+{ c:82, name:'25年整装公司明细',section:'整装渠道', src:'history', how:'历史合同档案，CRM自动关联',                   example:'城市之家:120 品界:85', action:'<span class="text-slate-500">CRM历史数据</span>' },
+{ c:83, name:'25年整装总销量',section:'整装渠道', src:'history',  how:'来自整装公司订单记录，系统汇总',                 example:'1050万',          action:'<span class="text-slate-500">系统自动汇总</span>' },
+{ c:84, name:'25年整装提货额',section:'整装渠道', src:'auto',     how:'BIP整装渠道出库数据自动汇总',                  example:'700万',           action:'<span class="text-slate-500">BIP自动同步</span>' },
+{ c:85, name:'未合作整装公司',section:'整装渠道', src:'voice',    how:'语音："当地还有金地家装没合作，一年大概50万瓷砖"', example:'金地家装:50万',   action:'🎤 <span class="text-cyan-300">说一句话</span>' },
+{ c:86, name:'市场前三整装品牌',section:'整装渠道', src:'zero',   how:'拍当地装饰城索引图，AI识别前三品牌及销量',         example:'东鹏:300 蒙娜:180',action:'📷 <span class="text-purple-300">拍照识别</span>' },
+{ c:87, name:'整装品牌二',    section:'整装渠道', src:'zero',     how:'同上',                                         example:'蒙娜丽莎:180',    action:'📷 <span class="text-purple-300">拍照识别</span>' },
+{ c:88, name:'整装品牌三',    section:'整装渠道', src:'zero',     how:'同上',                                         example:'马可波罗:120',    action:'📷 <span class="text-purple-300">拍照识别</span>' },
+{ c:89, name:'26年已合作整装明细',section:'整装渠道',src:'human', how:'确认哪些整装公司继续合作、目标提货额',             example:'城市之家:160 品界:100', action:'🔴 <span class="text-red-300">销区经理确认合作清单</span>' },
+{ c:90, name:'26年整装总销量目标',section:'整装渠道',src:'calc',  how:'已合作+待开拓整装公司目标之和，系统计算',          example:'1300万',          action:'<span class="text-slate-500">系统汇总计算</span>' },
+{ c:91, name:'26年整装提货额目标',section:'整装渠道',src:'calc',  how:'根据总销量×渗透率计算',                          example:'950万',           action:'<span class="text-slate-500">系统计算</span>' },
+{ c:92, name:'待开拓整装公司',section:'整装渠道', src:'human',    how:'识别出尚未合作的目标整装公司',                     example:'金地家装 绿城家装', action:'🔴 <span class="text-red-300">销区经理策略判断</span>' },
+{ c:93, name:'待开拓整装销量',section:'整装渠道', src:'human',    how:'预计开拓后能做的销量',                            example:'150万',           action:'🔴 <span class="text-red-300">策略判断</span>' },
+{ c:94, name:'待开拓整装提货',section:'整装渠道', src:'calc',     how:'根据销量×渗透率计算',                            example:'100万',           action:'<span class="text-slate-500">系统计算</span>' },
+{ c:95, name:'整装卡点',      section:'整装渠道', src:'ai',       how:'AI分析当地市场份额缺口自动生成卡点',               example:'头部整装公司未合作，市场渗透率仅60%', action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+{ c:96, name:'整装解决措施',  section:'整装渠道', src:'ai',       how:'AI配套建议',                                    example:'申请整装公司专项拜访活动', action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+{ c:97, name:'整装所需资源',  section:'整装渠道', src:'ai',       how:'AI配套资源需求',                                example:'整装样板间建设费用', action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+
+// ── 分销加盟 (98-117) ──
+{ c:98,  name:'25年已开拓分销数',  section:'分销加盟', src:'history', how:'CRM分销商档案自动汇总', example:'3家',  action:'<span class="text-slate-500">CRM历史数据</span>' },
+{ c:99,  name:'25年分销明细',      section:'分销加盟', src:'history', how:'CRM分销合同档案',       example:'沙井:80 龙岗:60', action:'<span class="text-slate-500">CRM历史数据</span>' },
+{ c:100, name:'25年分销总提货',    section:'分销加盟', src:'auto',    how:'BIP分销渠道出库汇总',   example:'200万', action:'<span class="text-slate-500">BIP自动同步</span>' },
+{ c:101, name:'25年加盟商数',      section:'分销加盟', src:'history', how:'CRM加盟商档案',         example:'0家',   action:'<span class="text-slate-500">CRM历史数据</span>' },
+{ c:102, name:'25年加盟商明细',    section:'分销加盟', src:'history', how:'CRM加盟合同档案',       example:'—',     action:'<span class="text-slate-500">CRM历史数据</span>' },
+{ c:103, name:'25年加盟总提货',    section:'分销加盟', src:'auto',    how:'BIP加盟渠道出库汇总',   example:'0万',   action:'<span class="text-slate-500">BIP自动同步</span>' },
+{ c:104, name:'26年分销数目标',    section:'分销加盟', src:'human',   how:'计划开拓几家分销点，策略判断', example:'5家', action:'🔴 <span class="text-red-300">策略判断</span>' },
+{ c:105, name:'26年分销明细',      section:'分销加盟', src:'human',   how:'具体是哪几家，语音说即可', example:'宝安区XX建材城', action:'🎤 <span class="text-cyan-300">语音说出来</span>' },
+{ c:106, name:'26年分销提货目标',  section:'分销加盟', src:'calc',    how:'分销数×人均提货额计算', example:'300万', action:'<span class="text-slate-500">系统计算</span>' },
+{ c:107, name:'26年加盟商数目标',  section:'分销加盟', src:'human',   how:'策略判断',               example:'0家',   action:'🔴 <span class="text-red-300">策略判断</span>' },
+{ c:108, name:'26年加盟明细',      section:'分销加盟', src:'human',   how:'语音说',                 example:'—',     action:'🎤 <span class="text-cyan-300">语音说出来</span>' },
+{ c:109, name:'26年加盟提货目标',  section:'分销加盟', src:'calc',    how:'系统计算',               example:'0万',   action:'<span class="text-slate-500">系统计算</span>' },
+{ c:110, name:'待开拓分销加盟数',  section:'分销加盟', src:'human',   how:'策略判断目标网点',       example:'2家',   action:'🔴 <span class="text-red-300">策略判断</span>' },
+{ c:111, name:'待开拓明细',        section:'分销加盟', src:'human',   how:'语音说目标网点',         example:'松岗 西乡各1家', action:'🎤 <span class="text-cyan-300">语音说出来</span>' },
+{ c:112, name:'待开拓提货预计',    section:'分销加盟', src:'calc',    how:'系统计算',               example:'100万', action:'<span class="text-slate-500">系统计算</span>' },
+{ c:113, name:'分销竞品第一',      section:'分销加盟', src:'voice',   how:'语音汇报当地分销竞品格局', example:'东鹏:15家 180万', action:'🎤 <span class="text-cyan-300">说一句话</span>' },
+{ c:114, name:'分销竞品第二',      section:'分销加盟', src:'voice',   how:'同上',                   example:'马可:10家 100万', action:'🎤 <span class="text-cyan-300">说一句话</span>' },
+{ c:115, name:'分销卡点',          section:'分销加盟', src:'ai',      how:'AI分析自动生成',         example:'县级市场空白多，竞品渗透', action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+{ c:116, name:'分销解决措施',      section:'分销加盟', src:'ai',      how:'AI建议',                 example:'以旧换新扶持政策', action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+{ c:117, name:'分销所需资源',      section:'分销加盟', src:'ai',      how:'AI匹配资源',             example:'分销网点开设补贴', action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+
+// ── 工程渠道 (118-126) ──
+{ c:118, name:'已确认工程项目明细',section:'工程渠道', src:'human', how:'销区经理录入具体项目名称、用量、金额，语音说一遍AI结构化', example:'中建八局：2万方 400万', action:'🎤 <span class="text-cyan-300">语音说项目清单，AI结构化</span>' },
+{ c:119, name:'已确认项目总金额',  section:'工程渠道', src:'calc',  how:'系统汇总计算',              example:'400万',           action:'<span class="text-slate-500">系统汇总</span>' },
+{ c:120, name:'在跟进项目明细',    section:'工程渠道', src:'human', how:'语音汇报在跟进项目',          example:'华润置地：3万方',   action:'🎤 <span class="text-cyan-300">语音说，AI记录</span>' },
+{ c:121, name:'在跟进项目预计',    section:'工程渠道', src:'human', how:'预计供货时间和金额',           example:'Q3开始 预计200万',  action:'🔴 <span class="text-red-300">策略判断</span>' },
+{ c:122, name:'在跟进项目总金额',  section:'工程渠道', src:'calc',  how:'系统汇总计算',              example:'200万',           action:'<span class="text-slate-500">系统汇总</span>' },
+{ c:123, name:'工程渠道合计目标',  section:'工程渠道', src:'calc',  how:'已确认+在跟进，系统计算',    example:'600万',           action:'<span class="text-slate-500">系统汇总</span>' },
+{ c:124, name:'工程卡点',          section:'工程渠道', src:'ai',    how:'AI分析工程项目储备充足度',    example:'在跟进项目转化率低', action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+{ c:125, name:'工程解决措施',      section:'工程渠道', src:'ai',    how:'AI建议',                   example:'申请样板间支持',    action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+{ c:126, name:'工程所需资源',      section:'工程渠道', src:'ai',    how:'AI匹配资源',               example:'工程项目BD资源',   action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+
+// ── 终端销售 (127-139) ──
+{ c:127, name:'25年终端总销售',   section:'终端销售', src:'auto',  how:'来自经销商DMS系统，或工厂出库按终端类型拆分',         example:'2800万',          action:'<span class="text-slate-500">DMS/BIP自动同步</span>' },
+{ c:128, name:'25年零售终端',     section:'终端销售', src:'auto',  how:'同上，按渠道分类汇总',                           example:'600万',           action:'<span class="text-slate-500">系统自动同步</span>' },
+{ c:129, name:'25年整装终端',     section:'终端销售', src:'auto',  how:'同上',                                         example:'1500万',          action:'<span class="text-slate-500">系统自动同步</span>' },
+{ c:130, name:'25年工程终端',     section:'终端销售', src:'auto',  how:'同上',                                         example:'600万',           action:'<span class="text-slate-500">系统自动同步</span>' },
+{ c:131, name:'25年其他',         section:'终端销售', src:'auto',  how:'同上',                                         example:'100万',           action:'<span class="text-slate-500">系统自动同步</span>' },
+{ c:132, name:'26年终端总目标',   section:'终端销售', src:'calc',  how:'根据工厂出库目标×终端/工厂比率推算',               example:'3500万',          action:'<span class="text-slate-500">系统推算</span>' },
+{ c:133, name:'26年零售终端目标', section:'终端销售', src:'calc',  how:'同上，按渠道拆分',                               example:'700万',           action:'<span class="text-slate-500">系统推算</span>' },
+{ c:134, name:'26年整装终端目标', section:'终端销售', src:'calc',  how:'同上',                                         example:'1900万',          action:'<span class="text-slate-500">系统推算</span>' },
+{ c:135, name:'26年工程终端目标', section:'终端销售', src:'calc',  how:'同上',                                         example:'800万',           action:'<span class="text-slate-500">系统推算</span>' },
+{ c:136, name:'26年其他',         section:'终端销售', src:'calc',  how:'同上',                                         example:'100万',           action:'<span class="text-slate-500">系统推算</span>' },
+{ c:137, name:'终端销售卡点',     section:'终端销售', src:'ai',    how:'AI分析终端结构偏差自动生成',                      example:'工程终端占比过高，风险集中', action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+{ c:138, name:'终端解决措施',     section:'终端销售', src:'ai',    how:'AI建议',                                      example:'提升零售占比，降低风险',  action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+{ c:139, name:'终端所需资源',     section:'终端销售', src:'ai',    how:'AI匹配',                                      example:'零售促销活动支持',       action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+
+// ── 库存 (140-145) ──
+{ c:140, name:'24年底库存',       section:'库存情况', src:'auto',  how:'来自BIP库存模块，含在途',                         example:'320万',           action:'<span class="text-slate-500">BIP自动同步</span>' },
+{ c:141, name:'25年底库存',       section:'库存情况', src:'auto',  how:'同上',                                          example:'280万',           action:'<span class="text-slate-500">BIP自动同步</span>' },
+{ c:142, name:'26年常备库存',     section:'库存情况', src:'calc',  how:'根据26年目标×库存周转天数推算',                    example:'300万',           action:'<span class="text-slate-500">系统推算</span>' },
+{ c:143, name:'库存卡点',         section:'库存情况', src:'ai',    how:'AI分析库存健康度（滞销款占比等）',                  example:'大规格积压，周转慢', action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+{ c:144, name:'库存解决措施',     section:'库存情况', src:'ai',    how:'AI建议',                                        example:'专项清库政策申请',  action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+{ c:145, name:'库存所需资源',     section:'库存情况', src:'ai',    how:'AI匹配',                                        example:'清库专项费用',      action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+
+// ── 毛利 (146-151) ──
+{ c:146, name:'25年折前毛利',     section:'毛利情况', src:'auto',  how:'来自财务系统，出库金额-产品成本',                    example:'18.5%',           action:'<span class="text-slate-500">财务系统自动同步</span>' },
+{ c:147, name:'影响毛利问题',     section:'毛利情况', src:'voice', how:'语音说主要问题，AI结构化记录',                       example:'高端品占比低，渠道费用高', action:'🎤 <span class="text-cyan-300">语音说一句话</span>' },
+{ c:148, name:'26年毛利目标',     section:'毛利情况', src:'human', how:'策略判断，与业务目标联动',                           example:'20%',             action:'🔴 <span class="text-red-300">策略判断</span>' },
+{ c:149, name:'毛利卡点',         section:'毛利情况', src:'ai',    how:'AI分析毛利结构',                                  example:'整装渠道费用率偏高', action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+{ c:150, name:'毛利解决措施',     section:'毛利情况', src:'ai',    how:'AI建议',                                         example:'提升高端品占比到35%', action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+{ c:151, name:'毛利所需资源',     section:'毛利情况', src:'ai',    how:'AI匹配',                                         example:'高端品专项激励政策', action:'🟡 <span class="text-amber-300">点选AI建议</span>' },
+
+// ── 综合评价 (152-154) ──
+{ c:152, name:'综合评价：优',     section:'综合评价', src:'calc',  how:'AI根据业绩达成率、目标合理性、渠道健康度综合评分',     example:'✓（若综合评分>80）', action:'<span class="text-slate-500">AI自动评分，无需操作</span>' },
+{ c:153, name:'综合评价：良',     section:'综合评价', src:'calc',  how:'同上',                                            example:'（60-80分）',      action:'<span class="text-slate-500">AI自动评分</span>' },
+{ c:154, name:'综合评价：差',     section:'综合评价', src:'calc',  how:'同上',                                            example:'（<60分）',        action:'<span class="text-slate-500">AI自动评分</span>' },
+];
+
+// ══════════════════════════════════════
+// 数据源配置
+// ══════════════════════════════════════
+const SRC_CONFIG = {
+  auto:    { label:'系统自动拉取', icon:'🔵', cls:'src-auto',    note:'直连BIP/ERP/DMS，实时同步，0人工' },
+  history: { label:'CRM历史沉淀', icon:'🟢', cls:'src-history',  note:'一次录入，永久复用，后续自动更新' },
+  zero:    { label:'零感知采集',  icon:'🟣', cls:'src-zero',     note:'拍照AI识别，业务员0打字' },
+  voice:   { label:'语音转结构化',icon:'🔵', cls:'src-voice',    note:'说一句话，AI提取并填入对应字段' },
+  ai:      { label:'AI建议确认', icon:'🟡', cls:'src-ai',       note:'AI自动生成3个建议，点选一条即可' },
+  calc:    { label:'自动计算',   icon:'⚫', cls:'src-calc',     note:'系统根据其他字段推算，0人工' },
+  human:   { label:'人工判断',   icon:'🔴', cls:'src-human',    note:'真正需要动脑的策略决策，数量极少' },
+};
+
+// ══════════════════════════════════════
+// 渲染色块
+// ══════════════════════════════════════
+let activeFilter = 'all';
+let selectedCol = null;
+
+function renderGrid(filter) {
+  const grid = document.getElementById('col-grid');
+  grid.innerHTML = '';
+
+  // Section groupings
+  const sections = [...new Set(COLS.map(c => c.section))];
+  sections.forEach(sec => {
+    const secCols = COLS.filter(c => c.section === sec);
+    const wrap = document.createElement('div');
+    wrap.className = 'flex flex-col items-start mr-3 mb-2';
+
+    const label = document.createElement('div');
+    label.className = 'section-label mb-1';
+    label.textContent = sec + ' (' + secCols.length + ')';
+    wrap.appendChild(label);
+
+    const row = document.createElement('div');
+    row.className = 'flex gap-0.5';
+
+    secCols.forEach(col => {
+      const cell = document.createElement('div');
+      cell.className = 'col-cell ' + SRC_CONFIG[col.src].cls;
+      const dimmed = filter !== 'all' && col.src !== filter;
+      if (dimmed) cell.style.opacity = '0.15';
+      cell.title = `[${col.c}] ${col.name}`;
+      cell.onclick = () => showDetail(col);
+      if (selectedCol === col.c) cell.classList.add('selected');
+      row.appendChild(cell);
+    });
+
+    wrap.appendChild(row);
+    grid.appendChild(wrap);
+  });
+}
+
+function renderStats() {
+  const counts = {};
+  COLS.forEach(c => { counts[c.src] = (counts[c.src]||0) + 1; });
+  const total = COLS.length;
+
+  Object.entries(SRC_CONFIG).forEach(([src, cfg]) => {
+    const n = counts[src] || 0;
+    const pct = Math.round(n / total * 100);
+    const statEl = document.getElementById('stat-' + src);
+    if (!statEl) return;
+    statEl.innerHTML = `
+      <div class="legend-dot ${cfg.cls} mx-auto mb-1" style="width:10px;height:10px;border-radius:2px"></div>
+      <div class="stat-num text-white">${n}</div>
+      <div class="text-xs text-slate-500">${pct}%</div>
+      <div class="text-xs text-slate-600" style="font-size:9px;line-height:1.3">${cfg.label}</div>
+    `;
+  });
+}
+
+function showDetail(col) {
+  selectedCol = col.c;
+  renderGrid(activeFilter);
+
+  const cfg = SRC_CONFIG[col.src];
+  document.getElementById('detail-default').classList.add('hidden');
+  const content = document.getElementById('detail-content');
+  content.classList.remove('hidden');
+  // force re-animation
+  content.classList.remove('fade-up');
+  void content.offsetWidth;
+  content.classList.add('fade-up');
+
+  document.getElementById('d-colnum').textContent = '第 ' + col.c + ' 列';
+  document.getElementById('d-name').textContent = col.name;
+  document.getElementById('d-section').textContent = col.section;
+  document.getElementById('d-dot').className = 'legend-dot ' + cfg.cls;
+  document.getElementById('d-src-label').textContent = cfg.label;
+  document.getElementById('d-src-label').style.color = getComputedColor(col.src);
+  document.getElementById('d-how').textContent = col.how;
+  document.getElementById('d-example').textContent = col.example;
+  document.getElementById('d-action').innerHTML = col.action;
+}
+
+function getComputedColor(src) {
+  const m = { auto:'#60a5fa', history:'#34d399', zero:'#a78bfa', voice:'#22d3ee', ai:'#fcd34d', calc:'#6b7280', human:'#f87171' };
+  return m[src] || '#94a3b8';
+}
+
+function filterSource(src) {
+  activeFilter = src;
+  renderGrid(src);
+  // highlight legend
+  Object.keys(SRC_CONFIG).forEach(s => {
+    const el = document.getElementById('leg-' + s);
+    if (!el) return;
+    el.style.opacity = (src === 'all' || src === s) ? '1' : '0.3';
+  });
+}
+
+// ══════════════════════════════════════
+// 区块汇总
+// ══════════════════════════════════════
+function renderSectionSummary() {
+  const sections = [...new Set(COLS.map(c => c.section))];
+  const srcOrder = ['auto','history','zero','voice','ai','calc','human'];
+
+  document.getElementById('section-summary').innerHTML = sections.map(sec => {
+    const secCols = COLS.filter(c => c.section === sec);
+    const srcBreak = {};
+    secCols.forEach(c => { srcBreak[c.src] = (srcBreak[c.src]||0) + 1; });
+
+    const chips = srcOrder.filter(s => srcBreak[s]).map(s => {
+      const cfg = SRC_CONFIG[s];
+      return `<span class="text-xs px-2 py-0.5 rounded-full mr-1 font-semibold" style="background:rgba(255,255,255,.05);color:${getComputedColor(s)}">${cfg.label} ${srcBreak[s]}列</span>`;
+    }).join('');
+
+    return `
+      <div class="flex items-center gap-3 py-2 border-b border-slate-900/80">
+        <div class="w-24 text-xs text-slate-500 flex-shrink-0">${sec}</div>
+        <div class="text-xs text-slate-700 w-6 flex-shrink-0">${secCols.length}列</div>
+        <div class="flex flex-wrap gap-1">${chips}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ══════════════════════════════════════
+// Init
+// ══════════════════════════════════════
+window.onload = () => {
+  renderStats();
+  renderGrid('all');
+  renderSectionSummary();
+};
+</script>
+</body>
+</html>

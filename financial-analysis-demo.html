@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI财务参谋 - 智能诊断平台</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #8b5cf6;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --glass-bg: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Top Navigation */
+        .navbar {
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            background: rgba(11, 15, 25, 0.6);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-status {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-success);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Main Layout */
+        .container {
+            display: flex;
+            flex: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 40px;
+            gap: 40px;
+        }
+
+        /* Progress Sidebar */
+        .sidebar {
+            width: 250px;
+            flex-shrink: 0;
+        }
+
+        .progress-list {
+            position: relative;
+            list-style: none;
+        }
+
+        .progress-list::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            bottom: 15px;
+            width: 2px;
+            background: var(--glass-border);
+            z-index: 0;
+        }
+
+        .progress-item {
+            position: relative;
+            padding: 0 0 40px 45px;
+            z-index: 1;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.5;
+        }
+
+        .progress-item.active {
+            opacity: 1;
+        }
+        
+        .progress-item.completed {
+            opacity: 0.8;
+        }
+
+        .step-icon {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-color);
+            border: 2px solid var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .progress-item.active .step-icon {
+            border-color: var(--accent-primary);
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-primary);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .progress-item.completed .step-icon {
+            border-color: var(--accent-success);
+            background: var(--accent-success);
+            color: #fff;
+        }
+
+        .step-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 1rem;
+        }
+
+        .step-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            position: relative;
+        }
+
+        .stage-pane {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .stage-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-title .icon {
+            color: var(--accent-primary);
+        }
+
+        /* Root Cause specific styles */
+        .cause-tree {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .cause-node {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .cause-node:hover {
+            transform: translateX(10px);
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .node-weight {
+            width: 60px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent-danger);
+        }
+
+        .node-content {
+            flex: 1;
+        }
+
+        .node-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .node-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Opportunity specific styles */
+        .opp-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .opp-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.2) 100%);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .opp-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.15);
+            border-color: rgba(139, 92, 246, 0.5);
+        }
+
+        .opp-card::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.05) 50%, transparent 60%);
+            background-size: 200% 200%;
+            animation: shimmer 3s infinite linear;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .opp-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--accent-secondary);
+            margin: 15px 0 5px;
+        }
+        
+        .opp-value.success { color: var(--accent-success); }
+        .opp-value.warning { color: var(--accent-warning); }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.1);
+            margin-right: 8px;
+            margin-bottom: 10px;
+        }
+
+        .tag.high { background: rgba(16, 185, 129, 0.2); color: var(--accent-success); }
+        .tag.med { background: rgba(245, 158, 11, 0.2); color: var(--accent-warning); }
+
+        /* Action specific styles */
+        .action-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .action-table th, .action-table td {
+            text-align: left;
+            padding: 16px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .action-table th {
+            color: var(--text-muted);
+            font-weight: 500;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .action-table tr {
+            transition: background 0.2s ease;
+        }
+
+        .action-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--accent-secondary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: none;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+        
+        .action-btn {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            justify-content: flex-end;
+        }
+
+        /* Utility */
+        .typing-effect {
+            border-right: 2px solid var(--accent-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            animation: typing 2s steps(40, end), blink-caret .75s step-end infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: var(--accent-primary); }
+        }
+
+        /* Top Alert Panel */
+        .alert-panel {
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.1), transparent);
+            border-left: 4px solid var(--accent-danger);
+            padding: 20px;
+            border-radius: 0 12px 12px 0;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .alert-icon {
+            font-size: 1.5rem;
+            margin-top: 2px;
+        }
+
+        /* Loading Overlay */
+        .ai-processing {
+            text-align: center;
+            padding: 60px 20px;
+            display: none;
+        }
+        .ai-processing.active {
+            display: block;
+        }
+
+        .loader-ring {
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--accent-primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="url(#paint0_linear)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                <defs>
+                    <linearGradient id="paint0_linear" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#60a5fa"/>
+                        <stop offset="1" stop-color="#c084fc"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+            AI参谋 - 财务推演中枢
+        </div>
+        <div class="nav-status">
+            <div class="pulse-dot"></div>
+            系统实时接入 | 华南建材大区数据集
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <ul class="progress-list">
+                <li class="progress-item active" id="nav-step1">
+                    <div class="step-icon">1</div>
+                    <div class="step-title">Root Cause</div>
+                    <div class="step-desc">深度追推异常根源</div>
+                </li>
+                <li class="progress-item" id="nav-step2">
+                    <div class="step-icon">2</div>
+                    <div class="step-title">Opportunity</div>
+                    <div class="step-desc">发现高价值增量机会</div>
+                </li>
+                <li class="progress-item" id="nav-step3">
+                    <div class="step-icon">3</div>
+                    <div class="step-title">Action</div>
+                    <div class="step-desc">生成自动下发任务表</div>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+
+            <!-- Global Alert Context -->
+            <div class="glass-card" style="padding: 0; overflow: hidden; margin-bottom: 30px;">
+                <div class="alert-panel" style="margin-bottom: 0px; border-radius: 0;">
+                    <div class="alert-icon">⚠️</div>
+                    <div>
+                        <h3 style="color: #f8fafc; margin-bottom: 8px; font-weight: 600;">监控警报：华南大区经营异常</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;">截至上季度结算，华南大区总体利润率同比下降 <span style="color: var(--accent-danger); font-weight:700;">2.1%</span>，零售营收环比下滑 <span style="color: var(--accent-warning); font-weight:700;">15%</span>。AI系统已自动触发极速诊断推演。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preloader for transitions -->
+            <div class="ai-processing glass-card" id="processing-overlay">
+                <div class="loader-ring"></div>
+                <h3 style="margin-bottom: 10px;">AI正结合家居建材行业知识库进行推演...</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;" id="processing-text">解析财务底层台账数据匹配中</p>
+            </div>
+
+            <!-- Stage 1: Root Cause -->
+            <div class="stage-pane active" id="pane-step1">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="icon">🔍</span> 异常根源归因分析 (Root Cause)
+                        </div>
+                    </div>
+                    
+                    <p style="color: var(--text-muted); margin-bottom: 24px;">通过多维下钻策略，拆解影响利润下滑的核心权重因子：</p>
+
+                    <div class="cause-tree">
+                        <!-- Node 1 -->
+                        <div class="cause-node" style="animation: fadeIn 0.4s ease 0.1s backwards;">
+                            <div class="node-weight">+8.2%</div>
+                            <div class="node-content">
+                                <div class="node-title">原材料单价大幅侵蚀利润</div>
+                                <div class="node-desc">核心原材料（高岭土、特殊釉料）采购成本全线上涨，现有供应商体系缺乏议价博弈能力造成成本直线上升。</div>
+                            </div>
+                        </div>
+
+                        <!-- Node 2 -->
+                        <div class="cause-node" style="animation: fadeIn 0.4s ease 0.3s backwards;">
+                            <div class="node-weight">+15天</div>
+                            <div class="node-content">
+                                <div class="node-title">库存周转率恶化（滞销挤压）</div>
+                                <div class="node-desc">零售端多款非标定制类成品与瓷砖库存大量积压，导致盘点计损增加与库存资金无效占用。</div>
+                            </div>
+                        </div>
+
+                        <!-- Node 3 -->
+                        <div class="cause-node" style="animation: fadeIn 0.4s ease 0.5s backwards;">
+                            <div class="node-weight">+4.5%</div>
+                            <div class="node-content">
+                                <div class="node-title">工程回款逾期占用流动资金</div>
+                                <div class="node-desc">工程渠道（含精装房项目）应收账款周期拉长，回款逾期产生的隐性资金利息极大约束了现金流。</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-btn">
+                        <button class="btn" onclick="nextStep(2)">
+                            基于根源提取机会点 <span style="font-size: 1.2rem;">→</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stage 2: Opportunity -->
+            <div class="stage-pane" id="pane-step2">
+                 <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="icon">✨</span> 价值增量机会发掘 (Opportunity)
+                        </div>
+                    </div>
+                    
+                    <p style="color: var(--text-muted); margin-bottom: 24px;">结合现存痛点，智能筛选并根据“高收益/高可行性”排序出 3 项关键行动机会：</p>
+
+                    <div class="opp-grid">
+                        <!-- Card 1 -->
+                        <div class="opp-card" style="animation: fadeIn 0.4s ease 0.1s backwards;">
+                            <span class="tag high">高优先级</span><span class="tag">降本</span>
+                            <div class="node-title" style="margin-top: 10px;">源头供应商汰换与长期协议集采</div>
+                            <div class="node-desc" style="margin-top: 8px;">拓展长协多供应商策略，减少对单一上游依赖。采用大宗环保替代品。</div>
+                            <div class="opp-value success">预估降本 5%-8%</div>
+                        </div>
+
+                        <!-- Card 2 -->
+                        <div class="opp-card" style="animation: fadeIn 0.4s ease 0.3s backwards;">
+                            <span class="tag high">高优先级</span><span class="tag">释放资金</span>
+                            <div class="node-title" style="margin-top: 10px;">滞销爆款“门店清库”动销</div>
+                            <div class="node-desc" style="margin-top: 8px;">组合高毛利产品（如智能卫浴）进行搭售套餐，加速库存周转流通。</div>
+                            <div class="opp-value success">盘活资金 1200w+</div>
+                        </div>
+
+                        <!-- Card 3 -->
+                        <div class="opp-card" style="animation: fadeIn 0.4s ease 0.5s backwards;">
+                            <span class="tag med">中高收益</span><span class="tag">风控</span>
+                            <div class="node-title" style="margin-top: 10px;">修订工程渠道回款红线政策</div>
+                            <div class="node-desc" style="margin-top: 8px;">调整质保金比例结构建立前置催收体系，防止坏账波及主体营运。</div>
+                            <div class="opp-value warning">挽回周期 15天</div>
+                        </div>
+                    </div>
+
+                    <div class="action-btn">
+                        <button class="btn btn-outline" onclick="nextStep(1)">
+                            返回
+                        </button>
+                        <button class="btn" onclick="nextStep(3)">
+                            制定落地行动计划 <span style="font-size: 1.2rem;">→</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stage 3: Action -->
+            <div class="stage-pane" id="pane-step3">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="icon">🚀</span> 智能下发执行矩阵 (Action)
+                        </div>
+                    </div>
+                    
+                    <p style="color: var(--text-muted); margin-bottom: 24px;">AI 已将机会转化为具备考核标准（KPI）和 Deadline 的任务池结构。</p>
+
+                    <div style="overflow-x: auto; border-radius: 12px; border: 1px solid var(--glass-border);">
+                        <table class="action-table">
+                            <thead>
+                                <tr>
+                                    <th width="30%">核心行动指令</th>
+                                    <th>实施部门与负责人</th>
+                                    <th>追踪 KPI</th>
+                                    <th>Deadline</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <strong>寻源比价与长协签约</strong><br>
+                                        <span style="font-size: 0.8rem; color: var(--text-muted);">引入至少3家优质新釉料/泥料供应商进行评级。</span>
+                                    </td>
+                                    <td>
+                                        <span class="avatar">李</span> 采购部 - 李强
+                                    </td>
+                                    <td style="color: var(--accent-success); font-weight: 600;">大宗单价 ▼ 5%</td>
+                                    <td>7日内完成报价</td>
+                                    <td>
+                                        <button class="btn btn-outline btn-small" id="btn-sync-1" onclick="simulateSync(1)">同步至系统</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <strong>华南大区清库搭售大促</strong><br>
+                                        <span style="font-size: 0.8rem; color: var(--text-muted);">滞销瓷砖组合智能家居卫浴制定降价去库存套餐方案。</span>
+                                    </td>
+                                    <td>
+                                        <span class="avatar" style="background:#3b82f6;">赵</span> 销售/仓储 - 赵丽
+                                    </td>
+                                    <td style="color: var(--accent-success); font-weight: 600;">化解滞销库存 80%</td>
+                                    <td>本月30日前</td>
+                                    <td>
+                                        <button class="btn btn-outline btn-small" id="btn-sync-2" onclick="simulateSync(2)">同步至系统</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <strong>工程回款保障专案</strong><br>
+                                        <span style="font-size: 0.8rem; color: var(--text-muted);">修订合同回款账期限制，并组建跨部门逾期催收突击队。</span>
+                                    </td>
+                                    <td>
+                                        <span class="avatar" style="background:#f59e0b;">刘</span> 财务/工程 - 刘伟
+                                    </td>
+                                    <td style="color: var(--accent-warning); font-weight: 600;">账期缩短 15天</td>
+                                    <td>5日内出台红头文</td>
+                                    <td>
+                                        <button class="btn btn-outline btn-small" id="btn-sync-3" onclick="simulateSync(3)">同步至系统</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="action-btn">
+                        <button class="btn btn-outline" onclick="nextStep(2)">
+                            返回
+                        </button>
+                        <button class="btn" style="background: linear-gradient(135deg, var(--accent-success), #059669);" onclick="alert('全案任务已下发企业微信流转中心与跟进看板！')">
+                            一键建档立项下发 <span style="font-size: 1.2rem;">✔</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const texts = [
+            "正在映射建材行业供应链拓扑模型...",
+            "对比行业同期毛利基准线...",
+            "AI 诊断完成，正在渲染根源影响因子..."
+        ];
+
+        function nextStep(stepIdx) {
+            // UI state management
+            document.querySelectorAll('.progress-item').forEach((el, idx) => {
+                el.classList.remove('active');
+                if(idx < stepIdx - 1) {
+                    el.classList.add('completed');
+                } else {
+                    el.classList.remove('completed');
+                }
+            });
+            document.getElementById(`nav-step${stepIdx}`).classList.add('active');
+
+            // Hide Panes
+            document.querySelectorAll('.stage-pane').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Show Processing Overlay
+            const overlay = document.getElementById('processing-overlay');
+            const pText = document.getElementById('processing-text');
+            overlay.classList.add('active');
+            
+            let i = 0;
+            pText.innerText = texts[0];
+            const loadInterval = setInterval(() => {
+                i++;
+                if (i < texts.length) {
+                    pText.innerText = texts[i];
+                }
+            }, 500);
+
+            // After simulated wait, show real pane
+            setTimeout(() => {
+                clearInterval(loadInterval);
+                overlay.classList.remove('active');
+                document.getElementById(`pane-step${stepIdx}`).classList.add('active');
+            }, 1500);
+        }
+
+        function simulateSync(id) {
+            const btn = document.getElementById(`btn-sync-${id}`);
+            btn.innerHTML = `同步中... <span class="loader-ring" style="width:12px; height:12px; border-width:2px; margin-bottom:0;"></span>`;
+            setTimeout(() => {
+                btn.innerHTML = `<span style="color:var(--accent-success)">已同步飞书/企业微信</span>`;
+                btn.style.border = 'none';
+                btn.style.background = 'rgba(16, 185, 129, 0.1)';
+            }, 1200);
+        }
+    </script>
+</body>
+</html>

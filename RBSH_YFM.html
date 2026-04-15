@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>探视日历 · 见孩子的路径指南</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #0f1318; }
+
+        @keyframes fadeUp  { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes pulse   { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+        @keyframes shake   { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+        @keyframes pop     { 0%{transform:scale(0.88);opacity:0;} 100%{transform:scale(1);opacity:1;} }
+        @keyframes ripple  { 0%{transform:scale(0);opacity:0.5;} 100%{transform:scale(4);opacity:0;} }
+        @keyframes bounce  { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
+        @keyframes ping    { 0%{transform:scale(1);opacity:0.8;} 100%{transform:scale(2.2);opacity:0;} }
+        @keyframes slideDown { from{opacity:0;transform:translateY(-8px);} to{opacity:1;transform:translateY(0);} }
+        @keyframes glow    { 0%,100%{box-shadow:0 0 8px rgba(99,102,241,0.3);} 50%{box-shadow:0 0 20px rgba(99,102,241,0.7);} }
+
+        .fade-up   { animation: fadeUp 0.45s ease-out forwards; }
+        .pop-in    { animation: pop 0.35s cubic-bezier(.34,1.56,.64,1) forwards; }
+        .blink     { animation: pulse 2s ease-in-out infinite; }
+        .bounce    { animation: bounce 1.2s ease-in-out infinite; }
+        .glow-ring { animation: glow 2s ease-in-out infinite; }
+        .slide-down { animation: slideDown 0.3s ease-out forwards; }
+
+        /* Ripple effect on buttons */
+        .ripple-btn { position:relative; overflow:hidden; }
+        .ripple-btn .ripple-circle {
+            position:absolute; border-radius:50%; background:rgba(255,255,255,0.15);
+            transform:scale(0); animation:ripple 0.5s linear; pointer-events:none;
+        }
+
+        /* Hover lift */
+        .lift { transition:all 0.2s cubic-bezier(.34,1.56,.64,1); }
+        .lift:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,0.4); }
+        .lift:active { transform:translateY(0) scale(0.97); }
+
+        /* Ping dot */
+        .ping-wrap { position:relative; display:inline-flex; }
+        .ping-wrap::before {
+            content:''; position:absolute; inset:0; border-radius:50%;
+            background:currentColor; opacity:0.4;
+            animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite;
+        }
+
+        /* Step progress */
+        .step-dot { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0; transition:all 0.4s cubic-bezier(.34,1.56,.64,1); cursor:pointer; }
+        .step-dot.done    { background:#10b981; color:white; }
+        .step-dot.done:hover { transform:scale(1.15); }
+        .step-dot.current { background:#6366f1; color:white; box-shadow:0 0 0 5px rgba(99,102,241,0.2); animation:glow 2s ease-in-out infinite; }
+        .step-dot.future  { background:#1e293b; color:#475569; border:2px solid #1e293b; }
+        .step-line        { width:2px; height:32px; margin:3px auto; background:#1e293b; transition:background 0.5s; }
+        .step-line.done   { background:#10b981; }
+
+        /* Choice buttons */
+        .choice-btn { transition:all 0.2s cubic-bezier(.34,1.56,.64,1); border:2px solid transparent; position:relative; overflow:hidden; }
+        .choice-btn:hover { transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,0.35); }
+        .choice-btn:active { transform:translateY(0) scale(0.97); }
+
+        .choice-yes   { background:rgba(16,185,129,0.08); border-color:rgba(16,185,129,0.25); }
+        .choice-yes:hover { background:rgba(16,185,129,0.16); border-color:#10b981; }
+
+        .choice-no    { background:rgba(239,68,68,0.07); border-color:rgba(239,68,68,0.2); }
+        .choice-no:hover { background:rgba(239,68,68,0.15); border-color:#ef4444; }
+
+        .choice-maybe { background:rgba(245,158,11,0.07); border-color:rgba(245,158,11,0.2); }
+        .choice-maybe:hover { background:rgba(245,158,11,0.15); border-color:#f59e0b; }
+
+        /* Selected state */
+        .choice-btn.selected-yes   { background:rgba(16,185,129,0.2);  border-color:#10b981; box-shadow:0 0 0 3px rgba(16,185,129,0.15); }
+        .choice-btn.selected-no    { background:rgba(239,68,68,0.18);  border-color:#ef4444; box-shadow:0 0 0 3px rgba(239,68,68,0.15); }
+        .choice-btn.selected-maybe { background:rgba(245,158,11,0.18); border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,0.15); }
+
+        /* Log items */
+        .log-item { animation: fadeUp 0.3s ease-out; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width:4px; }
+        ::-webkit-scrollbar-thumb { background:#1e293b; border-radius:2px; }
+
+        /* Card */
+        .main-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); }
+
+        /* Tip box */
+        .tip { background:rgba(99,102,241,0.07); border-left:3px solid rgba(99,102,241,0.4); }
+
+        /* input */
+        input[type=text], select { background:#1a2030; border:1px solid #2a3444; color:#e2e8f0; border-radius:10px; padding:10px 14px; font-size:14px; outline:none; transition:border 0.2s; width:100%; }
+        input[type=text]:focus, select:focus { border-color:#6366f1; }
+        input::placeholder { color:#475569; }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen">
+
+<!-- ── 顶栏 ── -->
+<div class="border-b border-slate-800/50 px-5 py-3 flex items-center justify-between" style="background:#0c1018;">
+    <div>
+        <div class="text-sm font-bold text-slate-100">见孩子 · 行动指南</div>
+        <div class="text-xs text-slate-500 mt-0.5">帮你把"我想见孩子"变成真正发生的事</div>
+    </div>
+    <div class="flex items-center gap-3 text-xs text-slate-500">
+        <div>成功探视 <span id="nav-success" class="text-emerald-400 font-bold">0</span> 次</div>
+        <div>遇到阻碍 <span id="nav-fail" class="text-red-400 font-bold">0</span> 次</div>
+        <button onclick="resetAll()" class="text-slate-600 hover:text-slate-400 transition-colors ml-2">↺ 重新开始</button>
+    </div>
+</div>
+
+<div class="max-w-4xl mx-auto p-4 md:p-6 grid grid-cols-12 gap-4">
+
+    <!-- ── 左：进度步骤 ── -->
+    <div class="col-span-12 md:col-span-3">
+        <div class="main-card rounded-2xl p-4 sticky top-16">
+            <div class="text-xs text-slate-500 mb-4 font-semibold uppercase tracking-wider">现在走到哪了</div>
+            <div id="steps-panel">
+                <!-- Rendered by JS -->
+            </div>
+
+            <!-- Core reminder -->
+            <div class="mt-5 pt-4 border-t border-slate-800/60 space-y-2">
+                <div class="text-xs text-slate-500 mb-2 font-semibold">每次沟通只说</div>
+                <div class="flex flex-wrap gap-1.5">
+                    <span class="text-xs bg-emerald-950/50 border border-emerald-800/40 text-emerald-400 rounded-full px-2.5 py-1">什么时间</span>
+                    <span class="text-xs bg-emerald-950/50 border border-emerald-800/40 text-emerald-400 rounded-full px-2.5 py-1">在哪里</span>
+                    <span class="text-xs bg-emerald-950/50 border border-emerald-800/40 text-emerald-400 rounded-full px-2.5 py-1">多久</span>
+                </div>
+                <div class="text-xs text-slate-600 mt-1">不解释、不争论、不表达情绪</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 中：当前操作 ── -->
+    <div class="col-span-12 md:col-span-9 space-y-4">
+
+        <!-- 主操作卡片 -->
+        <div id="main-action" class="main-card rounded-2xl p-5 md:p-6 fade-up min-h-64">
+            <!-- 内容由 JS 渲染 -->
+        </div>
+
+        <!-- 提示条（情境化建议） -->
+        <div id="tip-box" class="tip rounded-xl px-4 py-3 text-sm text-slate-400 hidden fade-up">
+            <span id="tip-text"></span>
+        </div>
+
+        <!-- 记录 -->
+        <div class="main-card rounded-2xl overflow-hidden">
+            <div class="px-5 py-3 border-b border-slate-800/50 flex items-center justify-between">
+                <span class="text-sm font-semibold text-slate-300">发生了什么</span>
+                <span id="log-count" class="text-xs text-slate-600">暂无记录</span>
+            </div>
+            <div id="log-list" class="divide-y divide-slate-800/30 max-h-56 overflow-y-auto">
+                <div class="px-5 py-5 text-sm text-slate-600 text-center">还没有任何记录，开始操作后会自动记录在这里</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Toast ── -->
+<div id="toast-wrap" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 space-y-2 pointer-events-none"></div>
+
+<!-- ── 悬浮冲突按钮 ── -->
+<div id="conflict-fab" class="fixed bottom-6 right-6 z-40 hidden">
+    <button onclick="triggerConflict()" class="lift ripple-btn flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold rounded-2xl px-4 py-3 shadow-xl">
+        <span class="ping-wrap w-2 h-2 rounded-full bg-white text-white flex-shrink-0"></span>
+        ⚡ 遇到争执了
+    </button>
+</div>
+
+<!-- ── 复制成功提示 ── -->
+<div id="copy-flash" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 hidden">
+    <div class="bg-emerald-800 text-emerald-100 text-sm px-5 py-2.5 rounded-xl shadow-xl slide-down">✓ 已复制到剪贴板</div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// 状态
+// ════════════════════════════════════════
+let S = {
+    phase: 'start',
+    attempt: 1,
+    failStreak: 0,
+    totalSuccess: 0,
+    totalFail: 0,
+    request: null,
+    log: [],
+    prevPhase: null,
+    countdownTimer: null,
+};
+
+// 步骤定义
+const STEPS = [
+    { id:'send',    label:'发出请求'    },
+    { id:'wait',    label:'等她回复'    },
+    { id:'agreed',  label:'约好了'      },
+    { id:'visit',   label:'见到孩子'    },
+];
+
+function stepStatus(stepId) {
+    const order = ['send','wait','agreed','visit'];
+    const phaseStep = {
+        start:    'send',
+        sent:     'wait',
+        waiting:  'wait',
+        agreed:   'agreed',
+        'visit-done': 'visit',
+        failed:   'wait',
+        escalate: 'send',
+        conflict: 'wait',
+        done:     'visit',
+    };
+    const cur = phaseStep[S.phase] || 'send';
+    const curIdx = order.indexOf(cur);
+    const stepIdx = order.indexOf(stepId);
+    if (stepIdx < curIdx) return 'done';
+    if (stepIdx === curIdx) return 'current';
+    return 'future';
+}
+
+// ════════════════════════════════════════
+// 渲染
+// ════════════════════════════════════════
+function render() {
+    renderSteps();
+    renderMain();
+    updateFAB();
+}
+
+function updateFAB() {
+    const fab = document.getElementById('conflict-fab');
+    // 在等待回复或约好了阶段显示冲突按钮
+    const showPhases = ['waiting', 'agreed', 'failed'];
+    if (showPhases.includes(S.phase)) {
+        fab.classList.remove('hidden');
+    } else {
+        fab.classList.add('hidden');
+    }
+}
+
+function renderSteps() {
+    const el = document.getElementById('steps-panel');
+    el.innerHTML = STEPS.map((s, i) => {
+        const status = stepStatus(s.id);
+        const icons = { done:'✓', current:'→', future: i+1 };
+        return `
+            <div class="flex items-start gap-3 ${i < STEPS.length-1 ? 'mb-0' : ''}">
+                <div class="flex flex-col items-center">
+                    <div class="step-dot ${status}">${status==='done'?'✓':status==='current'?'→':i+1}</div>
+                    ${i < STEPS.length-1 ? `<div class="step-line ${status==='done'?'done':''}"></div>` : ''}
+                </div>
+                <div class="pt-1.5 pb-4">
+                    <div class="text-sm ${status==='current'?'text-white font-semibold':status==='done'?'text-slate-400':'text-slate-600'}">${s.label}</div>
+                    ${status==='current' && S.attempt > 1 ? `<div class="text-xs text-amber-400 mt-0.5">第 ${S.attempt} 次尝试</div>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderMain() {
+    const el = document.getElementById('main-action');
+    el.className = 'main-card rounded-2xl p-5 md:p-6 fade-up';
+    // 强制重新触发动画
+    void el.offsetWidth;
+    el.innerHTML = phases[S.phase]?.html() || '';
+    // 绑定 ripple 到所有按钮
+    setTimeout(() => {
+        el.querySelectorAll('button').forEach(btn => addRipple(btn));
+        // 绑定实时预览
+        if (S.phase === 'fill-request') setupPreview();
+        // 启动倒计时
+        if (S.phase === 'waiting') startCountdown();
+        // 绑定冲突页复制按钮（避免 onclick 中单引号破坏 HTML 属性）
+        if (S.phase === 'conflict') {
+            const copyBtn = el.querySelector('[data-copy-conflict]');
+            if (copyBtn) {
+                const r = S.request;
+                const text = r
+                    ? `"我们商定的是：${r.time}，在${r.place}，探视时长${r.dur}。请按这个安排执行。"`
+                    : `"请确认探视的时间和地点，按照我们的约定执行。"`;
+                copyBtn.addEventListener('click', () => copyText(text));
+            }
+        }
+    }, 50);
+}
+
+function showTip(text) {
+    const el = document.getElementById('tip-box');
+    document.getElementById('tip-text').innerHTML = text;
+    el.classList.remove('hidden');
+}
+
+function hideTip() {
+    document.getElementById('tip-box').classList.add('hidden');
+}
+
+// ════════════════════════════════════════
+// 各阶段内容
+// ════════════════════════════════════════
+const phases = {
+
+    start: {
+        html: () => `
+            <div class="text-center max-w-md mx-auto py-4">
+                <div class="text-4xl mb-4">👶</div>
+                <h2 class="text-xl font-bold mb-2">你想见孩子</h2>
+                <p class="text-slate-400 text-sm mb-6 leading-relaxed">
+                    这个工具帮你一步一步把这件事做成。<br>
+                    从发出请求，到真正见到孩子。
+                </p>
+                <div class="text-xs text-slate-500 bg-slate-800/50 rounded-xl px-4 py-3 mb-6 text-left space-y-1.5">
+                    <div class="font-semibold text-slate-400 mb-2">这个方法的核心逻辑：</div>
+                    <div>· 把"见孩子"从一次次的情绪博弈，变成可执行的约定</div>
+                    <div>· 如果她不配合，每一次都留下记录</div>
+                    <div>· 积累到一定程度，就有足够的依据建立固定规则</div>
+                </div>
+                ${btn('primary', '开始 → 发出第一次请求', 'goTo("fill-request")')}
+            </div>
+        `
+    },
+
+    'fill-request': {
+        html: () => `
+            <div>
+                <div class="flex items-center gap-2 mb-5">
+                    <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
+                    <div>
+                        <div class="font-bold text-base">填写这次想见孩子的安排</div>
+                        <div class="text-xs text-slate-500">只需要三个信息，简单明确</div>
+                    </div>
+                </div>
+                <div class="space-y-3 mb-5">
+                    <div>
+                        <label class="text-sm text-slate-400 block mb-1.5">🕐 什么时间？</label>
+                        <input type="text" id="f-time" placeholder="比如：本周六上午9点" />
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-400 block mb-1.5">📍 在哪里交接？</label>
+                        <input type="text" id="f-place" placeholder="比如：小区南门" />
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-400 block mb-1.5">⏱ 大概多长时间？</label>
+                        <input type="text" id="f-dur" placeholder="比如：6小时，下午3点送回" />
+                    </div>
+                </div>
+                <div class="bg-slate-800/50 rounded-xl p-3 mb-4 text-xs text-slate-500 transition-all duration-300" id="preview-box">
+                    <span class="text-slate-400 font-semibold">发送给她的话只需要说：</span><br>
+                    <span id="preview-msg" class="text-slate-500 italic leading-relaxed">填写上面的内容后，这里会自动生成</span>
+                    <button id="copy-preview-btn" onclick="copyPreview()" class="hidden mt-2 text-xs text-indigo-400 hover:text-indigo-300 transition-colors underline">复制这句话</button>
+                </div>
+                ${btn('primary', '发出请求 →', 'sendRequest()')}
+            </div>
+        `
+    },
+
+    waiting: {
+        html: () => {
+            const r = S.request;
+            return `
+            <div>
+                <div class="flex items-center gap-2 mb-5">
+                    <div class="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
+                    <div>
+                        <div class="font-bold text-base">请求已发出，等她回复</div>
+                        <div class="text-xs text-slate-500">给她24小时时间回应</div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800/40 rounded-xl p-4 mb-4 border border-slate-700/40">
+                    <div class="text-xs text-slate-500 mb-2">你发出的请求：</div>
+                    <div class="text-sm text-slate-200 leading-relaxed">
+                        "我想${r?.time}在${r?.place}见孩子，大约${r?.dur}，请告知是否可以。"
+                    </div>
+                </div>
+
+                <!-- 倒计时 -->
+                <div class="flex items-center gap-3 bg-amber-950/20 border border-amber-800/30 rounded-xl px-4 py-3 mb-5">
+                    <div class="text-amber-400 text-lg">⏳</div>
+                    <div class="flex-1">
+                        <div class="text-xs text-amber-400 font-semibold">等待回复中</div>
+                        <div class="text-xs text-slate-500 mt-0.5">给她24小时时间，不要催</div>
+                    </div>
+                    <div id="countdown-display" class="text-right">
+                        <div id="countdown-num" class="text-lg font-bold text-amber-300 mono">24:00:00</div>
+                        <div class="text-xs text-slate-600">剩余时间（演示）</div>
+                    </div>
+                </div>
+
+                <div class="text-sm text-slate-400 mb-3 font-semibold">她怎么回应的？</div>
+                <div class="grid grid-cols-1 gap-2">
+                    <button onclick="handleResponse('agree')" class="choice-btn choice-yes rounded-xl p-4 text-left">
+                        <div class="font-semibold text-emerald-400 mb-0.5">✓ 她同意了</div>
+                        <div class="text-xs text-slate-500">明确说了可以，或给出了具体安排</div>
+                    </button>
+                    <button onclick="handleResponse('vague')" class="choice-btn choice-maybe rounded-xl p-4 text-left">
+                        <div class="font-semibold text-amber-400 mb-0.5">～ 她在拖延或说不清楚</div>
+                        <div class="text-xs text-slate-500">说"再看看""不一定""孩子最近不舒服"等模糊回答</div>
+                    </button>
+                    <button onclick="handleResponse('refuse')" class="choice-btn choice-no rounded-xl p-4 text-left">
+                        <div class="font-semibold text-red-400 mb-0.5">✕ 她明确拒绝了</div>
+                        <div class="text-xs text-slate-500">直接说不行，或给出理由拒绝</div>
+                    </button>
+                    <button onclick="handleResponse('silence')" class="choice-btn rounded-xl p-4 text-left" style="background:rgba(255,255,255,0.02);border:2px solid rgba(255,255,255,0.05);">
+                        <div class="font-semibold text-slate-400 mb-0.5">— 24小时过去了，她没回</div>
+                        <div class="text-xs text-slate-500">发出去之后音讯全无</div>
+                    </button>
+                </div>
+            </div>
+        `},
+    },
+
+    agreed: {
+        html: () => {
+            const r = S.request;
+            return `
+            <div>
+                <div class="flex items-center gap-2 mb-5">
+                    <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-sm font-bold flex-shrink-0">3</div>
+                    <div>
+                        <div class="font-bold text-base">约好了，准备见孩子</div>
+                        <div class="text-xs text-slate-500">她已经同意了</div>
+                    </div>
+                </div>
+
+                <div class="bg-emerald-950/30 border border-emerald-800/40 rounded-xl p-4 mb-5">
+                    <div class="text-emerald-400 font-semibold mb-2">✓ 已确认的安排</div>
+                    <div class="space-y-1 text-sm text-slate-300">
+                        <div>🕐 时间：${r?.time}</div>
+                        <div>📍 地点：${r?.place}</div>
+                        <div>⏱ 时长：${r?.dur}</div>
+                    </div>
+                </div>
+
+                <div class="text-sm text-slate-400 mb-3 font-semibold">到了约定时间，发生了什么？</div>
+                <div class="grid grid-cols-1 gap-2">
+                    <button onclick="handleVisit('success')" class="choice-btn choice-yes rounded-xl p-4 text-left">
+                        <div class="font-semibold text-emerald-400 mb-0.5">✓ 顺利见到孩子了</div>
+                        <div class="text-xs text-slate-500">交接顺利，探视正常进行</div>
+                    </button>
+                    <button onclick="handleVisit('breach')" class="choice-btn choice-no rounded-xl p-4 text-left">
+                        <div class="font-semibold text-red-400 mb-0.5">✕ 她临时反悔，没让见</div>
+                        <div class="text-xs text-slate-500">约好了但到现场她不配合，或改口说有事</div>
+                    </button>
+                </div>
+            </div>
+        `},
+    },
+
+    success: {
+        html: () => `
+            <div class="text-center max-w-md mx-auto py-4">
+                <div class="text-5xl mb-4">🎉</div>
+                <h2 class="text-xl font-bold mb-2 text-emerald-400">探视成功</h2>
+                <p class="text-slate-400 text-sm mb-6 leading-relaxed">
+                    这次见到孩子了。<br>
+                    这很重要，每一次成功都在建立规律。
+                </p>
+                <div class="bg-slate-800/50 rounded-xl p-4 mb-6 text-left text-sm text-slate-400 space-y-1.5">
+                    <div>✓ 已记录本次探视成功</div>
+                    <div>✓ 连续成功记录有助于建立固定探视规律</div>
+                    <div>✓ 下一步：继续保持规律，下次再约</div>
+                </div>
+                ${btn('primary', '安排下一次探视', 'nextVisit()')}
+            </div>
+        `
+    },
+
+    failed: {
+        html: () => {
+            const streak = S.failStreak;
+            const isEscalate = streak >= 2;
+            return `
+            <div>
+                <div class="flex items-center gap-2 mb-5">
+                    <div class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-sm font-bold flex-shrink-0">!</div>
+                    <div>
+                        <div class="font-bold text-base">${isEscalate ? '已经发生多次阻碍' : '这次被阻碍了'}</div>
+                        <div class="text-xs text-slate-500">连续阻碍 ${streak} 次，记录已保存</div>
+                    </div>
+                </div>
+
+                <div class="${isEscalate ? 'bg-violet-950/30 border border-violet-800/40' : 'bg-red-950/20 border border-red-800/30'} rounded-xl p-4 mb-5">
+                    <div class="${isEscalate ? 'text-violet-300' : 'text-red-400'} font-semibold mb-1.5">
+                        ${isEscalate ? '⚠ 已连续 ' + streak + ' 次无法完成探视' : '本次探视未能实现'}
+                    </div>
+                    <div class="text-slate-400 text-sm">
+                        ${isEscalate
+                            ? '这意味着光靠协商已经很难推进。这些记录将来可以作为建立正式探视协议的依据。'
+                            : '每次阻碍都被记录下来了。积累到一定次数，可以用来建立正式规则。'}
+                    </div>
+                </div>
+
+                <div class="text-sm text-slate-400 mb-3 font-semibold">接下来怎么做？</div>
+                <div class="grid grid-cols-1 gap-2">
+                    ${isEscalate ? `
+                    <button onclick="goTo('escalate')" class="choice-btn rounded-xl p-4 text-left" style="background:rgba(139,92,246,0.1);border:2px solid rgba(139,92,246,0.3);">
+                        <div class="font-semibold text-violet-300 mb-0.5">⚖ 建立正式的探视规则</div>
+                        <div class="text-xs text-slate-500">通过调解或法律途径，把探视时间写成固定规则，不再靠协商</div>
+                    </button>
+                    ` : ''}
+                    <button onclick="tryAgain()" class="choice-btn choice-maybe rounded-xl p-4 text-left">
+                        <div class="font-semibold text-amber-400 mb-0.5">↺ 再试一次（第 ${S.attempt + 1} 次请求）</div>
+                        <div class="text-xs text-slate-500">换个时间重新发出请求，继续留下记录</div>
+                    </button>
+                </div>
+            </div>
+        `},
+    },
+
+    conflict: {
+        html: () => {
+            const r = S.request;
+            const ruleText = r
+                ? `"我们商定的是：${r.time}，在${r.place}，探视时长${r.dur}。请按这个安排执行。"`
+                : `"请确认探视的时间和地点，按照我们的约定执行。"`;
+            return `
+            <div>
+                <div class="flex items-center gap-2 mb-5">
+                    <div class="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-base flex-shrink-0">⚡</div>
+                    <div>
+                        <div class="font-bold text-base">遇到争执了？</div>
+                        <div class="text-xs text-slate-500">不要被情绪拉走，只说这一句话</div>
+                    </div>
+                </div>
+
+                <div class="bg-amber-950/20 border border-amber-800/30 rounded-xl p-5 mb-5">
+                    <div class="text-xs text-amber-500 mb-2 font-semibold">回复她的话（复制发送）：</div>
+                    <div class="text-slate-200 text-sm leading-relaxed font-medium">${ruleText}</div>
+                    <button data-copy-conflict class="mt-3 text-xs text-amber-400 hover:text-amber-300 transition-colors">复制这句话</button>
+                </div>
+
+                <div class="bg-slate-800/30 rounded-xl p-4 mb-5 text-sm text-slate-400 space-y-2">
+                    <div class="font-semibold text-slate-300">为什么只说这一句？</div>
+                    <div>· 解释越多，争论的空间越大</div>
+                    <div>· 你的目标是见孩子，不是赢得争论</div>
+                    <div>· 每次只重复事实，时间久了她会知道这条路没有情绪可利用</div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="exitConflict()" class="choice-btn rounded-xl p-3 text-center text-sm text-slate-300 font-semibold" style="background:rgba(255,255,255,0.03);border:2px solid rgba(255,255,255,0.08);">
+                        ← 回到之前的步骤
+                    </button>
+                    <button onclick="logConflict()" class="choice-btn choice-maybe rounded-xl p-3 text-center text-sm text-amber-300 font-semibold">
+                        记录这次冲突
+                    </button>
+                </div>
+            </div>
+        `},
+    },
+
+    escalate: {
+        html: () => `
+            <div>
+                <div class="flex items-center gap-2 mb-5">
+                    <div class="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-sm font-bold flex-shrink-0">⚖</div>
+                    <div>
+                        <div class="font-bold text-base">建立正式的探视规则</div>
+                        <div class="text-xs text-slate-500">把"每次都要协商"变成"有固定规则"</div>
+                    </div>
+                </div>
+
+                <div class="bg-violet-950/20 border border-violet-800/30 rounded-xl p-4 mb-4 text-sm text-slate-400">
+                    <div class="font-semibold text-violet-300 mb-2">为什么走这一步？</div>
+                    <div class="space-y-1.5">
+                        <div>· 靠每次协商太不稳定，她可以随时拒绝</div>
+                        <div>· 正式规则一旦确定，不配合就是违规，可以追责</div>
+                        <div>· 你之前积累的那些记录，在这里有用</div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800/40 rounded-xl p-4 mb-5 text-sm space-y-3">
+                    <div class="font-semibold text-slate-300">建议固化的内容：</div>
+                    <div class="space-y-2 text-slate-400">
+                        <div class="flex gap-2"><span class="text-slate-600 flex-shrink-0">时间：</span><span>每周六 09:00 - 15:00</span></div>
+                        <div class="flex gap-2"><span class="text-slate-600 flex-shrink-0">地点：</span><span>${S.request?.place || '固定交接地点'}</span></div>
+                        <div class="flex gap-2"><span class="text-slate-600 flex-shrink-0">频率：</span><span>每周一次</span></div>
+                        <div class="flex gap-2"><span class="text-slate-600 flex-shrink-0">形式：</span><span>书面协议 / 调解协议 / 法院裁定</span></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="tryAgain()" class="choice-btn rounded-xl p-3 text-center text-sm text-slate-400 font-semibold" style="background:rgba(255,255,255,0.02);border:2px solid rgba(255,255,255,0.05);">
+                        先再试一次
+                    </button>
+                    <button onclick="confirmEscalate()" class="choice-btn rounded-xl p-3 text-center text-sm text-violet-300 font-semibold" style="background:rgba(139,92,246,0.1);border:2px solid rgba(139,92,246,0.35);">
+                        ✓ 确认，开始走流程
+                    </button>
+                </div>
+            </div>
+        `
+    },
+
+    done: {
+        html: () => `
+            <div class="text-center max-w-md mx-auto py-4">
+                <div class="text-5xl mb-4">📋</div>
+                <h2 class="text-xl font-bold mb-2 text-violet-300">已确认进入正式流程</h2>
+                <p class="text-slate-400 text-sm mb-6 leading-relaxed">
+                    你前面积累的记录，会在这个阶段派上用场。<br>
+                    一旦形成固定规则，就不再需要每次协商了。
+                </p>
+                <div class="bg-slate-800/50 rounded-xl p-4 mb-6 text-left text-sm text-slate-400 space-y-1.5">
+                    <div>✓ 历史记录已保存</div>
+                    <div>✓ 建议联系专业调解机构或律师</div>
+                    <div>✓ 规则一旦固化，每次执行不再依赖对方配合</div>
+                </div>
+                ${btn('secondary', '↺ 重新开始记录', 'resetAll()')}
+            </div>
+        `
+    },
+};
+
+// ════════════════════════════════════════
+// 动作函数
+// ════════════════════════════════════════
+function goTo(phase) {
+    S.phase = phase;
+    hideTip();
+    render();
+}
+
+function sendRequest() {
+    const time  = document.getElementById('f-time')?.value.trim()  || '待定时间';
+    const place = document.getElementById('f-place')?.value.trim() || '待定地点';
+    const dur   = document.getElementById('f-dur')?.value.trim()   || '待定时长';
+    S.request = { time, place, dur };
+    S.phase = 'waiting';
+    addLog('send', `发出第${S.attempt}次请求：${time} · ${place} · ${dur}`);
+    showTip('💡 发出请求后，给她24小时时间回应。不要催，等待本身也是一种记录。');
+    render();
+    toast('请求已记录 ✓', 'success');
+}
+
+function handleResponse(type) {
+    const labels = { agree:'她同意了', vague:'她模糊拖延', refuse:'她明确拒绝', silence:'她没有回应' };
+    addLog(type, `第${S.attempt}次请求 → ${labels[type]}`);
+
+    if (type === 'agree') {
+        S.phase = 'agreed';
+        S.failStreak = 0;
+        hideTip();
+        toast('太好了，约好了！', 'success');
+    } else {
+        S.failStreak++;
+        S.totalFail++;
+        document.getElementById('nav-fail').textContent = S.totalFail;
+        S.phase = 'failed';
+        if (S.failStreak >= 2) {
+            showTip(`⚠ 这已经是连续第 ${S.failStreak} 次没能成功。每次记录都很重要，这些积累对后续建立正式规则很有价值。`);
+        } else {
+            showTip('这次没成。别灰心，每次尝试都是记录的一部分。可以稍等几天再试。');
+        }
+        toast('已记录，保持冷静', 'warn');
+    }
+    render();
+}
+
+function handleVisit(result) {
+    if (result === 'success') {
+        S.totalSuccess++;
+        S.failStreak = 0;
+        document.getElementById('nav-success').textContent = S.totalSuccess;
+        addLog('success', `✓ 探视成功完成`);
+        S.phase = 'success';
+        hideTip();
+        toast('记录已保存 🎉', 'success');
+    } else {
+        S.failStreak++;
+        S.totalFail++;
+        document.getElementById('nav-fail').textContent = S.totalFail;
+        addLog('breach', `✕ 约定后临时被阻止，未能探视`);
+        S.phase = 'failed';
+        showTip('约好了却被阻止，这种情况记录下来尤其重要。连续发生几次后，可以作为申请固定探视规则的依据。');
+        toast('已记录违约情况', 'danger');
+    }
+    render();
+}
+
+function tryAgain() {
+    S.attempt++;
+    S.phase = 'fill-request';
+    hideTip();
+    render();
+}
+
+function nextVisit() {
+    S.attempt = 1;
+    S.phase = 'fill-request';
+    S.request = null;
+    hideTip();
+    render();
+}
+
+function confirmEscalate() {
+    addLog('escalate', '⚖ 确认进入正式探视规则建立流程');
+    S.phase = 'done';
+    hideTip();
+    render();
+}
+
+function copyText(text) {
+    navigator.clipboard?.writeText(text).then(() => showCopyFlash());
+}
+
+function copyPreview() {
+    const msg = document.getElementById('preview-msg')?.textContent;
+    if (msg && msg !== '填写上面的内容后，这里会自动生成') {
+        navigator.clipboard?.writeText(msg).then(() => showCopyFlash());
+    }
+}
+
+function showCopyFlash() {
+    const el = document.getElementById('copy-flash');
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 1800);
+}
+
+// ── Ripple effect ──
+function addRipple(btn) {
+    btn.addEventListener('click', function(e) {
+        const circle = document.createElement('span');
+        const rect = btn.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        circle.className = 'ripple-circle';
+        circle.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;`;
+        btn.appendChild(circle);
+        setTimeout(() => circle.remove(), 600);
+    });
+}
+
+// ── Real-time preview ──
+function setupPreview() {
+    const tf = document.getElementById('f-time');
+    const pf = document.getElementById('f-place');
+    const df = document.getElementById('f-dur');
+    const prev = document.getElementById('preview-msg');
+    const copyBtn = document.getElementById('copy-preview-btn');
+    const box = document.getElementById('preview-box');
+    if (!tf || !prev) return;
+
+    const update = () => {
+        const t = tf.value.trim() || '___';
+        const p = pf?.value.trim() || '___';
+        const d = df?.value.trim() || '___';
+        const hasContent = tf.value.trim() || pf?.value.trim() || df?.value.trim();
+        const msg = `"我想${t}在${p}见孩子，大约${d}，请告知是否可以。"`;
+        prev.textContent = msg;
+        prev.className = hasContent ? 'text-slate-200 leading-relaxed' : 'text-slate-500 italic leading-relaxed';
+        if (copyBtn) copyBtn.classList.toggle('hidden', !hasContent);
+        if (box) box.style.borderColor = hasContent ? 'rgba(99,102,241,0.4)' : '';
+    };
+    [tf, pf, df].forEach(el => el?.addEventListener('input', update));
+}
+
+// ── Countdown (demo: counts down from 10s visually as 24h) ──
+function startCountdown() {
+    if (S.countdownTimer) clearInterval(S.countdownTimer);
+    let secs = 86400; // 24h in seconds
+    const el = () => document.getElementById('countdown-num');
+    const fmt = s => {
+        const h = Math.floor(s/3600).toString().padStart(2,'0');
+        const m = Math.floor((s%3600)/60).toString().padStart(2,'0');
+        const sec = (s%60).toString().padStart(2,'0');
+        return `${h}:${m}:${sec}`;
+    };
+    if (el()) el().textContent = fmt(secs);
+    S.countdownTimer = setInterval(() => {
+        secs -= 60; // speed up for demo: 1 real second = 1 hour
+        if (secs <= 0) { clearInterval(S.countdownTimer); return; }
+        if (el()) el().textContent = fmt(secs);
+    }, 1000);
+}
+
+// ── Conflict trigger ──
+function triggerConflict() {
+    S.prevPhase = S.phase;
+    S.phase = 'conflict';
+    hideTip();
+    render();
+}
+
+function exitConflict() {
+    S.phase = S.prevPhase || (S.request ? 'waiting' : 'start');
+    render();
+}
+
+function logConflict() {
+    addLog('conflict', '⚡ 发生争执 · 已记录 · 只重复了规则，未做情绪回应');
+    toast('冲突记录已保存', 'warn');
+    exitConflict();
+}
+
+function resetAll() {
+    S = { phase:'start', attempt:1, failStreak:0, totalSuccess:0, totalFail:0, request:null, log:[] };
+    document.getElementById('nav-success').textContent = '0';
+    document.getElementById('nav-fail').textContent = '0';
+    document.getElementById('log-list').innerHTML = '<div class="px-5 py-5 text-sm text-slate-600 text-center">还没有任何记录，开始操作后会自动记录在这里</div>';
+    document.getElementById('log-count').textContent = '暂无记录';
+    hideTip();
+    render();
+}
+
+// ════════════════════════════════════════
+// Log
+// ════════════════════════════════════════
+function addLog(type, text) {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+    S.log.unshift({ type, text, time: timeStr });
+    renderLog();
+}
+
+function renderLog() {
+    if (S.log.length === 0) return;
+    const icons  = { send:'→', agree:'✓', success:'✓✓', vague:'～', refuse:'✕', silence:'—', breach:'⚠', conflict:'⚡', escalate:'⚖' };
+    const colors = { send:'text-blue-400', agree:'text-emerald-400', success:'text-emerald-300', vague:'text-amber-400', refuse:'text-red-400', silence:'text-slate-500', breach:'text-red-400', conflict:'text-amber-400', escalate:'text-violet-400' };
+
+    document.getElementById('log-list').innerHTML = S.log.map(r => `
+        <div class="log-item px-5 py-3 flex items-start gap-3">
+            <span class="${colors[r.type]||'text-slate-500'} text-sm flex-shrink-0 w-5 text-center font-bold">${icons[r.type]||'·'}</span>
+            <div class="flex-1 text-sm text-slate-400">${r.text}</div>
+            <span class="text-xs text-slate-600 flex-shrink-0">${r.time}</span>
+        </div>
+    `).join('');
+    document.getElementById('log-count').textContent = `${S.log.length} 条记录`;
+}
+
+// ════════════════════════════════════════
+// Helpers
+// ════════════════════════════════════════
+function btn(type, label, action) {
+    if (type === 'primary')
+        return `<button onclick="${action}" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-xl py-3 transition-all">${label}</button>`;
+    return `<button onclick="${action}" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold text-sm rounded-xl py-3 transition-all">${label}</button>`;
+}
+
+function toast(msg, type='info') {
+    const cols = {
+        info:    'bg-slate-800 border-slate-600 text-slate-200',
+        success: 'bg-emerald-900 border-emerald-700 text-emerald-100',
+        warn:    'bg-amber-900 border-amber-700 text-amber-100',
+        danger:  'bg-red-900 border-red-700 text-red-100',
+    };
+    const el = document.createElement('div');
+    el.className = `fade-up pointer-events-auto text-sm px-5 py-2.5 rounded-xl border shadow-xl ${cols[type]}`;
+    el.textContent = msg;
+    document.getElementById('toast-wrap').appendChild(el);
+    setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity 0.4s'; setTimeout(()=>el.remove(),400); }, 2800);
+}
+
+// ════════════════════════════════════════
+// Init
+// ════════════════════════════════════════
+window.onload = () => {
+    S.phase = 'start';
+    render();
+};
+</script>
+</body>
+</html>

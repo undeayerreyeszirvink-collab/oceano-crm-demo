@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>欧神诺CRM演示系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif; }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        .scan-line { animation: scan 2s ease-in-out; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in-card { animation: fadeInUp 0.5s ease-out forwards; opacity: 0; }
+        @keyframes ripple { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+        .ripple { animation: ripple 1.5s ease-out infinite; }
+        @keyframes fillTemp { from { height: 0%; } to { height: 70%; } }
+        .temp-fill { animation: fillTemp 2s ease-out forwards; }
+        @keyframes flow { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
+        .flow-arrow { animation: flow 2s ease-in-out infinite; }
+        .tab-content { transition: opacity 0.3s ease-in-out; }
+        .iphone-container { width: 375px; height: 667px; border-radius: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); position: relative; overflow: hidden; background: #1a1a1a; }
+        .iphone-notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 150px; height: 25px; background: #0F172A; border-radius: 0 0 20px 20px; z-index: 10; }
+    </style>
+</head>
+<body class="bg-[#0F172A] text-white min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-center mb-2">欧神诺 CRM 演示系统</h1>
+            <p class="text-center text-gray-400">数字化作战平台</p>
+        </header>
+        <nav class="flex justify-center gap-3 mb-8 flex-wrap">
+            <button onclick="switchTab('architecture')" id="tab-architecture" class="px-5 py-3 rounded-lg bg-[#2563EB] font-semibold transition-all text-sm">架构视图</button>
+            <button onclick="switchTab('mobile')" id="tab-mobile" class="px-5 py-3 rounded-lg bg-gray-700 hover:bg-gray-600 font-semibold transition-all text-sm">移动端演练</button>
+            <button onclick="switchTab('analysis')" id="tab-analysis" class="px-5 py-3 rounded-lg bg-gray-700 hover:bg-gray-600 font-semibold transition-all text-sm">华中运营分析</button>
+            <button onclick="switchTab('capture')" id="tab-capture" class="px-5 py-3 rounded-lg bg-gray-700 hover:bg-gray-600 font-semibold transition-all text-sm border border-[#10B981]/50">🚀 零感知录入演示</button>
+        </nav>
+        <div class="flex gap-6">
+            <div class="flex-1">
+                <div id="content-architecture" class="tab-content">
+                    <div class="grid grid-cols-3 gap-8">
+                        <div class="space-y-4">
+                            <h3 class="text-xl font-bold text-[#10B981] mb-4">输入端</h3>
+                            <div class="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 transition-all">
+                                <svg class="w-8 h-8 mb-2 text-[#10B981]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                                <p class="font-semibold">语音转结构化</p>
+                                <p class="text-sm text-gray-400">实时转写客户对话</p>
+                            </div>
+                            <div class="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 transition-all">
+                                <svg class="w-8 h-8 mb-2 text-[#10B981]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+                                <p class="font-semibold">扫码建档</p>
+                                <p class="text-sm text-gray-400">快速录入客户信息</p>
+                            </div>
+                            <div class="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 transition-all">
+                                <svg class="w-8 h-8 mb-2 text-[#10B981]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                <p class="font-semibold">报价单识别</p>
+                                <p class="text-sm text-gray-400">OCR自动提取</p>
+                            </div>
+                            <div class="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 transition-all">
+                                <svg class="w-8 h-8 mb-2 text-[#10B981]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                <p class="font-semibold">AI拍照盘点</p>
+                                <p class="text-sm text-gray-400">智能识别店面</p>
+                            </div>
+                            <div class="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 transition-all">
+                                <svg class="w-8 h-8 mb-2 text-[#10B981]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                <p class="font-semibold">文档追踪</p>
+                                <p class="text-sm text-gray-400">阅读行为分析</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col justify-center items-center">
+                            <h3 class="text-xl font-bold text-[#2563EB] mb-6">引擎端</h3>
+                            <div class="bg-gradient-to-br from-[#2563EB] to-[#1e40af] p-6 rounded-xl shadow-2xl">
+                                <svg class="w-12 h-12 mb-3 mx-auto text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+                                <p class="font-bold text-center text-white mb-2">利益分配算法</p>
+                                <div class="text-sm text-gray-200 space-y-1">
+                                    <p>• 提成保护期锁定</p>
+                                    <p>• 公海流转预警</p>
+                                    <p>• 动态权重计算</p>
+                                </div>
+                            </div>
+                            <div class="my-6">
+                                <svg class="w-16 h-16 text-[#10B981] flow-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <h3 class="text-xl font-bold text-[#10B981] mb-4">输出端</h3>
+                            <div class="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 transition-all">
+                                <div class="text-3xl font-bold text-[#10B981] mb-1">87%</div>
+                                <p class="font-semibold">客户资产沉淀率</p>
+                                <p class="text-sm text-gray-400">完整信息占比</p>
+                            </div>
+                            <div class="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 transition-all">
+                                <div class="text-3xl font-bold text-[#10B981] mb-1">62%</div>
+                                <p class="font-semibold">销售有效动作率</p>
+                                <p class="text-sm text-gray-400">跟进质量评分</p>
+                            </div>
+                            <div class="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 transition-all">
+                                <div class="text-3xl font-bold text-[#10B981] mb-1">¥8.2万</div>
+                                <p class="font-semibold">客户生命周期价值</p>
+                                <p class="text-sm text-gray-400">CLV平均值</p>
+                            </div>
+                            <div class="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 transition-all">
+                                <div class="text-3xl font-bold text-[#10B981] mb-1">8.4分</div>
+                                <p class="font-semibold">团队跟进质量</p>
+                                <p class="text-sm text-gray-400">综合评分</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 模块B: 移动端演练 -->
+                <div id="content-mobile" class="tab-content hidden">
+                    <div class="flex flex-col items-center">
+                        <div class="mb-6 flex gap-3">
+                            <button onclick="showScene(1)" class="px-4 py-2 bg-[#2563EB] rounded-lg hover:bg-[#1e40af] transition-all">场景1: AI拍照盘点</button>
+                            <button onclick="showScene(2)" class="px-4 py-2 bg-[#2563EB] rounded-lg hover:bg-[#1e40af] transition-all">场景2: 语音作战助手</button>
+                            <button onclick="showScene(3)" class="px-4 py-2 bg-[#2563EB] rounded-lg hover:bg-[#1e40af] transition-all">场景3: 意向温度计</button>
+                            <button onclick="showScene(4)" class="px-4 py-2 bg-[#2563EB] rounded-lg hover:bg-[#1e40af] transition-all">场景4: 资产保护区</button>
+                        </div>
+                        <div class="iphone-container">
+                            <div class="iphone-notch"></div>
+                            <div id="phone-content" class="h-full p-6 pt-10 overflow-y-auto">
+                                <!-- 场景1: AI拍照盘点 -->
+                                <div id="scene-1" class="scene-content">
+                                    <h3 class="text-xl font-bold mb-4 text-center">AI拍照盘点</h3>
+                                    <div id="store-photo" class="relative h-64 mb-4 rounded-lg overflow-hidden" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <div class="text-center">
+                                                <svg class="w-16 h-16 mx-auto mb-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                                <button onclick="startScan()" class="px-6 py-2 bg-[#10B981] rounded-lg font-semibold hover:bg-green-600 transition-all">点击拍照</button>
+                                            </div>
+                                        </div>
+                                        <div id="scan-line-container" class="hidden absolute inset-0">
+                                            <div class="scan-line absolute w-full h-1 bg-[#10B981] shadow-lg" style="box-shadow: 0 0 20px #10B981;"></div>
+                                        </div>
+                                    </div>
+                                    <div id="scan-results" class="space-y-3"></div>
+                                </div>
+                                <!-- 场景2: 语音作战助手 -->
+                                <div id="scene-2" class="scene-content hidden">
+                                    <h3 class="text-xl font-bold mb-4 text-center">语音作战助手</h3>
+                                    <div class="flex flex-col items-center mb-6">
+                                        <div id="mic-button" onclick="startRecording()" class="relative w-24 h-24 bg-[#2563EB] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#1e40af] transition-all">
+                                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                                            <div id="ripple-container" class="hidden absolute inset-0">
+                                                <div class="ripple absolute inset-0 border-4 border-[#10B981] rounded-full"></div>
+                                                <div class="ripple absolute inset-0 border-4 border-[#10B981] rounded-full" style="animation-delay: 0.5s;"></div>
+                                                <div class="ripple absolute inset-0 border-4 border-[#10B981] rounded-full" style="animation-delay: 1s;"></div>
+                                            </div>
+                                        </div>
+                                        <p id="recording-status" class="mt-4 text-gray-400">点击开始录音</p>
+                                    </div>
+                                    <div id="voice-results" class="space-y-3"></div>
+                                </div>
+                                <!-- 场景3: 意向温度计 -->
+                                <div id="scene-3" class="scene-content hidden">
+                                    <h3 class="text-xl font-bold mb-4 text-center">意向温度计</h3>
+                                    <div class="bg-gray-800 p-4 rounded-lg mb-4">
+                                        <p class="font-semibold mb-2">客户：张总 - 武汉汉口店</p>
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-12 h-32 bg-gray-700 rounded-full overflow-hidden relative">
+                                                <div id="temp-fill" class="absolute bottom-0 w-full bg-gradient-to-t from-[#10B981] to-[#2563EB]"></div>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-sm text-gray-400 mb-2">当前意向等级</p>
+                                                <p id="temp-level" class="text-2xl font-bold text-[#10B981]">冷</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-gray-800 p-4 rounded-lg mb-4">
+                                        <p class="font-semibold mb-2">微信图册阅读行为追踪</p>
+                                        <p class="text-sm text-gray-400">最近阅读时长: <span class="text-[#10B981]">3分42秒</span></p>
+                                        <p class="text-sm text-gray-400">阅读频率: <span class="text-[#10B981]">今日第3次</span></p>
+                                    </div>
+                                    <button onclick="updateTemp()" class="w-full px-4 py-3 bg-[#2563EB] rounded-lg font-semibold hover:bg-[#1e40af] transition-all">更新意向温度</button>
+                                </div>
+                                <!-- 场景4: 资产保护区 -->
+                                <div id="scene-4" class="scene-content hidden">
+                                    <h3 class="text-xl font-bold mb-4 text-center">资产保护区</h3>
+                                    <div class="bg-gradient-to-br from-[#2563EB] to-[#1e40af] p-6 rounded-xl mb-4">
+                                        <div class="flex items-center justify-center mb-4">
+                                            <svg class="w-16 h-16 text-[#10B981]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                                        </div>
+                                        <p class="text-center text-2xl font-bold mb-2">提成锁定中</p>
+                                        <p class="text-center text-gray-200">本季度剩余保护期</p>
+                                        <p class="text-center text-4xl font-bold text-[#10B981] my-4">14天23小时</p>
+                                    </div>
+                                    <div class="bg-red-900/30 border border-red-500 p-4 rounded-lg">
+                                        <p class="text-red-400 font-semibold mb-2">⚠ 保护期预警</p>
+                                        <p class="text-sm text-gray-300">客户信息已超过7天未更新，继续不更新将失去保护权益</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 模块C: 华中运营分析 -->
+                <div id="content-analysis" class="tab-content hidden">
+                    <div class="space-y-6">
+                        <!-- 顶部大指标 -->
+                        <div class="bg-gradient-to-r from-gray-800 to-gray-700 p-6 rounded-xl">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 mb-2">2024年华中区总业绩</p>
+                                    <p class="text-5xl font-bold text-white">1.11亿</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-red-400 text-3xl font-bold">-18.8%</p>
+                                    <p class="text-gray-400">同比去年</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 渠道对比 -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-800 p-6 rounded-xl">
+                                <p class="text-gray-400 mb-2">零售渠道</p>
+                                <p class="text-3xl font-bold text-white mb-2">6,800万</p>
+                                <p class="text-red-400 font-semibold">-23.3% ↓</p>
+                            </div>
+                            <div class="bg-gray-800 p-6 rounded-xl">
+                                <p class="text-gray-400 mb-2">工程渠道</p>
+                                <p class="text-3xl font-bold text-white mb-2">4,300万</p>
+                                <p class="text-[#10B981] font-semibold">+57.4% ↑</p>
+                            </div>
+                        </div>
+                        
+                        <!-- 经销商画像 -->
+                        <div class="bg-gray-800 p-6 rounded-xl">
+                            <h3 class="text-xl font-bold mb-4">经销商画像（159家）</h3>
+                            <div class="flex items-center gap-8">
+                                <div class="relative w-48 h-48">
+                                    <svg viewBox="0 0 100 100" class="transform -rotate-90">
+                                        <circle cx="50" cy="50" r="40" fill="none" stroke="#374151" stroke-width="10"/>
+                                        <circle cx="50" cy="50" r="40" fill="none" stroke="#2563EB" stroke-width="10"
+                                                stroke-dasharray="131 251.33" stroke-linecap="round"/>
+                                        <circle cx="50" cy="50" r="40" fill="none" stroke="#10B981" stroke-width="10"
+                                                stroke-dasharray="183.5 251.33" stroke-dashoffset="-131" stroke-linecap="round"/>
+                                        <circle cx="50" cy="50" r="40" fill="none" stroke="#F59E0B" stroke-width="10"
+                                                stroke-dasharray="12.6 251.33" stroke-dashoffset="-314.5" stroke-linecap="round"/>
+                                    </svg>
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <div class="text-center">
+                                            <p class="text-sm text-gray-400">平均年龄</p>
+                                            <p class="text-2xl font-bold">42岁</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-1 space-y-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-4 h-4 bg-[#2563EB] rounded"></div>
+                                        <p class="flex-1">夫妻店模式</p>
+                                        <p class="font-bold">52%</p>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-4 h-4 bg-[#10B981] rounded"></div>
+                                        <p class="flex-1">多品牌经营</p>
+                                        <p class="font-bold">73%</p>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-4 h-4 bg-[#F59E0B] rounded"></div>
+                                        <p class="flex-1">二代接班</p>
+                                        <p class="font-bold text-red-400">5%</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 重点经销商预警 -->
+                        <div class="bg-gray-800 p-6 rounded-xl">
+                            <h3 class="text-xl font-bold mb-4">重点经销商预警名单（评级差）</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead>
+                                        <tr class="border-b border-gray-700">
+                                            <th class="text-left py-3 px-2">经销商</th>
+                                            <th class="text-left py-3 px-2">区域</th>
+                                            <th class="text-left py-3 px-2">24年销售</th>
+                                            <th class="text-left py-3 px-2">核心痛点</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="text-sm">
+                                        <tr class="border-b border-gray-700">
+                                            <td class="py-3 px-2">固始 李名扬</td>
+                                            <td class="py-3 px-2">周口同盟</td>
+                                            <td class="py-3 px-2"><span class="text-red-400 font-bold">18万 ↓90%</span></td>
+                                            <td class="py-3 px-2">工程烂尾，资金压力大</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-700">
+                                            <td class="py-3 px-2">巢湖 汤昌</td>
+                                            <td class="py-3 px-2">合肥同盟</td>
+                                            <td class="py-3 px-2"><span class="text-red-400 font-bold">14万 ↓80%</span></td>
+                                            <td class="py-3 px-2">工程下滑严重，零售无交房</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-700">
+                                            <td class="py-3 px-2">随州 张正江</td>
+                                            <td class="py-3 px-2">襄阳同盟</td>
+                                            <td class="py-3 px-2"><span class="text-red-400 font-bold">10万 ↓82%</span></td>
+                                            <td class="py-3 px-2">多品牌经营，重心偏移</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-700">
+                                            <td class="py-3 px-2">砀山 杨标</td>
+                                            <td class="py-3 px-2">蚌埠同盟</td>
+                                            <td class="py-3 px-2"><span class="text-red-400 font-bold">3万 ↓92%</span></td>
+                                            <td class="py-3 px-2">装修公司欠款多，基本不合作</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-700">
+                                            <td class="py-3 px-2">洛阳 杨振宇</td>
+                                            <td class="py-3 px-2">郑州同盟</td>
+                                            <td class="py-3 px-2"><span class="text-red-400 font-bold">35万 ↓50%</span></td>
+                                            <td class="py-3 px-2">店面位置差，老板精力有限</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 模块D: 零感知录入演示 -->
+                <div id="content-capture" class="tab-content hidden">
+                    <div class="space-y-6">
+                        <div class="bg-gradient-to-r from-[#2563EB] to-[#1e40af] p-6 rounded-xl text-center">
+                            <h2 class="text-2xl font-bold mb-2">🚀 告别Excel表格录入</h2>
+                            <p class="text-gray-200">演示：如何用零感知采集替代"24年1-5月华中经销商经营情况.xlsx"</p>
+                        </div>
+
+                        <!-- 对比展示 -->
+                        <div class="grid grid-cols-2 gap-6">
+                            <!-- 传统方式 -->
+                            <div class="bg-gray-800 p-6 rounded-xl">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <span class="text-3xl">😓</span>
+                                    <h3 class="text-xl font-bold text-red-400">传统方式</h3>
+                                </div>
+                                <div class="space-y-3 text-sm">
+                                    <div class="flex items-start gap-2">
+                                        <span class="text-red-400">❌</span>
+                                        <p>销售拜访完，回办公室打开Excel</p>
+                                    </div>
+                                    <div class="flex items-start gap-2">
+                                        <span class="text-red-400">❌</span>
+                                        <p>手工填写56列数据（城市、姓名、年龄、门店数、展厅面积...）</p>
+                                    </div>
+                                    <div class="flex items-start gap-2">
+                                        <span class="text-red-400">❌</span>
+                                        <p>记不清细节，只能凭印象填写</p>
+                                    </div>
+                                    <div class="flex items-start gap-2">
+                                        <span class="text-red-400">❌</span>
+                                        <p>每月汇总159家经销商数据，耗时3-5天</p>
+                                    </div>
+                                    <div class="flex items-start gap-2">
+                                        <span class="text-red-400">❌</span>
+                                        <p>数据分散在多个Excel，难以追踪变化</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 p-3 bg-red-900/30 rounded border border-red-500">
+                                    <p class="text-red-400 font-semibold text-center">录入时间：3-5天/月</p>
+                                </div>
+                            </div>
+
+                            <!-- CRM方式 -->
+                            <div class="bg-gray-800 p-6 rounded-xl border-2 border-[#10B981]">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <span class="text-3xl">🎯</span>
+                                    <h3 class="text-xl font-bold text-[#10B981]">CRM零感知采集</h3>
+                                </div>
+                                <div class="space-y-3 text-sm">
+                                    <div class="flex items-start gap-2">
+                                        <span class="text-[#10B981]">✓</span>
+                                        <p><strong>AI拍照盘点：</strong>拍店面→自动识别面积、陈列率</p>
+                                    </div>
+                                    <div class="flex items-start gap-2">
+                                        <span class="text-[#10B981]">✓</span>
+                                        <p><strong>语音转结构化：</strong>口述拜访情况→自动提取关键信息</p>
+                                    </div>
+                                    <div class="flex items-start gap-2">
+                                        <span class="text-[#10B981]">✓</span>
+                                        <p><strong>订单自动同步：</strong>ERP订单→自动计算销售额</p>
+                                    </div>
+                                    <div class="flex items-start gap-2">
+                                        <span class="text-[#10B981]">✓</span>
+                                        <p><strong>微信聊天解析：</strong>与经销商沟通→自动记录痛点</p>
+                                    </div>
+                                    <div class="flex items-start gap-2">
+                                        <span class="text-[#10B981]">✓</span>
+                                        <p><strong>实时数据看板：</strong>无需汇总，随时查看最新数据</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 p-3 bg-[#10B981]/20 rounded border border-[#10B981]">
+                                    <p class="text-[#10B981] font-semibold text-center">录入时间：0分钟（自动）</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 实际演示场景 -->
+                        <div class="bg-gray-800 p-6 rounded-xl">
+                            <h3 class="text-xl font-bold mb-4">📱 实际操作演示</h3>
+                            <div class="space-y-4">
+                                <button onclick="demoAutoCapture(1)" class="w-full text-left p-4 bg-gray-700 hover:bg-gray-600 rounded-lg transition-all">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-semibold text-[#10B981]">场景1：拜访经销商"固始 李名扬"</p>
+                                            <p class="text-sm text-gray-400 mt-1">演示如何通过拍照+语音，自动填充Excel中的56列数据</p>
+                                        </div>
+                                        <svg class="w-6 h-6 text-[#10B981]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                    </div>
+                                </button>
+
+                                <div id="demo-result-1" class="hidden space-y-3"></div>
+
+                                <button onclick="demoAutoCapture(2)" class="w-full text-left p-4 bg-gray-700 hover:bg-gray-600 rounded-lg transition-all">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-semibold text-[#10B981]">场景2：月度数据自动汇总</p>
+                                            <p class="text-sm text-gray-400 mt-1">演示如何一键生成"华中运营分析报告"，替代手工Excel汇总</p>
+                                        </div>
+                                        <svg class="w-6 h-6 text-[#10B981]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                    </div>
+                                </button>
+
+                                <div id="demo-result-2" class="hidden space-y-3"></div>
+                            </div>
+                        </div>
+
+                        <!-- ROI计算 -->
+                        <div class="bg-gradient-to-br from-[#10B981]/20 to-[#2563EB]/20 p-6 rounded-xl border border-[#10B981]/50">
+                            <h3 class="text-xl font-bold mb-4 text-center">💰 投资回报率（ROI）</h3>
+                            <div class="grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                    <p class="text-3xl font-bold text-[#10B981]">15天/年</p>
+                                    <p class="text-sm text-gray-400 mt-1">节省录入时间</p>
+                                </div>
+                                <div>
+                                    <p class="text-3xl font-bold text-[#10B981]">95%</p>
+                                    <p class="text-sm text-gray-400 mt-1">数据准确率提升</p>
+                                </div>
+                                <div>
+                                    <p class="text-3xl font-bold text-[#10B981]">实时</p>
+                                    <p class="text-sm text-gray-400 mt-1">数据更新速度</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 演示提词器 -->
+            <div class="w-80 bg-gray-900/90 backdrop-blur rounded-xl p-6 sticky top-6 h-fit">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold">演示提词器</h3>
+                    <button onclick="togglePrompter()" class="text-gray-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                </div>
+                <div id="prompter-content">
+                    <div id="prompter-architecture" class="prompter-section">
+                        <p class="text-sm text-gray-400 mb-3">架构视图演示步骤：</p>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">1.</span>
+                                <p>介绍输入端5大数据采集能力</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">2.</span>
+                                <p>强调利益分配算法的核心价值</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">3.</span>
+                                <p>展示4大输出指标的业务意义</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">4.</span>
+                                <p>说明数据流动的闭环逻辑</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="prompter-mobile" class="prompter-section hidden">
+                        <p class="text-sm text-gray-400 mb-3">移动端演练步骤：</p>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">1.</span>
+                                <p>演示AI拍照盘点的扫描识别过程</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">2.</span>
+                                <p>展示语音转结构化的实时能力</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">3.</span>
+                                <p>说明意向温度计的追踪机制</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">4.</span>
+                                <p>强调资产保护区的利益锁定</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="prompter-analysis" class="prompter-section hidden">
+                        <p class="text-sm text-gray-400 mb-3">运营分析演示步骤：</p>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">1.</span>
+                                <p>指出华中区业绩下滑的严峻形势</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">2.</span>
+                                <p>对比零售与工程渠道的差异</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">3.</span>
+                                <p>分析经销商画像的结构特征</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">4.</span>
+                                <p>重点关注预警名单的改进方向</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="prompter-capture" class="prompter-section hidden">
+                        <p class="text-sm text-gray-400 mb-3">零感知录入演示步骤：</p>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">1.</span>
+                                <p>对比传统Excel录入的痛点</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">2.</span>
+                                <p>展示CRM零感知采集的5大能力</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">3.</span>
+                                <p>演示场景1：拜访经销商自动填充56列数据</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">4.</span>
+                                <p>演示场景2：月度数据自动汇总</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="text-[#10B981] font-bold">5.</span>
+                                <p>强调ROI：节省15天/年，准确率提升95%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab切换功能
+        function switchTab(tab) {
+            // 隐藏所有内容
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            // 重置所有Tab按钮
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('bg-[#2563EB]');
+                btn.classList.add('bg-gray-700');
+            });
+            
+            // 显示选中的内容
+            document.getElementById('content-' + tab).classList.remove('hidden');
+            document.getElementById('tab-' + tab).classList.remove('bg-gray-700');
+            document.getElementById('tab-' + tab).classList.add('bg-[#2563EB]');
+            
+            // 更新提词器
+            document.querySelectorAll('.prompter-section').forEach(el => {
+                el.classList.add('hidden');
+            });
+            document.getElementById('prompter-' + tab).classList.remove('hidden');
+        }
+        
+        // 移动端场景切换
+        function showScene(sceneNum) {
+            document.querySelectorAll('.scene-content').forEach(el => {
+                el.classList.add('hidden');
+            });
+            document.getElementById('scene-' + sceneNum).classList.remove('hidden');
+        }
+        
+        // 场景1: AI拍照盘点
+        function startScan() {
+            const scanLineContainer = document.getElementById('scan-line-container');
+            const scanResults = document.getElementById('scan-results');
+            
+            scanLineContainer.classList.remove('hidden');
+            scanResults.innerHTML = '';
+            
+            setTimeout(() => {
+                scanLineContainer.classList.add('hidden');
+                
+                const results = [
+                    { title: '店面面积', value: '约120㎡', confidence: '置信度94%', delay: 0 },
+                    { title: '中国玉陈列率', value: '37%', note: '行业均值45% ⬇', delay: 200 },
+                    { title: '竞品渗透率', value: '58%', note: '⚠ 马可波罗占主位', delay: 400 }
+                ];
+                
+                results.forEach((result, index) => {
+                    setTimeout(() => {
+                        const card = document.createElement('div');
+                        card.className = 'fade-in-card bg-gray-800 p-4 rounded-lg';
+                        card.style.animationDelay = '0s';
+                        card.innerHTML = `
+                            <p class="font-semibold text-[#10B981] mb-1">${result.title}</p>
+                            <p class="text-2xl font-bold mb-1">${result.value}</p>
+                            <p class="text-sm text-gray-400">${result.confidence || result.note}</p>
+                        `;
+                        scanResults.appendChild(card);
+                    }, result.delay);
+                });
+            }, 2000);
+        }
+        
+        // 场景2: 语音作战助手
+        function startRecording() {
+            const rippleContainer = document.getElementById('ripple-container');
+            const recordingStatus = document.getElementById('recording-status');
+            const voiceResults = document.getElementById('voice-results');
+            
+            rippleContainer.classList.remove('hidden');
+            recordingStatus.textContent = '正在录音...';
+            voiceResults.innerHTML = '';
+            
+            setTimeout(() => {
+                rippleContainer.classList.add('hidden');
+                recordingStatus.textContent = '录音完成';
+                
+                setTimeout(() => {
+                    voiceResults.innerHTML = `
+                        <div class="fade-in-card bg-gray-800 p-4 rounded-lg">
+                            <p class="font-semibold text-[#10B981] mb-2">客户痛点</p>
+                            <p class="text-sm">担心产品质量，希望看到更多案例</p>
+                        </div>
+                        <div class="fade-in-card bg-gray-800 p-4 rounded-lg" style="animation-delay: 0.2s;">
+                            <p class="font-semibold text-[#10B981] mb-2">意向等级</p>
+                            <p class="text-sm">温热 - 有明确需求但需要更多信息</p>
+                        </div>
+                        <div class="fade-in-card bg-gray-800 p-4 rounded-lg" style="animation-delay: 0.4s;">
+                            <p class="font-semibold text-[#10B981] mb-2">待办任务</p>
+                            <ul class="text-sm space-y-1">
+                                <li>• 发送成功案例图册</li>
+                                <li>• 预约门店参观时间</li>
+                                <li>• 准备详细报价方案</li>
+                            </ul>
+                        </div>
+                    `;
+                }, 500);
+            }, 3000);
+        }
+        
+        // 场景3: 意向温度计
+        function updateTemp() {
+            const tempFill = document.getElementById('temp-fill');
+            const tempLevel = document.getElementById('temp-level');
+            
+            tempFill.classList.add('temp-fill');
+            
+            setTimeout(() => {
+                tempLevel.textContent = '温热';
+                tempLevel.classList.remove('text-[#10B981]');
+                tempLevel.classList.add('text-yellow-400');
+            }, 1000);
+        }
+        
+        // 提词器折叠
+        function togglePrompter() {
+            const content = document.getElementById('prompter-content');
+            content.classList.toggle('hidden');
+        }
+
+        // 零感知录入演示
+        function demoAutoCapture(sceneNum) {
+            const resultDiv = document.getElementById('demo-result-' + sceneNum);
+
+            if (sceneNum === 1) {
+                resultDiv.classList.remove('hidden');
+                resultDiv.innerHTML = `
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-[#10B981] font-semibold mb-2">📸 步骤1：AI拍照识别店面</p>
+                        <div class="bg-gray-800 p-3 rounded mt-2">
+                            <p class="text-sm text-gray-400">正在识别...</p>
+                        </div>
+                    </div>
+                `;
+
+                setTimeout(() => {
+                    resultDiv.innerHTML += `
+                        <div class="bg-gray-700 p-4 rounded-lg fade-in-up">
+                            <p class="text-[#10B981] font-semibold mb-2">✓ 自动识别完成</p>
+                            <div class="bg-gray-800 p-3 rounded space-y-1 text-sm">
+                                <p>• 门店数量: 1家</p>
+                                <p>• 展厅面积: 约280㎡</p>
+                                <p>• 核心商圈: 否</p>
+                                <p>• 最新形象展厅: 否（店面老旧）</p>
+                            </div>
+                        </div>
+                    `;
+                }, 1500);
+
+                setTimeout(() => {
+                    resultDiv.innerHTML += `
+                        <div class="bg-gray-700 p-4 rounded-lg fade-in-up">
+                            <p class="text-[#10B981] font-semibold mb-2">🎤 步骤2：语音录入拜访情况</p>
+                            <div class="bg-gray-800 p-3 rounded mt-2">
+                                <p class="text-sm italic text-gray-300">"今天拜访了固始的李名扬，夫妻店，主要做工程，但最近很多工程烂尾，资金压力很大，库存积压严重..."</p>
+                            </div>
+                        </div>
+                    `;
+                }, 3000);
+
+                setTimeout(() => {
+                    resultDiv.innerHTML += `
+                        <div class="bg-gray-700 p-4 rounded-lg fade-in-up">
+                            <p class="text-[#10B981] font-semibold mb-2">✓ AI自动提取结构化信息</p>
+                            <div class="bg-gray-800 p-3 rounded space-y-1 text-sm">
+                                <p>• 经营特点: 夫妻店</p>
+                                <p>• 主要渠道: 工程为主</p>
+                                <p>• 核心痛点: 工程烂尾，资金压力大</p>
+                                <p>• 综合评价: 差（需重点关注）</p>
+                            </div>
+                        </div>
+                    `;
+                }, 4500);
+
+                setTimeout(() => {
+                    resultDiv.innerHTML += `
+                        <div class="bg-gradient-to-r from-[#10B981]/20 to-[#2563EB]/20 p-4 rounded-lg border border-[#10B981] fade-in-up">
+                            <p class="text-[#10B981] font-bold text-center mb-2">🎉 完成！Excel中56列数据已自动填充</p>
+                            <p class="text-sm text-gray-300 text-center">传统方式需要30分钟手工录入，现在只需2分钟语音+拍照</p>
+                            <p class="text-xs text-gray-400 text-center mt-2">节省时间：93% | 数据准确率：从60%提升到95%</p>
+                        </div>
+                    `;
+                }, 6000);
+            } else if (sceneNum === 2) {
+                resultDiv.classList.remove('hidden');
+                resultDiv.innerHTML = `
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-[#10B981] font-semibold mb-2">📊 一键生成月度报告</p>
+                        <div class="bg-gray-800 p-3 rounded mt-2">
+                            <p class="text-sm text-gray-400">正在汇总159家经销商数据...</p>
+                        </div>
+                    </div>
+                `;
+
+                setTimeout(() => {
+                    resultDiv.innerHTML += `
+                        <div class="bg-gray-700 p-4 rounded-lg fade-in-up">
+                            <p class="text-[#10B981] font-semibold mb-2">✓ 自动生成完成</p>
+                            <div class="bg-gray-800 p-3 rounded space-y-2 text-sm">
+                                <p class="font-semibold">华中运营分析报告（2024年1-5月）</p>
+                                <p>• 总经销商：159家，平均年龄42岁</p>
+                                <p>• 夫妻店占比：52%</p>
+                                <p>• 多品牌经营：73%</p>
+                                <p>• 二代接班率：仅5%（预警）</p>
+                                <p>• 预警名单：43家评级差，需重点关注</p>
+                                <p class="text-[#10B981] mt-2">✓ 所有数据实时更新，无需手工汇总</p>
+                            </div>
+                        </div>
+                    `;
+                }, 2000);
+
+                setTimeout(() => {
+                    resultDiv.innerHTML += `
+                        <div class="bg-gradient-to-r from-[#10B981]/20 to-[#2563EB]/20 p-4 rounded-lg border border-[#10B981] fade-in-up">
+                            <p class="text-[#10B981] font-bold text-center mb-2">🎉 报告生成完成！</p>
+                            <p class="text-sm text-gray-300 text-center">传统方式需要3-5天手工汇总Excel，现在实时自动生成</p>
+                            <p class="text-xs text-gray-400 text-center mt-2">节省时间：100% | 数据时效性：从滞后1个月到实时</p>
+                        </div>
+                    `;
+                }, 3500);
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 默认显示架构视图
+            switchTab('architecture');
+            // 默认显示场景1
+            showScene(1);
+        });
+    </script>
+</body>
+</html>

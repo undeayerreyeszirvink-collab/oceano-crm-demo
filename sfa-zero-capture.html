@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>欧神诺SFA · 零感知采集</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body { background:#08111e; font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif; }
+
+@keyframes fadeUp    { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes scanLine  { 0%{top:0} 100%{top:100%} }
+@keyframes wave      { 0%,100%{height:4px} 50%{height:28px} }
+@keyframes typeIn    { from{width:0} to{width:100%} }
+@keyframes fillIn    { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
+@keyframes countdown { from{opacity:1} to{opacity:.5} }
+@keyframes ping      { 0%{transform:scale(1);opacity:.7} 100%{transform:scale(2.2);opacity:0} }
+@keyframes glow      { 0%,100%{box-shadow:0 0 8px rgba(99,102,241,.3)} 50%{box-shadow:0 0 22px rgba(99,102,241,.7)} }
+@keyframes decay     { from{width:100%} to{width:0%} }
+@keyframes lock      { 0%{transform:scale(0) rotate(-20deg);opacity:0} 60%{transform:scale(1.15) rotate(5deg);opacity:1} 100%{transform:scale(1) rotate(0deg);opacity:1} }
+
+.fade-up   { animation:fadeUp .35s ease-out forwards }
+.glow-ring { animation:glow 2s ease-in-out infinite }
+
+::-webkit-scrollbar { width:4px }
+::-webkit-scrollbar-thumb { background:#1a2a3a; border-radius:2px }
+
+/* Tabs */
+.tab-btn { transition:all .15s; border-bottom:2px solid transparent; }
+.tab-btn.active { border-bottom-color:#6366f1; color:white; }
+
+/* Demo cards */
+.demo-card { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.06); border-radius:16px; }
+
+/* Scan overlay */
+.scan-container { position:relative; overflow:hidden; border-radius:10px; }
+.scan-line-el {
+  position:absolute; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,rgba(99,102,241,.8),transparent);
+  box-shadow:0 0 8px rgba(99,102,241,.5);
+  top:-4px; display:none;
+}
+.scan-line-el.running { display:block; animation:scanLine 1.8s ease-in-out; }
+
+/* Field fill animation */
+.field-row { display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+.field-val { font-size:12px; color:#94a3b8; font-style:italic; }
+.field-val.filled { color:#e2e8f0; font-style:normal; animation:fillIn .4s ease-out; }
+.field-val.confirmed { color:#6ee7b7; }
+
+/* Voice waveform */
+.wave-bar { width:3px; border-radius:2px; background:#6366f1; transition:height .1s; }
+
+/* Trust lock badge */
+.lock-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.35);
+  color:#6ee7b7; font-size:12px; font-weight:700;
+  padding:6px 14px; border-radius:10px;
+  animation:lock .5s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+
+/* Countdown bar */
+.timer-bar { height:3px; background:#1e3a5f; border-radius:2px; overflow:hidden; }
+.timer-fill { height:100%; border-radius:2px; transition:width 1s linear; }
+
+/* Status indicators */
+.status-safe { color:#34d399 }
+.status-warn { color:#fbbf24 }
+.status-gone { color:#f87171 }
+
+.badge-safe { background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.3); color:#6ee7b7; }
+.badge-warn { background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.3); color:#fcd34d; }
+.badge-gone { background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); color:#fca5a5; }
+
+/* Score ring */
+.score-ring { position:relative; display:inline-flex; align-items:center; justify-content:center; }
+.score-ring svg { transform:rotate(-90deg) }
+
+/* Intent bar */
+.intent-bar { height:6px; border-radius:3px; background:#1a2a3a; overflow:hidden; }
+.intent-fill { height:100%; border-radius:3px; transition:width 1.2s cubic-bezier(.4,0,.2,1) }
+
+/* Ping dot */
+.ping-dot { position:relative }
+.ping-dot::after {
+  content:''; position:absolute; inset:-2px; border-radius:50%;
+  background:currentColor; opacity:0;
+  animation:ping 2s ease-out infinite;
+}
+
+input[type=range] { accent-color:#6366f1; }
+</style>
+</head>
+<body class="text-slate-300 min-h-screen">
+
+<!-- 顶栏 -->
+<div class="px-6 py-3 border-b border-slate-900 flex items-center justify-between" style="background:#060d17">
+  <div class="flex items-center gap-3">
+    <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-sm font-bold">S</div>
+    <div>
+      <span class="font-bold text-sm text-white">欧神诺SFA · 零感知采集</span>
+      <span class="ml-3 text-xs text-slate-600">彻底消灭打字录入</span>
+    </div>
+  </div>
+  <div class="flex gap-1">
+    <button onclick="switchTab('capture')" id="t-capture" class="tab-btn active text-sm px-4 py-2 text-slate-300">零感知采集</button>
+    <button onclick="switchTab('trust')"   id="t-trust"   class="tab-btn text-sm px-4 py-2 text-slate-500">提成护城河</button>
+  </div>
+</div>
+
+<!-- ══════════════════════ TAB 1: 零感知采集 ══════════════════════ -->
+<div id="tab-capture">
+
+  <!-- 前言 -->
+  <div class="px-6 py-4 border-b border-slate-900 text-xs text-slate-500" style="background:#060d17">
+    解决录入问题的终极答案不是更好的表单，而是 <strong class="text-slate-300">彻底消灭打字录入</strong>。
+    把表格里的每一列，映射到业务员的一个自然动作。点下面三个按钮，看看它是怎么运作的。
+  </div>
+
+  <div class="max-w-6xl mx-auto p-5 space-y-5">
+
+    <!-- ── STEP 1: 拍照识别 ── -->
+    <div class="demo-card p-5">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
+        <div>
+          <div class="font-bold text-white">拍一张照，填完半张表</div>
+          <div class="text-xs text-slate-500 mt-0.5">门店信息 · 竞品陈列 · 装修状况 · 展厅面积 — 一张照片全部解决，业务员不打一个字</div>
+        </div>
+        <button id="scan-btn" onclick="runPhotoScan()" class="ml-auto text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl transition-colors font-semibold flex items-center gap-2">
+          <span>📷</span> 巡店打卡
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-5">
+        <!-- 左：模拟门店照片 -->
+        <div class="scan-container" style="height:220px;background:linear-gradient(135deg,#0f1e30,#142035);">
+          <div id="scan-line" class="scan-line-el"></div>
+          <!-- Store illustration -->
+          <div class="flex flex-col items-center justify-center h-full gap-2 text-slate-600">
+            <div class="text-5xl">🏪</div>
+            <div class="text-xs">深圳 · 徐增勇门店</div>
+            <div class="text-xs opacity-50">华南区经销商 #1</div>
+          </div>
+          <!-- scan overlay -->
+          <div id="scan-overlay" class="absolute inset-0 hidden items-center justify-center" style="background:rgba(99,102,241,.05)">
+            <div class="text-xs text-indigo-400 font-semibold">AI 识别中...</div>
+          </div>
+          <!-- identified markers -->
+          <div id="photo-markers" class="absolute inset-0"></div>
+        </div>
+
+        <!-- 右：自动填写的表单 -->
+        <div>
+          <div class="text-xs text-slate-500 mb-3 font-semibold uppercase tracking-wider">门店信息（AI自动填写）</div>
+          <div id="photo-fields">
+            <div class="field-row"><span class="text-xs text-slate-500">门店面积</span><span class="field-val" id="f-area">待识别...</span></div>
+            <div class="field-row"><span class="text-xs text-slate-500">装修年份</span><span class="field-val" id="f-year">待识别...</span></div>
+            <div class="field-row"><span class="text-xs text-slate-500">核心商圈</span><span class="field-val" id="f-zone">待识别...</span></div>
+            <div class="field-row"><span class="text-xs text-slate-500">竞品陈列</span><span class="field-val" id="f-brand">待识别...</span></div>
+            <div class="field-row"><span class="text-xs text-slate-500">中国玉展厅</span><span class="field-val" id="f-jade">待识别...</span></div>
+            <div class="field-row"><span class="text-xs text-slate-500">欧神诺Logo状态</span><span class="field-val" id="f-logo">待识别...</span></div>
+          </div>
+          <div id="photo-done" class="hidden mt-3 text-xs text-emerald-400 font-semibold">✓ 6项门店信息已自动录入 — 业务员一个字没打</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 2: 语音录入 ── -->
+    <div class="demo-card p-5">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
+        <div>
+          <div class="font-bold text-white">动动嘴，锁定提成权</div>
+          <div class="text-xs text-slate-500 mt-0.5">巡店后说一段业务黑话，AI提取老板画像 + 商机 + 卡点 — 还顺手锁住了该客户的提成权</div>
+        </div>
+        <button id="voice-btn" onclick="runVoice()" class="ml-auto text-sm bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl transition-colors font-semibold flex items-center gap-2">
+          <span>🎤</span> 语音副官
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-5">
+        <!-- 左：语音可视化 -->
+        <div>
+          <div class="bg-slate-900/60 rounded-xl p-4 mb-3" style="height:100px">
+            <div id="voice-idle" class="flex items-center justify-center h-full text-slate-700 text-xs">按下「语音副官」开始说话</div>
+            <!-- 波形 -->
+            <div id="voice-wave" class="hidden flex items-end justify-center gap-1 h-full pb-2">
+              <div class="wave-bar" style="height:4px"></div><div class="wave-bar" style="height:4px"></div>
+              <div class="wave-bar" style="height:4px"></div><div class="wave-bar" style="height:4px"></div>
+              <div class="wave-bar" style="height:4px"></div><div class="wave-bar" style="height:4px"></div>
+              <div class="wave-bar" style="height:4px"></div><div class="wave-bar" style="height:4px"></div>
+              <div class="wave-bar" style="height:4px"></div><div class="wave-bar" style="height:4px"></div>
+              <div class="wave-bar" style="height:4px"></div><div class="wave-bar" style="height:4px"></div>
+              <div class="wave-bar" style="height:4px"></div><div class="wave-bar" style="height:4px"></div>
+              <div class="wave-bar" style="height:4px"></div><div class="wave-bar" style="height:4px"></div>
+            </div>
+          </div>
+          <!-- 转写文字 -->
+          <div id="transcript-box" class="hidden bg-slate-900/40 rounded-xl p-3 text-xs text-slate-400 italic leading-relaxed" style="min-height:60px">
+            <span id="transcript-text"></span><span id="cursor" class="text-indigo-400">|</span>
+          </div>
+        </div>
+
+        <!-- 右：AI提取结果 -->
+        <div>
+          <div class="text-xs text-slate-500 mb-3 font-semibold uppercase tracking-wider">AI自动提取</div>
+          <div id="voice-fields" class="space-y-0">
+            <div class="field-row"><span class="text-xs text-slate-500">老板年龄</span><span class="field-val" id="v-age">—</span></div>
+            <div class="field-row"><span class="text-xs text-slate-500">二代接班</span><span class="field-val" id="v-heir">—</span></div>
+            <div class="field-row"><span class="text-xs text-slate-500">经营特点</span><span class="field-val" id="v-style">—</span></div>
+            <div class="field-row"><span class="text-xs text-slate-500">当前威胁</span><span class="field-val" id="v-threat">—</span></div>
+            <div class="field-row"><span class="text-xs text-slate-500">申请支持</span><span class="field-val" id="v-ask">—</span></div>
+          </div>
+          <!-- 提成保护 -->
+          <div id="lock-badge-wrap" class="hidden mt-4">
+            <div class="lock-badge">
+              🔒 提成保护已锁定 &nbsp;<strong>30天</strong>
+            </div>
+            <div class="text-xs text-slate-600 mt-1.5">系统确认：深圳·徐增勇 归属 欧基挺，有效期至 2026-04-24</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 3: 意向温度计 ── -->
+    <div class="demo-card p-5">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-sm font-bold flex-shrink-0">3</div>
+        <div>
+          <div class="font-bold text-white">不问客户，就知道意向</div>
+          <div class="text-xs text-slate-500 mt-0.5">系统静默追踪客户的阅读行为，商机质量评分完全由数据说话 — 业务员不用填任何内容</div>
+        </div>
+        <button onclick="runIntent()" class="ml-auto text-sm bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-xl transition-colors font-semibold flex items-center gap-2">
+          <span>🌡</span> 意向温度计
+        </button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-4">
+        <!-- 行为数据 -->
+        <div class="col-span-2 space-y-3" id="intent-behaviors">
+          <div class="text-xs text-slate-600 italic">点击「意向温度计」查看客户行为数据</div>
+        </div>
+
+        <!-- 评分 -->
+        <div class="flex flex-col items-center justify-center">
+          <div id="score-display" class="text-center">
+            <div class="text-5xl font-bold text-slate-700" id="score-num">—</div>
+            <div class="text-xs text-slate-600 mt-1">商机质量评分</div>
+          </div>
+          <div id="score-label" class="hidden mt-3 text-xs font-bold px-3 py-1 rounded-full bg-amber-900/40 border border-amber-700/40 text-amber-300">
+            极高意向
+          </div>
+          <div id="score-note" class="hidden mt-3 text-xs text-slate-600 text-center leading-relaxed">
+            系统后台静默抓取<br>数据绝对真实<br>无法造假
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════ TAB 2: 提成护城河 ══════════════════════ -->
+<div id="tab-trust" class="hidden">
+
+  <!-- 三条规则 -->
+  <div class="px-6 py-5 border-b border-slate-900" style="background:#060d17">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-xs text-slate-500 mb-4">解决录入问题的核心不是技术，是 <strong class="text-slate-200">利益机制</strong>。用零感知降低录入难度，用提成驱动录入动力。</div>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
+          <div class="text-base mb-2">🔴</div>
+          <div class="font-bold text-sm text-white mb-1">资产化红线</div>
+          <div class="text-xs text-slate-500 leading-relaxed">凡是系统里没有记录的客户，视为<strong class="text-red-400">无主客户</strong>，归公司资产。业务员没有录入 = 没有所有权。</div>
+        </div>
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
+          <div class="text-base mb-2">⏱</div>
+          <div class="font-bold text-sm text-white mb-1">公海倒计时</div>
+          <div class="text-xs text-slate-500 leading-relaxed">系统自动检测跟进行为（打电话、发文件、拜访打卡）。<strong class="text-amber-400">48小时</strong>内没有任何动作，客户自动流入公海，任何人可抢。</div>
+        </div>
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
+          <div class="text-base mb-2">🔒</div>
+          <div class="font-bold text-sm text-white mb-1">录入即确权</div>
+          <div class="text-xs text-slate-500 leading-relaxed">只要使用了零感知采集（拍了照、说了话、发了文件），提成保护期<strong class="text-emerald-400">自动延期30天</strong>。录入 = 保住提成。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 经销商状态列表 -->
+  <div class="max-w-5xl mx-auto p-5">
+    <div class="flex items-center justify-between mb-4">
+      <div class="text-sm font-semibold text-white">华南经销商实时状态</div>
+      <div class="text-xs text-slate-600">倒计时实时刷新 · 业务员手机端可见</div>
+    </div>
+
+    <!-- 表头 -->
+    <div class="grid text-xs text-slate-600 font-semibold uppercase tracking-wider px-4 py-2 mb-1"
+         style="grid-template-columns:1fr 90px 80px 1fr 120px 100px">
+      <div>城市 · 经销商</div><div>销区经理</div><div>等级</div><div>最近跟进</div><div>剩余保护</div><div>状态</div>
+    </div>
+
+    <div id="trust-list" class="space-y-1.5">
+      <!-- rendered by JS -->
+    </div>
+
+    <!-- 公海说明 -->
+    <div class="mt-5 bg-red-950/20 border border-red-900/30 rounded-xl p-4">
+      <div class="text-sm font-semibold text-red-300 mb-2">⚡ 公海客户（2家）— 当前任何人可认领</div>
+      <div class="text-xs text-slate-500 leading-relaxed">
+        下方经销商超过48小时无跟进记录，已流入公海。系统已向全体销区经理推送通知。
+        第一个发起跟进的业务员将自动获得该客户的30天提成保护期。
+      </div>
+      <div id="open-sea" class="mt-3 space-y-2"><!-- rendered --></div>
+    </div>
+
+    <!-- 底部提示 -->
+    <div class="mt-4 text-xs text-slate-700 text-center">
+      业务员会为了保住提成主动使用零感知采集 → 数据真实性自然解决 → 不需要靠检查和督促
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════
+// Tab切换
+// ══════════════════════════════════
+function switchTab(t) {
+  ['capture','trust'].forEach(id => {
+    document.getElementById('tab-' + id).classList.toggle('hidden', id !== t);
+    const btn = document.getElementById('t-' + id);
+    btn.classList.toggle('active', id === t);
+    btn.classList.toggle('text-slate-300', id === t);
+    btn.classList.toggle('text-slate-500', id !== t);
+  });
+  if (t === 'trust') initTrustList();
+}
+
+// ══════════════════════════════════
+// STEP 1: 拍照识别
+// ══════════════════════════════════
+let photoRunning = false;
+function runPhotoScan() {
+  if (photoRunning) return;
+  photoRunning = true;
+  const btn = document.getElementById('scan-btn');
+  btn.textContent = '📡 识别中...';
+  btn.disabled = true;
+
+  // 重置字段
+  ['f-area','f-year','f-zone','f-brand','f-jade','f-logo'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = '识别中...';
+    el.className = 'field-val';
+  });
+  document.getElementById('photo-done').classList.add('hidden');
+
+  // 扫描线动画
+  const scanLine = document.getElementById('scan-line');
+  const overlay = document.getElementById('scan-overlay');
+  scanLine.classList.add('running');
+  overlay.classList.remove('hidden');
+  overlay.style.display = 'flex';
+
+  const fills = [
+    { id:'f-area',  delay:400,  val:'420 ㎡',           ok:true  },
+    { id:'f-year',  delay:750,  val:'2021年（需升级）',  ok:false },
+    { id:'f-zone',  delay:1000, val:'是（核心商圈）',     ok:true  },
+    { id:'f-brand', delay:1350, val:'东鹏 · 马可波罗',   ok:false },
+    { id:'f-jade',  delay:1700, val:'已设立（60㎡）',    ok:true  },
+    { id:'f-logo',  delay:2050, val:'正面显示，完好',     ok:true  },
+  ];
+
+  fills.forEach(({ id, delay, val, ok }) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      el.textContent = val;
+      el.className = ok ? 'field-val confirmed' : 'field-val filled';
+    }, delay + 800);
+  });
+
+  setTimeout(() => {
+    scanLine.classList.remove('running');
+    overlay.style.display = 'none';
+    document.getElementById('photo-done').classList.remove('hidden');
+    btn.innerHTML = '<span>✓</span> 已识别';
+    btn.className = 'ml-auto text-sm bg-emerald-700 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2';
+
+    // Add markers
+    const markers = document.getElementById('photo-markers');
+    markers.innerHTML = `
+      <div style="position:absolute;top:30%;left:15%;background:rgba(99,102,241,.85);color:white;font-size:9px;padding:2px 6px;border-radius:4px">420㎡</div>
+      <div style="position:absolute;top:50%;left:55%;background:rgba(239,68,68,.85);color:white;font-size:9px;padding:2px 6px;border-radius:4px">⚠ 东鹏陈列</div>
+      <div style="position:absolute;top:70%;left:25%;background:rgba(16,185,129,.85);color:white;font-size:9px;padding:2px 6px;border-radius:4px">✓ 中国玉展厅</div>
+    `;
+    photoRunning = false;
+  }, 3200);
+}
+
+// ══════════════════════════════════
+// STEP 2: 语音录入
+// ══════════════════════════════════
+const VOICE_TEXT = '徐总45岁，他儿子已经在店里管事了。主要做整装和零售，但这个月蒙娜丽莎在打价格战，整装这块压力很大。我觉得我们要申请五月份的中国玉特价包，帮他把整装份额夺回来。';
+let voiceRunning = false;
+let waveTimer = null;
+
+function runVoice() {
+  if (voiceRunning) return;
+  voiceRunning = true;
+  const btn = document.getElementById('voice-btn');
+  btn.textContent = '⏹ 录音中...';
+  btn.disabled = true;
+
+  document.getElementById('voice-idle').classList.add('hidden');
+  document.getElementById('voice-wave').classList.remove('hidden');
+  document.getElementById('transcript-box').classList.remove('hidden');
+  document.getElementById('transcript-text').textContent = '';
+
+  // 重置字段
+  ['v-age','v-heir','v-style','v-threat','v-ask'].forEach(id => {
+    document.getElementById(id).textContent = '—';
+    document.getElementById(id).className = 'field-val';
+  });
+  document.getElementById('lock-badge-wrap').classList.add('hidden');
+
+  // 波形动画
+  const bars = document.querySelectorAll('.wave-bar');
+  waveTimer = setInterval(() => {
+    bars.forEach(b => {
+      const h = 3 + Math.random() * 26;
+      b.style.height = h + 'px';
+    });
+  }, 120);
+
+  // 打字效果
+  let i = 0;
+  const typer = setInterval(() => {
+    if (i >= VOICE_TEXT.length) { clearInterval(typer); stopWave(); return; }
+    document.getElementById('transcript-text').textContent += VOICE_TEXT[i++];
+  }, 45);
+}
+
+function stopWave() {
+  clearInterval(waveTimer);
+  document.querySelectorAll('.wave-bar').forEach(b => b.style.height = '4px');
+  document.getElementById('cursor').style.display = 'none';
+
+  const btn = document.getElementById('voice-btn');
+  btn.innerHTML = '<span>⚙️</span> AI分析中...';
+
+  // 字段填入
+  const fields = [
+    { id:'v-age',    delay:300,  val:'45岁' },
+    { id:'v-heir',   delay:600,  val:'是（儿子已回店管事）' },
+    { id:'v-style',  delay:900,  val:'整装 + 零售为主' },
+    { id:'v-threat', delay:1200, val:'蒙娜丽莎价格战（整装渠道）' },
+    { id:'v-ask',    delay:1500, val:'申请5月中国玉特价包' },
+  ];
+
+  fields.forEach(({ id, delay, val }) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      el.textContent = val;
+      el.className = 'field-val filled';
+    }, delay);
+  });
+
+  setTimeout(() => {
+    document.getElementById('lock-badge-wrap').classList.remove('hidden');
+    btn.innerHTML = '<span>✓</span> 已录入，提成已锁';
+    btn.className = 'ml-auto text-sm bg-emerald-700 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2';
+    btn.disabled = false;
+    voiceRunning = false;
+  }, 2000);
+}
+
+// ══════════════════════════════════
+// STEP 3: 意向温度计
+// ══════════════════════════════════
+const BEHAVIORS = [
+  { label:'阅读《工程渠道白皮书》',    count:'5次',    pct:92, color:'#6366f1' },
+  { label:'查看工程报价单（PDF）',      count:'3次',    pct:75, color:'#10b981' },
+  { label:'停留在"保证金条款"页',       count:'10分钟', pct:85, color:'#f59e0b' },
+  { label:'转发给采购部同事',           count:'1次',    pct:60, color:'#8b5cf6' },
+  { label:'回看欧神诺产品对比表',       count:'2次',    pct:55, color:'#06b6d4' },
+];
+
+function runIntent() {
+  const box = document.getElementById('intent-behaviors');
+  box.innerHTML = BEHAVIORS.map((b, i) => `
+    <div class="fade-up" style="animation-delay:${i * 0.12}s">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-xs text-slate-400">${b.label}</span>
+        <span class="text-xs font-semibold text-slate-300">${b.count}</span>
+      </div>
+      <div class="intent-bar">
+        <div class="intent-fill" id="ib-${i}" style="width:0%;background:${b.color}"></div>
+      </div>
+    </div>
+  `).join('');
+
+  // Animate bars
+  setTimeout(() => {
+    BEHAVIORS.forEach((b, i) => {
+      setTimeout(() => {
+        const el = document.getElementById('ib-' + i);
+        if (el) el.style.width = b.pct + '%';
+      }, i * 120);
+    });
+  }, 100);
+
+  // Score count-up
+  let score = 0;
+  const target = 87;
+  const numEl = document.getElementById('score-num');
+  numEl.className = 'text-5xl font-bold text-amber-300';
+  const counter = setInterval(() => {
+    score += 3;
+    if (score >= target) { score = target; clearInterval(counter); }
+    numEl.textContent = score;
+  }, 30);
+
+  setTimeout(() => {
+    document.getElementById('score-label').classList.remove('hidden');
+    document.getElementById('score-note').classList.remove('hidden');
+    // add explanation
+    box.insertAdjacentHTML('beforeend', `
+      <div class="mt-3 bg-amber-950/20 border border-amber-800/30 rounded-xl p-3 text-xs text-slate-500 fade-up">
+        <strong class="text-amber-300">中建八局 · 工程项目</strong><br>
+        系统在后台静默追踪文件阅读行为。业务员发了一份报价PDF给客户，客户翻看了几次、停留了多久、分享给谁——这些数据
+        <strong class="text-slate-300">不需要业务员填任何东西</strong>，系统自动记录，绝对真实。
+      </div>
+    `);
+  }, 1200);
+}
+
+// ══════════════════════════════════
+// TAB 2: 提成护城河
+// ══════════════════════════════════
+const DEALERS_TRUST = [
+  { city:'深圳', dealer:'徐增勇', manager:'欧基挺', grade:'B', lastAction:'今天 14:32 · 语音录入', remainSecs: 42*3600+18*60, status:'safe' },
+  { city:'福州', dealer:'林伟',   manager:'陈乃捷', grade:'A', lastAction:'今天 11:05 · 拍照打卡',  remainSecs: 38*3600+55*60, status:'safe' },
+  { city:'泉州', dealer:'詹学哲', manager:'田宇',   grade:'A', lastAction:'昨天 16:40 · 电话记录', remainSecs: 21*3600+20*60, status:'safe' },
+  { city:'佛山', dealer:'刘嘉敏', manager:'邓国全', grade:'A', lastAction:'昨天 09:15 · 文件发送', remainSecs: 14*3600+47*60, status:'safe' },
+  { city:'广州', dealer:'李冬',   manager:'欧基挺', grade:'C', lastAction:'前天 18:30 · 拜访打卡', remainSecs: 3*3600+27*60,  status:'warn' },
+  { city:'东莞', dealer:'刘奇伟', manager:'欧基挺', grade:'C', lastAction:'昨天 08:00 · 电话记录', remainSecs: 1*3600+12*60,  status:'warn' },
+];
+
+const OPEN_SEA = [
+  { city:'汕头', dealer:'蚁克华', manager:'凌辉（原归属）', grade:'A', overdue:'超时 6小时32分' },
+  { city:'珠海', dealer:'罗卓奎', manager:'邓国全（原归属）', grade:'B', overdue:'超时 2小时15分' },
+];
+
+let trustTimers = {};
+
+function initTrustList() {
+  renderTrustList();
+  renderOpenSea();
+  startTrustCountdowns();
+}
+
+function renderTrustList() {
+  document.getElementById('trust-list').innerHTML = DEALERS_TRUST.map((d, i) => {
+    const hh = Math.floor(d.remainSecs / 3600);
+    const mm = Math.floor((d.remainSecs % 3600) / 60);
+    const pct = Math.min(100, d.remainSecs / (48 * 3600) * 100);
+    const barColor = d.status === 'safe' ? '#10b981' : '#f59e0b';
+    const badgeClass = d.status === 'safe' ? 'badge-safe' : 'badge-warn';
+    const statusText = d.status === 'safe' ? '安全' : '⚠ 预警';
+
+    return `
+      <div class="bg-slate-900/40 border border-slate-800 rounded-xl px-4 py-3 grid items-center gap-2"
+           style="grid-template-columns:1fr 90px 80px 1fr 120px 100px">
+        <div>
+          <div class="text-sm font-semibold text-slate-200">${d.city} · ${d.dealer}</div>
+        </div>
+        <div class="text-xs text-slate-500">${d.manager}</div>
+        <div>
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full" style="background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.2)">${d.grade}</span>
+        </div>
+        <div class="text-xs text-slate-500">${d.lastAction}</div>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-mono ${d.status === 'warn' ? 'text-amber-400' : 'text-slate-400'}" id="timer-${i}">${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00</span>
+          </div>
+          <div class="timer-bar">
+            <div class="timer-fill" id="tbar-${i}" style="width:${pct}%;background:${barColor}"></div>
+          </div>
+        </div>
+        <div>
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full ${badgeClass}">${statusText}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderOpenSea() {
+  document.getElementById('open-sea').innerHTML = OPEN_SEA.map(d => `
+    <div class="flex items-center justify-between bg-red-950/20 border border-red-900/20 rounded-xl px-4 py-3">
+      <div>
+        <div class="text-sm font-semibold text-slate-200">${d.city} · ${d.dealer}</div>
+        <div class="text-xs text-slate-600 mt-0.5">${d.manager} &nbsp;·&nbsp; <span class="text-red-400">${d.overdue}</span></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-bold px-2.5 py-1 rounded-full badge-gone">已入公海</span>
+        <button class="text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition-colors font-semibold" onclick="claimDealer(this,'${d.dealer}')">立即认领</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function claimDealer(btn, name) {
+  btn.textContent = '✓ 已认领';
+  btn.disabled = true;
+  btn.className = 'text-xs bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-semibold';
+  btn.closest('div.flex').querySelector('.badge-gone').textContent = '已被认领';
+  btn.closest('div.flex').querySelector('.badge-gone').className = 'text-xs font-bold px-2.5 py-1 rounded-full badge-safe';
+}
+
+function startTrustCountdowns() {
+  // Clear old timers
+  Object.values(trustTimers).forEach(clearInterval);
+  trustTimers = {};
+
+  DEALERS_TRUST.forEach((d, i) => {
+    let secs = d.remainSecs;
+    trustTimers[i] = setInterval(() => {
+      secs--;
+      if (secs < 0) { clearInterval(trustTimers[i]); return; }
+      const hh = Math.floor(secs / 3600);
+      const mm = Math.floor((secs % 3600) / 60);
+      const ss = secs % 60;
+      const el = document.getElementById('timer-' + i);
+      const bar = document.getElementById('tbar-' + i);
+      if (!el) return;
+      el.textContent = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+      const pct = Math.min(100, secs / (48 * 3600) * 100);
+      if (bar) {
+        bar.style.width = pct + '%';
+        if (pct < 20) bar.style.background = '#ef4444';
+        else if (pct < 50) bar.style.background = '#f59e0b';
+        else bar.style.background = '#10b981';
+      }
+    }, 1000);
+  });
+}
+</script>
+</body>
+</html>

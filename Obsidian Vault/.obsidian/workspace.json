@@ -1,0 +1,350 @@
+{
+  "main": {
+    "id": "53cbcbd6e985fa80",
+    "type": "split",
+    "children": [
+      {
+        "id": "d30dff27a56d5d63",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "fb8c337c843da692",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "陈宇超总沟通 CRM录入问题.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "陈宇超总沟通 CRM录入问题"
+            }
+          },
+          {
+            "id": "b2093c4b4fc14fd1",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "CRM尽调.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "CRM尽调"
+            }
+          },
+          {
+            "id": "9eeb136d227d275b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "预算财务for pro/*预算会计.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "*预算会计"
+            }
+          },
+          {
+            "id": "6b2ef60eaaacfb34",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "陈宇超总沟通 CRM录入问题.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "陈宇超总沟通 CRM录入问题"
+            }
+          },
+          {
+            "id": "17db27a1f247c999",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "！！工作日志.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "！！工作日志"
+            }
+          },
+          {
+            "id": "69f44b5ef177ed17",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "罗浮宫.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "罗浮宫"
+            }
+          },
+          {
+            "id": "e09e9ca7dda3d0ab",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "罗浮宫需求清单.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "罗浮宫需求清单"
+            }
+          },
+          {
+            "id": "c8ab06c6f790b19b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "龙虾销售方法论.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "龙虾销售方法论"
+            }
+          },
+          {
+            "id": "8f9aa378131964f9",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "中远海特/中远海特.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "中远海特"
+            }
+          }
+        ],
+        "currentTab": 7
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "133ac4be62f7c2d6",
+    "type": "split",
+    "children": [
+      {
+        "id": "49f1bb1f00cd0c2e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c10014b5c4213858",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "e1dee863431d5db6",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "e3e0b0e69fd2460e",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "b0b835c9b2913077",
+    "type": "split",
+    "children": [
+      {
+        "id": "c1b1c97e1703dc74",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "13f5d7c92736a2a1",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "2026-01-25.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "2026-01-25 的反向链接列表"
+            }
+          },
+          {
+            "id": "d2e0ee7df187e9fc",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "2026-01-25.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "2026-01-25 的出链列表"
+            }
+          },
+          {
+            "id": "9938001179a55308",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "030681b76c267792",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "添加笔记属性"
+            }
+          },
+          {
+            "id": "c53997f1306074de",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "2026-01-25.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "2026-01-25 的大纲"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:新建数据库": false
+    }
+  },
+  "active": "c8ab06c6f790b19b",
+  "lastOpenFiles": [
+    "！！工作日志.md",
+    "Athropic 提示词.md",
+    "罗浮宫需求清单.md",
+    "罗浮宫.md",
+    "智能马桶.md",
+    "WOW设计平台/超懂你分析工作台/1.input/场景观察记录表.md",
+    "WOW设计平台/超懂你分析工作台/1.input/需求解码器.md",
+    "WOW设计平台/超懂你分析工作台/1.input/生活访谈指南.md",
+    "SKU项目立项审批表.md",
+    "SKU设计调整.md",
+    "中远海特/中远海特 演示PPT.md",
+    "SR continue/效率智能体合同/AI 智能体应用技术顾问服务合同 WS.md",
+    "中远海特/中远海特.md",
+    "中远海特",
+    "WOW设计平台/超懂你分析工作台/2.set/超懂你分析工作台C1.md",
+    "鸿威展会/构建会展行业核心壁垒.md",
+    "鸿威展会/鸿威采购商ai员工.md",
+    "鸿威展会/鸿威展会.md",
+    "陈宇超总沟通 CRM录入问题.md",
+    "鸿威采购商ai员工.md",
+    "WOW设计平台/超懂你分析工作台/4产出内容/黄秃秃的家居需求洞察报告.md",
+    "WOWdesign/2026-03-29-wowhome-research-notes.md",
+    "WOWdesign/2026-03-29-wowhome-poc-design.md",
+    "WOWdesign/2026-03-29-wowhome-poc-bridge-design.md",
+    "WOW设计平台/logo.png",
+    "WOW设计平台/设计交付原型/设计方案交付流程图.png",
+    "WOW设计平台/理解转交原型/微信图片_20251214191856_8_2.jpg",
+    "WOW设计平台/理解转交原型/微信图片_20251214191852_7_2.jpg",
+    "WOW设计平台/理解转交原型/微信图片_20251214191850_6_2.jpg",
+    "WOW设计平台/理解转交原型/微信图片_20251214191848_5_2.jpg",
+    "WOW设计平台/超懂你分析工作台/4产出内容/黄秃秃理想家的一天.md",
+    "预算财务for pro/*预算会计.md",
+    "粤哥募投管退.md",
+    "Pasted image 20260403152527.png",
+    "Pasted image 20260328010604.png",
+    "Pasted image 20260323233625.png",
+    "预算财务for pro",
+    "未命名文件夹",
+    "Pasted image 20260404192131.png",
+    "WOW设计平台/超懂你分析工作台/4产出内容",
+    "WOW设计平台/超懂你分析工作台/3.prompt",
+    "WOW设计平台/超懂你分析工作台/2.set",
+    "WOW设计平台/超懂你分析工作台/1.input",
+    "WOW设计平台/店铺基础设想/社区店（最小服务单元）",
+    "WOW设计平台/店铺基础设想/旗舰店（有交互功能）",
+    "WOW设计平台/超懂你分析工作台",
+    "未命名.canvas",
+    "未命名 1.canvas"
+  ]
+}
