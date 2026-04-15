@@ -20,7 +20,6 @@
             <li><a href="#" class="nav-link active" data-target="dashboard"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
             <li><a href="#" class="nav-link" data-target="leads"><i data-lucide="globe"></i> Lead Discovery</a></li>
             <li><a href="#" class="nav-link" data-target="emails"><i data-lucide="mail"></i> Email Campaigns</a></li>
-            <li><a href="#" class="nav-link" data-target="crm"><i data-lucide="database"></i> OKKI CRM Sync</a></li>
             <li><a href="#" class="nav-link" data-target="settings"><i data-lucide="settings"></i> Settings</a></li>
         </ul>
     </aside>
@@ -156,8 +155,8 @@
             <div id="view-leads" class="page-view" style="display: none;">
                 <header class="header" style="margin-bottom: 24px;">
                     <div class="title-area">
-                        <h1>Lead Database</h1>
-                        <p>All scanned leads scored by AI. Filtered by Artie Aesthetic match.</p>
+                        <h1>Lead Discovery - 筛选的商机客户列表</h1>
+                        <p>AI scanned leads with matched company, contact person, title, email, and phone number.</p>
                     </div>
                 </header>
                 <div class="filter-bar">
@@ -170,11 +169,11 @@
                     <table class="data-table" id="fullLeadsTable">
                         <thead>
                             <tr>
-                                <th>Company / Project</th>
-                                <th>Type</th>
-                                <th>Location</th>
-                                <th>AI Quality Rating</th>
-                                <th>Decision Maker</th>
+                                <th>Company / 公司名</th>
+                                <th>Contact / 人名</th>
+                                <th>Title / 职位</th>
+                                <th>Email</th>
+                                <th>Phone / 联系方式</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -189,8 +188,8 @@
             <div id="view-emails" class="page-view" style="display: none;">
                 <header class="header" style="margin-bottom: 24px;">
                     <div class="title-area">
-                        <h1>Email Campaigns</h1>
-                        <p>AI personalized outreach queue. Review, approve, or let it run automatically.</p>
+                        <h1>Email Campaigns - 已发邮件的客户列表</h1>
+                        <p>Sent emails with matched company, contact person, title, and email status.</p>
                     </div>
                     <button class="btn-primary" onclick="alert('Emails queued and sending in background.')"><i data-lucide="send-to-back"></i> Send Queue (12)</button>
                 </header>

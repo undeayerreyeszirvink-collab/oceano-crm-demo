@@ -235,25 +235,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // -------- Leads View Logic --------
     const leadsDatabase = [
-        { name: "Miami Oasis Retreat", type: "Luxury Resort", loc: "USA", rating: "98% (A-Level)", contact: "Sarah J.", action: "Email Sent" },
-        { name: "Lumina Outdoor Living", type: "Retailer (4 stores)", loc: "USA", rating: "92% (A-Level)", contact: "David R.", action: "Email Sent" },
-        { name: "Azure Mediterranean", type: "Retailer (3 stores)", loc: "Spain", rating: "89% (A-Level)", contact: "Elena M.", action: "Drafting" },
-        { name: "Bali Eco Villas", type: "Hotel Project", loc: "Indonesia", rating: "95% (A-Level)", contact: "Komang W.", action: "Review" },
-        { name: "Nordic Summer Furnishings", type: "Retailer (7 stores)", loc: "Sweden", rating: "72% (B-Level)", contact: "Lars E.", action: "Review" },
-        { name: "Santorini Cliffside", type: "Luxury Resort", loc: "Greece", rating: "99% (Perfect Match)", contact: "Maria P.", action: "Drafting" },
-        { name: "Gold Coast Patios", type: "Retailer (2 stores)", loc: "Australia", rating: "Rejected (Scale < 3)", contact: "N/A", action: "Discarded" },
+        { company: "Miami Oasis Retreat", contact: "Sarah Johnson", title: "General Manager", email: "sarah.j@miamioasis.com", phone: "+1 305-555-0123" },
+        { company: "Lumina Outdoor Living", contact: "David Rodriguez", title: "Managing Director", email: "david@luminaliving.com", phone: "+1 415-555-0456" },
+        { company: "Azure Mediterranean", contact: "Elena Martinez", title: "Procurement Head", email: "elena.m@azuremediterranean.es", phone: "+34 91-555-0789" },
+        { company: "Bali Eco Villas", contact: "Komang Widiarta", title: "Project Director", email: "komang@baliecovillas.id", phone: "+62 361-555-0234" },
+        { company: "Nordic Summer Furnishings", contact: "Lars Eriksson", title: "Buyer", email: "lars.e@nordicsummer.se", phone: "+46 8-555-0567" },
+        { company: "Santorini Cliffside", contact: "Maria Papadopoulos", title: "Owner", email: "maria.p@santorinicliffside.gr", phone: "+30 22-555-0890" },
+        { company: "Gold Coast Patios", contact: "N/A", title: "N/A", email: "N/A", phone: "N/A" },
     ];
     const fullLeadsTable = document.querySelector('#fullLeadsTable tbody');
     if (fullLeadsTable) {
         leadsDatabase.forEach(lead => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><strong>${lead.name}</strong></td>
-                <td>${lead.type}</td>
-                <td>${lead.loc}</td>
-                <td><span style="color: ${lead.rating.includes('A-Level')||lead.rating.includes('Perfect') ? 'var(--success-green)' : (lead.rating.includes('Rejected') ? 'var(--text-muted)' : 'inherit')}">${lead.rating}</span></td>
+                <td><strong>${lead.company}</strong></td>
                 <td>${lead.contact}</td>
-                <td><button class="table-btn">${lead.action}</button></td>
+                <td>${lead.title}</td>
+                <td>${lead.email}</td>
+                <td>${lead.phone}</td>
+                <td><button class="table-btn">View</button></td>
             `;
             fullLeadsTable.appendChild(tr);
         });
@@ -262,23 +262,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------- Emails View Logic --------
     const emailListPane = document.getElementById('emailListPane');
     const emailDetailPane = document.getElementById('emailDetailPane');
-    
+
     const emailCampaigns = [
-        { id: 1, to: "sarah.j@miamioasis.com", name: "Miami Oasis Retreat", time: "10:30 AM", subject: "Elevating the Outdoor Experience at Miami Oasis", content: `
+        { id: 1, company: "Miami Oasis Retreat", contact: "Sarah Johnson", title: "General Manager", email: "sarah.j@miamioasis.com", status: "已发送", time: "10:30 AM", subject: "Elevating the Outdoor Experience at Miami Oasis", content: `
             <h2>Dear Sarah,</h2>
             <p>I noticed Miami Oasis Retreat recently received the 2024 Best Design Hotel award—a well-deserved recognition for your stunning waterfront spaces.</p>
             <img class="email-hero-img" src="https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Artie Outdoor Furniture">
             <p>At <strong>Artie</strong>, we share your passion for weaving wild luxury and romantic aesthetics into outdoor living. Having furnished over 300 upscale resorts globally, our hand-woven collections are designed not just to withstand coastal elements, but to redefine them.</p>
             <p>Given your expansion in the South Beach property, I would love to explore how our tailored solutions can complement your vision.</p>
         `},
-        { id: 2, to: "david@luminaliving.com", name: "Lumina Outdoor", time: "11:15 AM", subject: "Partnership: Bringing Wild Luxury to California", content: `
+        { id: 2, company: "Lumina Outdoor Living", contact: "David Rodriguez", title: "Managing Director", email: "david@luminaliving.com", status: "已发送", time: "11:15 AM", subject: "Partnership: Bringing Wild Luxury to California", content: `
             <h2>Hi David,</h2>
             <p>Following Lumina Outdoor Living's recent expansion to 4 showroom locations across California, I was deeply impressed by your curated selection of high-end patio pieces.</p>
             <img class="email-hero-img" src="https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Artie Outdoor Furniture">
             <p>As the Managing Director, you know the Californian market demands both durability and refined aesthetics. <strong>Artie Outdoor Furniture</strong> specializes in creating that exact blend—vacation-style, wild luxury pieces that turn backyards into private resorts.</p>
             <p>I've attached our latest catalog for your buyers. Should we schedule a brief video intro?</p>
         `},
-        { id: 3, to: "maria.p@santorinicliffside.gr", name: "Santorini Cliffside", time: "Pending", subject: "Artie x Santorini Cliffside: A Romantic Setup", content: `
+        { id: 3, company: "Santorini Cliffside", contact: "Maria Papadopoulos", title: "Owner", email: "maria.p@santorinicliffside.gr", status: "已发送", time: "Yesterday", subject: "Artie x Santorini Cliffside: A Romantic Setup", content: `
             <h2>Dear Maria,</h2>
             <p>The Aegean views from Santorini Cliffside are magnificent. To match such a romantic and iconic destination, standard outdoor furniture is simply not enough.</p>
             <p>At <strong>Artie</strong>, our design philosophy revolves around 'wild luxury' and 'romantic aesthetics'. Our woven loungers and parasols are built specifically to endure coastal winds while providing a 5-star tactile experience.</p>
@@ -292,8 +292,9 @@ document.addEventListener('DOMContentLoaded', () => {
             div.className = `email-list-item ${idx === 0 ? 'selected' : ''}`;
             div.innerHTML = `
                 <span class="email-time">${email.time}</span>
-                <h4>${email.name}</h4>
-                <p><strong>Subj:</strong> ${email.subject}</p>
+                <h4>${email.company}</h4>
+                <p><strong>${email.contact}</strong> - ${email.title}</p>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">${email.email} - ${email.status}</p>
             `;
             div.addEventListener('click', () => {
                 document.querySelectorAll('.email-list-item').forEach(el => el.classList.remove('selected'));
