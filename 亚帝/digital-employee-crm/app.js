@@ -240,8 +240,13 @@ document.addEventListener('DOMContentLoaded', () => {
         { company: "Azure Mediterranean", contact: "Elena Martinez", title: "Procurement Head", email: "elena.m@azuremediterranean.es", phone: "+34 91-555-0789" },
         { company: "Bali Eco Villas", contact: "Komang Widiarta", title: "Project Director", email: "komang@baliecovillas.id", phone: "+62 361-555-0234" },
         { company: "Nordic Summer Furnishings", contact: "Lars Eriksson", title: "Buyer", email: "lars.e@nordicsummer.se", phone: "+46 8-555-0567" },
-        { company: "Santorini Cliffside", contact: "Maria Papadopoulos", title: "Owner", email: "maria.p@santorinicliffside.gr", phone: "+30 22-555-0890" },
-        { company: "Gold Coast Patios", contact: "N/A", title: "N/A", email: "N/A", phone: "N/A" },
+        { company: "Santorini Cliffside Resort", contact: "Maria Papadopoulos", title: "Owner / CEO", email: "maria.p@santorinicliffside.gr", phone: "+30 22-555-0890" },
+        { company: "Maldives Horizon Villas", contact: "Ahmed Rasheed", title: "F&B & Facilities Director", email: "a.rasheed@horizonvillas.mv", phone: "+960 332-5501" },
+        { company: "The Beverly Hills Garden Club", contact: "Jessica Lin", title: "Purchasing Manager", email: "jessica.lin@bhgardenclub.com", phone: "+1 310-555-9901" },
+        { company: "Casa de Campo Resort", contact: "Carlos Dominguez", title: "Head of Procurement", email: "c.dominguez@casadecampo.com.do", phone: "+1 809-523-3333" },
+        { company: "Alila Villas Uluwatu", contact: "Dewi Santoso", title: "Property Manager", email: "dewi.s@alilahotels.com", phone: "+62 361-848-2166" },
+        { company: "Tuscany Outdoor Interiors", contact: "Marco Ferraro", title: "Sales Director", email: "marco.f@tuscanyoutdoor.it", phone: "+39 055-555-2341" },
+        { company: "Palm Beach Luxury Patios", contact: "Robert Whitfield", title: "Owner", email: "robert@pbuxurypatios.com", phone: "+1 561-555-6677" },
     ];
     const fullLeadsTable = document.querySelector('#fullLeadsTable tbody');
     if (fullLeadsTable) {
@@ -278,11 +283,23 @@ document.addEventListener('DOMContentLoaded', () => {
             <p>As the Managing Director, you know the Californian market demands both durability and refined aesthetics. <strong>Artie Outdoor Furniture</strong> specializes in creating that exact blend—vacation-style, wild luxury pieces that turn backyards into private resorts.</p>
             <p>I've attached our latest catalog for your buyers. Should we schedule a brief video intro?</p>
         `},
-        { id: 3, company: "Santorini Cliffside", contact: "Maria Papadopoulos", title: "Owner", email: "maria.p@santorinicliffside.gr", status: "已发送", time: "Yesterday", subject: "Artie x Santorini Cliffside: A Romantic Setup", content: `
+        { id: 3, company: "Santorini Cliffside Resort", contact: "Maria Papadopoulos", title: "Owner / CEO", email: "maria.p@santorinicliffside.gr", status: "已发送", time: "Yesterday", subject: "Artie x Santorini Cliffside: A Romantic Setup", content: `
             <h2>Dear Maria,</h2>
             <p>The Aegean views from Santorini Cliffside are magnificent. To match such a romantic and iconic destination, standard outdoor furniture is simply not enough.</p>
             <p>At <strong>Artie</strong>, our design philosophy revolves around 'wild luxury' and 'romantic aesthetics'. Our woven loungers and parasols are built specifically to endure coastal winds while providing a 5-star tactile experience.</p>
             <p>Let's collaborate to elevate your cliffside terraces.</p>
+        `},
+        { id: 4, company: "Maldives Horizon Villas", contact: "Ahmed Rasheed", title: "F&B & Facilities Director", email: "a.rasheed@horizonvillas.mv", status: "已发送", time: "2 days ago", subject: "Outdoor Elegance for Maldives Horizon Villas", content: `
+            <h2>Dear Ahmed,</h2>
+            <p>Your overwater villas at Maldives Horizon are breathtaking. I believe our handcrafted outdoor collections would perfectly complement your resort's aesthetic.</p>
+            <p>Artie specializes in weather-resistant, luxury outdoor furniture designed for tropical climates. Our pieces combine durability with the refined elegance your guests expect.</p>
+            <p>Would you be open to a brief call to discuss how we can enhance your outdoor spaces?</p>
+        `},
+        { id: 5, company: "Casa de Campo Resort", contact: "Carlos Dominguez", title: "Head of Procurement", email: "c.dominguez@casadecampo.com.do", status: "已发送", time: "3 days ago", subject: "Premium Outdoor Solutions for Casa de Campo", content: `
+            <h2>Hola Carlos,</h2>
+            <p>Casa de Campo's reputation for luxury is unmatched in the Caribbean. I wanted to introduce Artie's outdoor furniture collections that align perfectly with your resort's standards.</p>
+            <p>Our pieces are designed to withstand Caribbean weather while maintaining the sophisticated aesthetic your guests expect. We've worked with over 50 luxury resorts in similar climates.</p>
+            <p>I'd love to share our portfolio with you.</p>
         `}
     ];
 
@@ -310,56 +327,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showEmailDetail(email) {
         emailDetailPane.innerHTML = `
-            <div class="email-mockup" style="animation: none;">
+            <div class="email-mockup" style="animation: none; overflow-y: auto; height: 100%;">
                 <div class="email-header">
                     <div class="email-field"><span>From:</span> AI Agent <span style="opacity:0.5">&lt;alex.chen@artiegarden.com&gt;</span></div>
-                    <div class="email-field"><span>To:</span> ${email.to}</div>
+                    <div class="email-field"><span>To:</span> ${email.contact} &lt;${email.email}&gt; — ${email.title}, ${email.company}</div>
                     <div class="email-field"><span>Subject:</span> ${email.subject}</div>
+                    <div class="email-field"><span>Status:</span> <span style="color: var(--success-green); font-weight: 500;">${email.status}</span></div>
                 </div>
                 <div class="email-body">
                     <div class="email-content">
                         ${email.content}
                         <div class="artie-signature">
                             <div class="artie-logo-dark">
-                                <img src="data:image/png;base64,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0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn0nQ/pB9b+Cn1n7p8v/A/pB4J6N007vAAAAABJRU5ErkJggg==" alt="Artie Logo" height="24" style="margin-right: 8px; vertical-align: middle;">
-                                 Artie
-                             </div>
-                             <div class="artie-tagline">Redefine Home - Enjoy Your Life</div>
-                         </div>
-                     </div>
-                 </div>
-             </div>
-         `;
-    }
-
-    // -------- CRM Sync Logs --------
-    const crmLogsOutput = document.getElementById('crmLogsOutput');
-    if (crmLogsOutput) {
-        const crmLogs = [
-            "[CRON] Heartbeat check. OKKI API connection active... OK",
-            "[POST] /api/v1/leads - Payload: {name: 'Miami Oasis Retreat', industry: 'Hospitality'}... SUCCESS",
-            "[INFO] Lead ID 89441 mapped successfully.",
-            "[SYNC] Pulling latest reply status from Outlook Server...",
-            "[EVENT] Inbound Email Detected.",
-            "[NLP] Sentiment Analysis: POSITIVE ('Yes, send catalog!')",
-            "[PATCH] /api/v1/leads/89441 - Update status to 'Qualified'... SUCCESS",
-            "[NOTIFY] Alerted Sales Rep: Alex Chen."
-        ];
-        
-        let logIdx = 0;
-        const crmLogIntervalId = setInterval(() => {
-            const viewCrm = document.getElementById('view-crm');
-            if (!viewCrm) {
-                clearInterval(crmLogIntervalId);
-                return;
-            }
-
-            if(logIdx < crmLogs.length && viewCrm.classList.contains('active')) {
-                addLog(crmLogs[logIdx], crmLogs[logIdx].includes('SUCCESS') ? 'info' : (crmLogs[logIdx].includes('POSITIVE') ? 'highlight' : 'warn'), crmLogsOutput);
-                logIdx++;
-            } else if (logIdx >= crmLogs.length) {
-                logIdx = 0; // restart mock logs
-            }
-        }, 1500);
+                                <img class="artie-logo-dynamic" src="" alt="Artie Logo" height="22" style="margin-right: 8px; vertical-align: middle;">
+                                Artie
+                            </div>
+                            <div class="artie-tagline">Redefine Home - Enjoy Your Life</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        refreshIcons(emailDetailPane);
+        // Re-inject logo into newly created img tags
+        emailDetailPane.querySelectorAll('.artie-logo-dynamic').forEach(img => { img.src = ARTIE_LOGO_B64; });
     }
 });
