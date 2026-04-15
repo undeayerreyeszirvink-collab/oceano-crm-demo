@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artie Digital Employee - Global Lead Discovery</title>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="brand-logo">
+            <img class="artie-logo-dynamic" src="" alt="Artie Logo" height="28">
+            <span>Artie Agent</span>
+        </div>
+        
+        <ul class="nav-links">
+            <li><a href="#" class="nav-link active" data-target="dashboard"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+            <li><a href="#" class="nav-link" data-target="leads"><i data-lucide="globe"></i> Lead Discovery</a></li>
+            <li><a href="#" class="nav-link" data-target="emails"><i data-lucide="mail"></i> Email Campaigns</a></li>
+            <li><a href="#" class="nav-link" data-target="settings"><i data-lucide="settings"></i> Settings</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="hero-background"></div>
+        <div class="content-wrapper">
+
+            <!-- DASHBOARD VIEW -->
+            <div id="view-dashboard" class="page-view active">
+                <header class="header" style="flex-direction: column; align-items: flex-start; gap: 32px; border-bottom: 1px solid var(--border-color); padding-bottom: 32px;">
+                    <div class="title-area" style="width: 100%;">
+                        <h1><img class="artie-logo-dynamic" src="" alt="Artie Logo" height="32" style="vertical-align: middle; margin-right: 12px;">AI Lead Engine: Parameter Configuration</h1>
+                        <p style="margin-top: 8px; font-size: 14px;">Select the target parameters for the AI Digital Employee to scan across Instagram, LinkedIn, and Global Web Directories.</p>
+                    </div>
+
+                    <div class="discovery-filters">
+                        <div class="filter-group">
+                            <label>客户区域 (Target Region)</label>
+                            <select class="form-select">
+                                <option>北美洲 (North America)</option>
+                                <option>欧洲 (Europe)</option>
+                                <option>中南美洲 & 加勒比 (Latin America & Caribbean)</option>
+                                <option>中东 (Middle East)</option>
+                                <option>亚太 (Southeast Asia / East Asia / Oceania)</option>
+                                <option>非洲 (High-end Resorts)</option>
+                                <option>国际邮轮 / 全球文旅 (Global Cruise & Tourism)</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>客户类型 (Client Type)</label>
+                            <select class="form-select">
+                                <optgroup label="零售渠道 (Retail Channels)">
+                                    <option>国际高端户外家具零售商 (3+ 门店)</option>
+                                    <option>国内中高端连锁零售商 (3+ 门店)</option>
+                                    <option>品牌授权加盟商</option>
+                                </optgroup>
+                                <optgroup label="酒店文旅 (Hospitality & Tourism)">
+                                    <option>全球五星级酒店 / 奢华度假酒店</option>
+                                    <option>国内五星级酒店 / 高端文旅</option>
+                                    <option>国际邮轮 / 海上度假项目</option>
+                                </optgroup>
+                                <optgroup label="工程地产 (Engineering & Real Estate)">
+                                    <option>国际酒店 / 地产 / 文旅工程承包商</option>
+                                    <option>国内酒店 / 地产 / 景观工程承包商</option>
+                                </optgroup>
+                                <optgroup label="私宅 & 设计师 (Private Residences & Designers)">
+                                    <option>高端私宅 / 别墅 / 庭院定制</option>
+                                    <option>高端设计师 / 软装 / 整装机构</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>应用场景 (Project Type)</label>
+                            <select class="form-select">
+                                <option>度假酒店 / 野奢度假 (Resort / Wild Luxury)</option>
+                                <option>高端地产 / 别墅庭院 (High-end Villa / Courtyard)</option>
+                                <option>商业会所 / 休闲空间 (Commercial / Leisure Space)</option>
+                                <option>邮轮 / 文旅综合体 (Cruise / Cultural Complex)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="action-area" style="position: relative; width: 100%;">
+                        <button id="startAutoBtn" class="btn-primary" style="width: 100%; justify-content: center; padding: 18px 0; font-size: 16px;">
+                            <i data-lucide="play"></i> Initiate Discovery Routine
+                        </button>
+                        <div class="progress-container" id="progressContainer">
+                            <div class="progress-bar" id="progressBar"></div>
+                        </div>
+                    </div>
+                </header>
+
+                <section class="section-panel" id="automationPanel">
+                    <div class="section-title">
+                        <i data-lucide="terminal"></i> Live Automation Logs (Steps 1-4)
+                    </div>
+                    <div class="terminal" id="terminalOutput">
+                        <div class="log-line"><span class="log-time">[08:00:00]</span> <span class="log-info">System idle. Ready to initiate discovery...</span></div>
+                    </div>
+                </section>
+
+                <section class="section-panel" id="resultsPanel">
+                    <div class="section-title">
+                        <i data-lucide="file-check-2"></i> AI Morning Report (Step 5)
+                    </div>
+                    <p style="color: var(--text-muted); margin-bottom: 24px;">Found 3 new A-Level prospects matching "Wild Luxury" aesthetic criteria.</p>
+                    <div class="results-grid" id="leadsGrid"></div>
+                </section>
+
+                <section class="section-panel" id="campaignPanel">
+                    <div class="section-title">
+                        <i data-lucide="send"></i> AI Outreach Simulation (Steps 6-7)
+                    </div>
+                    <p style="color: var(--text-muted); margin-bottom: 24px;">Generated highly personalized outreach based on aesthetic analysis.</p>
+
+                    <div class="email-mockup" id="emailMockup">
+                        <div class="email-header">
+                            <div class="email-field"><span>From:</span> alex.chen@artiegarden.com</div>
+                            <div class="email-field"><span>To:</span> sarah.j@miamioasis.com (Purchasing Manager)</div>
+                            <div class="email-field"><span>Subject:</span> Elevating the Outdoor Experience at Miami Oasis</div>
+                        </div>
+                        <div class="email-body">
+                            <div class="email-content">
+                                <h2>Dear Sarah,</h2>
+                                <p>I noticed Miami Oasis Retreat recently received the 2024 Best Design Hotel award—a well-deserved recognition for your stunning waterfront spaces.</p>
+                                <img class="email-hero-img" src="https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Artie Outdoor Furniture">
+                                <p>At <strong>Artie</strong>, we share your passion for weaving wild luxury and romantic aesthetics into outdoor living. Having furnished over 300 upscale resorts globally, our hand-woven collections are designed not just to withstand coastal elements, but to redefine them.</p>
+                                <p>Given your expansion in the South Beach property, I would love to explore how our tailored solutions can complement your vision.</p>
+                                <div class="artie-signature">
+                                    <div class="artie-logo-dark">
+                                        <img class="artie-logo-dynamic" src="" alt="Artie Logo" height="24" style="margin-right: 10px; vertical-align: middle;">
+                                        Artie
+                                    </div>
+                                    <div class="artie-tagline">Redefine Home - Enjoy Your Life</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="crm-sync" id="okkiSync" style="display: none;">
+                        <i data-lucide="check-circle" class="crm-sync-icon" size="32"></i>
+                        <div class="crm-sync-text">
+                            <h4>Sync Complete (Step 8)</h4>
+                            <p>Lead 'Miami Oasis Retreat' responded! Contact card and context automatically pushed to OKKI CRM Pipeline.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- LEADS VIEW -->
+            <div id="view-leads" class="page-view">
+                <header class="header" style="margin-bottom: 24px;">
+                    <div class="title-area">
+                        <h1>Lead Discovery - 筛选的商机客户列表</h1>
+                        <p>AI scanned leads with matched company, contact person, title, email, and phone number.</p>
+                    </div>
+                </header>
+                <div class="filter-bar">
+                    <button class="filter-btn active">All Leads <span class="badge">124</span></button>
+                    <button class="filter-btn">A-Level (Perfect Match) <span class="badge">18</span></button>
+                    <button class="filter-btn">Hotel Projects <span class="badge">45</span></button>
+                    <button class="filter-btn">Furniture Retailers <span class="badge">61</span></button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="fullLeadsTable">
+                        <thead>
+                            <tr>
+                                <th>Company / 公司名</th>
+                                <th>Contact / 人名</th>
+                                <th>Title / 职位</th>
+                                <th>Email</th>
+                                <th>Phone / 联系方式</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- EMAILS VIEW -->
+            <div id="view-emails" class="page-view">
+                <header class="header" style="margin-bottom: 24px;">
+                    <div class="title-area">
+                        <h1>Email Campaigns - 已发邮件的客户列表</h1>
+                        <p>Sent emails with matched company, contact person, title, and email status.</p>
+                    </div>
+                    <button class="btn-primary" onclick="alert('Emails queued and sending in background.')"><i data-lucide="send-to-back"></i> Send Queue (12)</button>
+                </header>
+                <div class="split-view">
+                    <div class="list-pane" id="emailListPane">
+                        <!-- Populated by JS -->
+                    </div>
+                    <div class="detail-pane" id="emailDetailPane">
+                        <div class="detail-placeholder">
+                            <i data-lucide="mail-open" size="48" style="color: var(--text-muted); opacity: 0.5;"></i>
+                            <p>Select an email to view the AI drafted content</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CRM SYNC VIEW -->
+            <div id="view-crm" class="page-view">
+                <header class="header">
+                    <div class="title-area">
+                        <h1>OKKI CRM Integration Status</h1>
+                        <p>Live sync logs mapping AI detected interactions back to your central CRM.</p>
+                    </div>
+                    <button class="btn-primary" onclick="alert('Forcing manual OKKI sync...')"><i data-lucide="refresh-cw"></i> Force Sync</button>
+                </header>
+                <div class="crm-stats">
+                    <div class="stat-card">
+                        <div class="stat-value">84</div>
+                        <div class="stat-label">Leads Pushed Today</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">Replies Captured</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">100%</div>
+                        <div class="stat-label">API Uptime</div>
+                    </div>
+                </div>
+                <section class="section-panel visible" style="margin-top: 32px">
+                    <div class="section-title"><i data-lucide="activity"></i> Synchronization Logs</div>
+                    <div class="terminal" id="crmLogsOutput" style="height: 400px">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- SETTINGS VIEW -->
+            <div id="view-settings" class="page-view">
+                <header class="header">
+                    <div class="title-area">
+                        <h1>AI Agent Settings</h1>
+                        <p>Configure search parameters, API keys, and model instructions.</p>
+                    </div>
+                    <button class="btn-primary" onclick="alert('Settings saved successfully.')"><i data-lucide="save"></i> Save Changes</button>
+                </header>
+                
+                <div class="settings-grid">
+                    <div class="settings-card">
+                        <h3>Scraping Keywords</h3>
+                        <div class="form-group">
+                            <label>Include Tags</label>
+                            <input type="text" value="#luxuryoutdoor, #resortliving, #patiofurniture, #villadesign" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label>Target Audience</label>
+                            <input type="text" value="5-star hotels, high-end retailers, project contractors" class="form-input">
+                        </div>
+                    </div>
+                    
+                    <div class="settings-card">
+                        <h3>Vision AI Criteria (Aesthetic Filter)</h3>
+                        <div class="form-group">
+                            <label>Prompt Directive</label>
+                            <textarea class="form-input" rows="4">Filter images. Look for 'vacation-style', 'wild luxury', 'romantic', and 'refined' aesthetics. Reject cheap, plastic, or overly generic industrial looks. Only approve premium rattan/woven outdoor sets.</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Certainty Threshold</label>
+                            <input type="range" min="1" max="100" value="85" style="width:100%">
+                        </div>
+                    </div>
+                    
+                    <div class="settings-card">
+                        <h3>Integrations</h3>
+                        <div class="form-group">
+                            <label>Apollo.io API Key</label>
+                            <input type="password" value="************************" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label>OKKI CRM Token</label>
+                            <input type="password" value="************************" class="form-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
