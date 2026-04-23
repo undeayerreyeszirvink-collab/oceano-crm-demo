@@ -88,6 +88,7 @@ const state = {
     currentConversation: null,
     fieldsData: DATA.conversations[0].fields.map(f => ({ ...f, filled: false })),
     progressInterval: null,
+    selectedAtoms: new Set(DATA.modules.flatMap(m => m.atoms).map(a => a.id)),
 };
 
 // ===== 路由 =====
@@ -212,7 +213,11 @@ function showGenerating(callback) {
 
 // ===== 页面2：工程拆解 =====
 function renderDecompose() {
-    const totalPrice = DATA.modules.flatMap(m => m.atoms).reduce((s, a) => s + a.price, 0);
+    const allAtoms = DATA.modules.flatMap(m => m.atoms);
+    const selectedAtoms = allAtoms.filter(a => state.selectedAtoms.has(a.id));
+    const totalPrice = selectedAtoms.reduce((s, a) => s + a.price, 0);
+    const selectedCount = selectedAtoms.length;
+
     return `
     <div class="section-header">
         <span class="section-title">工程能力拆解方案</span>
@@ -243,7 +248,7 @@ function renderDecompose() {
 
         <!-- 中间：工程原子拆解 -->
         <div class="card eng-panel">
-            <div class="req-title">工程原子能力</div>
+            <div class="req-title">工程原子能力 <span style="color:#64748b;font-size:0.875rem;margin-left:0.5rem">(已选 ${selectedCount}/${allAtoms.length})</span></div>
             ${DATA.modules.map(m => `
             <div class="module-block">
                 <div class="module-header">
@@ -252,12 +257,13 @@ function renderDecompose() {
                 </div>
                 <div class="atom-list">
                     ${m.atoms.map(a => `
-                    <div class="atom-item" data-atom="${a.id}">
+                    <div class="atom-item ${state.selectedAtoms.has(a.id) ? 'selected' : ''}" data-atom="${a.id}">
+                        <input type="checkbox" class="atom-checkbox" data-atom-id="${a.id}" ${state.selectedAtoms.has(a.id) ? 'checked' : ''}>
                         <div class="atom-left">
                             <span class="atom-icon">${a.tag === 'ai' ? '🤖' : a.tag === 'data' ? '💾' : '⚙️'}</span>
                             <span class="atom-name">${a.name}</span>
                         </div>
-                        <span class="atom-status ${a.status}">${a.status === 'done' ? '已完成' : a.status === 'active' ? '进行中' : '待开始'}</span>
+                        <span class="atom-price">¥${a.price.toLocaleString()}</span>
                     </div>`).join('')}
                 </div>
             </div>`).join('')}
@@ -268,13 +274,13 @@ function renderDecompose() {
             <div class="card" style="margin-bottom:1rem">
                 <div class="quote-total-card">
                     <div class="quote-total-label">项目总报价</div>
-                    <div class="quote-total-num">¥${totalPrice.toLocaleString()}</div>
+                    <div class="quote-total-num" id="totalPrice">¥${totalPrice.toLocaleString()}</div>
                     <div class="quote-total-sub">含税 · 交付周期 12 个工作日</div>
                 </div>
-                <div class="req-title">费用明细</div>
-                <div class="quote-items">
-                    ${DATA.modules.flatMap(m => m.atoms).map(a => `
-                    <div class="quote-item">
+                <div class="req-title">费用明细 <span style="color:#64748b;font-size:0.875rem">(${selectedCount} 项)</span></div>
+                <div class="quote-items" id="quoteItems">
+                    ${selectedAtoms.map(a => `
+                    <div class="quote-item" data-atom-id="${a.id}">
                         <div class="quote-item-left">
                             <div class="quote-item-name">${a.name}</div>
                             <div class="quote-item-tag">复杂度 ${a.complexity}x</div>
@@ -309,6 +315,53 @@ function renderDecompose() {
             <button class="btn-generate" id="btnStartProd">📋 确认方案，进入生产</button>
         </div>
     </div>`;
+}
+
+// 更新工程拆解页面的价格
+function updateDecomposePrice() {
+    const allAtoms = DATA.modules.flatMap(m => m.atoms);
+    const selectedAtoms = allAtoms.filter(a => state.selectedAtoms.has(a.id));
+    const totalPrice = selectedAtoms.reduce((s, a) => s + a.price, 0);
+
+    // 更新总价
+    const totalPriceEl = document.getElementById('totalPrice');
+    if (totalPriceEl) {
+        totalPriceEl.textContent = `¥${totalPrice.toLocaleString()}`;
+    }
+
+    // 更新费用明细
+    const quoteItemsEl = document.getElementById('quoteItems');
+    if (quoteItemsEl) {
+        quoteItemsEl.innerHTML = selectedAtoms.map(a => `
+            <div class="quote-item" data-atom-id="${a.id}">
+                <div class="quote-item-left">
+                    <div class="quote-item-name">${a.name}</div>
+                    <div class="quote-item-tag">复杂度 ${a.complexity}x</div>
+                </div>
+                <div class="quote-item-price">¥${a.price.toLocaleString()}</div>
+            </div>`).join('');
+    }
+
+    // 更新选中状态样式
+    document.querySelectorAll('.atom-item').forEach(item => {
+        const atomId = item.dataset.atom;
+        if (state.selectedAtoms.has(atomId)) {
+            item.classList.add('selected');
+        } else {
+            item.classList.remove('selected');
+        }
+    });
+
+    // 更新标题中的计数
+    const engPanel = document.querySelector('.eng-panel .req-title');
+    if (engPanel) {
+        engPanel.innerHTML = `工程原子能力 <span style="color:#64748b;font-size:0.875rem;margin-left:0.5rem">(已选 ${selectedAtoms.length}/${allAtoms.length})</span>`;
+    }
+
+    const quoteTitle = document.querySelector('.quote-panel .req-title');
+    if (quoteTitle) {
+        quoteTitle.innerHTML = `费用明细 <span style="color:#64748b;font-size:0.875rem">(${selectedAtoms.length} 项)</span>`;
+    }
 }
 
 // ===== 页面3：生产看板 =====
@@ -643,6 +696,19 @@ function bindEvents(page) {
             el.addEventListener('click', () => {
                 document.querySelectorAll('.req-node').forEach(n => n.classList.remove('selected'));
                 el.classList.add('selected');
+            });
+        });
+
+        // 复选框事件监听
+        document.querySelectorAll('.atom-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const atomId = e.target.dataset.atomId;
+                if (e.target.checked) {
+                    state.selectedAtoms.add(atomId);
+                } else {
+                    state.selectedAtoms.delete(atomId);
+                }
+                updateDecomposePrice();
             });
         });
     }
