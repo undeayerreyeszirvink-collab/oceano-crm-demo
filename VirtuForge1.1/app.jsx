@@ -739,55 +739,6 @@ function EngineeringPage({ selectedModules, setSelectedModules, onNext }) {
         </div>
     );
 }
-                                                ¥{atom.price.toLocaleString()}
-                                            </div>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                <div className="space-y-4">
-                    <div className="bg-gradient-to-br from-indigo-900/30 to-purple-900/30 border border-indigo-500/30 rounded-xl p-6 sticky top-24">
-                        <h3 className="text-lg font-semibold mb-4">方案汇总</h3>
-
-                        <div className="space-y-3 mb-6">
-                            <div className="flex justify-between items-center">
-                                <span className="text-slate-400">已选任务</span>
-                                <span className="text-xl font-bold text-indigo-400">{selectedModules.length}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-slate-400">总成本</span>
-                                <span className="text-xl font-bold text-indigo-400">¥{totalPrice.toLocaleString()}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-slate-400">总工期</span>
-                                <span className="text-xl font-bold text-indigo-400">{Math.ceil(totalDays / 2)}天</span>
-                            </div>
-                        </div>
-
-                        <div className="border-t border-slate-700/50 pt-4 mb-6">
-                            <div className="text-sm text-slate-500 mb-2">补贴建议</div>
-                            <div className="text-2xl font-bold text-green-400">
-                                ¥{Math.round(totalPrice * 0.3).toLocaleString()}
-                            </div>
-                            <div className="text-xs text-slate-500 mt-1">按30%标准补贴</div>
-                        </div>
-
-                        <button
-                            onClick={onNext}
-                            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all"
-                        >
-                            进入生产看板 →
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
 
 // ===== Step 4: 生产看板 =====
 function ProductionPage({ selectedModules, progress, setProgress, onNext }) {
