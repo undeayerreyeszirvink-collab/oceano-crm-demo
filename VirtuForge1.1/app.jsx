@@ -37,43 +37,59 @@ const CATEGORIES = [
 
 const ENGINEERING_MODULES = [
     {
-        id: 'dialog',
-        name: '对话理解模块',
-        icon: '💬',
+        id: 'interface',
+        name: 'A类：接口与接入',
+        icon: '🔌',
         atoms: [
-            { id: 'prompt', name: 'Prompt工程设计', price: 1000, days: 1.5, complexity: 0.6, type: 'ai' },
-            { id: 'fsm', name: '多轮对话状态机', price: 3000, days: 3, complexity: 0.9, type: 'eng' },
-            { id: 'exception', name: '异常输入处理', price: 800, days: 1, complexity: 0.5, type: 'eng' },
-        ]
-    },
-    {
-        id: 'channel',
-        name: '渠道接入模块',
-        icon: '📱',
-        atoms: [
-            { id: 'wechat', name: '微信接入', price: 1500, days: 2, complexity: 0.7, type: 'eng' },
-            { id: 'web', name: 'Web接入', price: 1200, days: 1.5, complexity: 0.6, type: 'eng' },
-            { id: 'api', name: 'API接口', price: 800, days: 1, complexity: 0.5, type: 'eng' },
+            { id: 'wx_login', name: '微信登录接入', price: 1200, days: 1.5, complexity: 0.6, type: 'eng' },
+            { id: 'wx_scan', name: '微信扫码触发', price: 800, days: 1, complexity: 0.5, type: 'eng' },
+            { id: 'session_mgmt', name: '会话上下文管理', price: 1500, days: 2, complexity: 0.7, type: 'eng' },
+            { id: 'webhook', name: 'Webhook回调处理', price: 1000, days: 1.5, complexity: 0.6, type: 'eng' },
         ]
     },
     {
         id: 'data',
-        name: '数据处理模块',
+        name: 'B类：数据结构',
         icon: '🗃️',
         atoms: [
-            { id: 'schema', name: '数据结构设计', price: 500, days: 0.5, complexity: 0.3, type: 'data' },
-            { id: 'storage', name: '存储方案', price: 700, days: 1, complexity: 0.4, type: 'data' },
-            { id: 'export', name: '数据导出', price: 600, days: 0.5, complexity: 0.3, type: 'data' },
+            { id: 'json_schema', name: '需求字段定义（JSON Schema）', price: 600, days: 0.5, complexity: 0.4, type: 'data' },
+            { id: 'form_design', name: '表单结构设计', price: 800, days: 1, complexity: 0.5, type: 'data' },
+            { id: 'db_io', name: '数据入库/出库', price: 1000, days: 1.5, complexity: 0.6, type: 'data' },
+            { id: 'data_validation', name: '数据校验规则', price: 700, days: 1, complexity: 0.5, type: 'data' },
         ]
     },
     {
-        id: 'intelligence',
-        name: '智能决策模块',
+        id: 'ai',
+        name: 'C类：AI能力封装',
         icon: '🤖',
         atoms: [
-            { id: 'classify', name: '意图分类', price: 1200, days: 1.5, complexity: 0.7, type: 'ai' },
-            { id: 'extract', name: '信息提取', price: 1000, days: 1.5, complexity: 0.6, type: 'ai' },
-            { id: 'recommend', name: '智能推荐', price: 1500, days: 2, complexity: 0.8, type: 'ai' },
+            { id: 'prompt_template', name: 'Prompt模板设计', price: 1200, days: 1.5, complexity: 0.7, type: 'ai' },
+            { id: 'dialog_fsm', name: '多轮对话状态机', price: 3000, days: 3, complexity: 0.9, type: 'ai' },
+            { id: 'intent_recognition', name: '意图识别规则', price: 1500, days: 2, complexity: 0.8, type: 'ai' },
+            { id: 'entity_extract', name: '实体提取', price: 1800, days: 2.5, complexity: 0.8, type: 'ai' },
+            { id: 'context_understand', name: '上下文理解', price: 2000, days: 2.5, complexity: 0.85, type: 'ai' },
+        ]
+    },
+    {
+        id: 'business',
+        name: 'D类：业务逻辑',
+        icon: '⚙️',
+        atoms: [
+            { id: 'dispatch_rule', name: '分单规则配置', price: 1200, days: 1.5, complexity: 0.7, type: 'eng' },
+            { id: 'state_flow', name: '状态流转逻辑', price: 1000, days: 1.5, complexity: 0.6, type: 'eng' },
+            { id: 'exception_handle', name: '异常处理逻辑', price: 800, days: 1, complexity: 0.5, type: 'eng' },
+            { id: 'business_rule', name: '业务规则引擎', price: 1500, days: 2, complexity: 0.75, type: 'eng' },
+        ]
+    },
+    {
+        id: 'interaction',
+        name: 'E类：交互与触达',
+        icon: '📱',
+        atoms: [
+            { id: 'msg_push', name: '消息推送', price: 1000, days: 1.5, complexity: 0.6, type: 'eng' },
+            { id: 'feedback_collect', name: '用户反馈收集', price: 800, days: 1, complexity: 0.5, type: 'eng' },
+            { id: 'h5_page', name: '页面展示（H5/小程序）', price: 2000, days: 2.5, complexity: 0.7, type: 'eng' },
+            { id: 'notification', name: '通知提醒机制', price: 900, days: 1, complexity: 0.55, type: 'eng' },
         ]
     },
 ];
@@ -86,6 +102,7 @@ function App() {
     const [complexityScore, setComplexityScore] = useState(null);
     const [selectedModules, setSelectedModules] = useState([]);
     const [productionProgress, setProductionProgress] = useState(0);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     const steps = [
         { id: 0, name: 'AI人力市场', icon: '🏪' },
@@ -149,17 +166,30 @@ function App() {
                         selectedEmployee={selectedEmployee}
                         userIdea={userIdea}
                         setUserIdea={setUserIdea}
+                        isAnalyzing={isAnalyzing}
                         onNext={() => {
-                            // 模拟AI分析
+                            setIsAnalyzing(true);
                             setTimeout(() => {
                                 setComplexityScore({
-                                    overall: 0.72,
-                                    technical: 0.8,
-                                    business: 0.65,
-                                    risk: 0.7,
+                                    overall: 72,
+                                    business: 65,
+                                    data: 45,
+                                    integration: 70,
+                                    ai_interaction: 80,
+                                    exception: 75,
+                                    baseDays: 8,
+                                    complexityFactor: 2.3,
+                                    riskBuffer: 0.3,
+                                    minCost: 20000,
+                                    maxCost: 60000,
+                                    minDays: 14,
+                                    maxDays: 28,
+                                    level: '中高',
+                                    supportLevel: 'B类试点项目',
                                 });
+                                setIsAnalyzing(false);
                                 goToStep(2);
-                            }, 1500);
+                            }, 2000);
                         }}
                     />
                 )}
@@ -314,52 +344,52 @@ function MarketplacePage({ onSelectEmployee }) {
 }
 
 // ===== Step 1: 输入想法 =====
-function IdeaInputPage({ selectedEmployee, userIdea, setUserIdea, onNext }) {
+function IdeaInputPage({ selectedEmployee, userIdea, setUserIdea, onNext, isAnalyzing }) {
     return (
         <div className="fade-in max-w-3xl mx-auto">
             <div className="text-center mb-8">
                 <div className="text-5xl mb-4">{selectedEmployee?.icon}</div>
                 <h2 className="text-3xl font-bold mb-2">定制你的{selectedEmployee?.role}</h2>
-                <p className="text-slate-400">描述你的具体需求，AI会自动评估复杂度和成本</p>
+                <p className="text-slate-400">描述你的具体需求，AI 将自动评估复杂度、成本区间与风险</p>
             </div>
 
             <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-8">
                 <label className="block text-sm text-slate-400 mb-3">
-                    💡 描述你的想法（越详细越好）
+                    💡 描述你的想法（越详细，评估越准确）
                 </label>
                 <textarea
                     value={userIdea}
                     onChange={(e) => setUserIdea(e.target.value)}
-                    placeholder={`例如：我需要一个${selectedEmployee?.role}，能够通过微信自动回复客户咨询，识别客户意图，并将高意向客户信息自动录入CRM系统...`}
+                    placeholder={`例如：我需要一个${selectedEmployee?.role}，能够通过微信自动回复客户咨询，识别客户意图，并将高意向客户信息自动录入CRM系统，同时按规则分配给对应销售跟进...`}
                     className="w-full h-48 bg-slate-900/50 border border-slate-700 rounded-lg p-4 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none"
                 />
-
+                <div className="mt-4 grid grid-cols-3 gap-3 text-xs text-slate-500">
+                    <div className="bg-slate-900/30 rounded-lg p-3">
+                        <div className="text-slate-300 font-medium mb-1">建议描述</div>
+                        <div>触达渠道（微信/Web）</div>
+                    </div>
+                    <div className="bg-slate-900/30 rounded-lg p-3">
+                        <div className="text-slate-300 font-medium mb-1">建议描述</div>
+                        <div>对接系统（ERP/CRM）</div>
+                    </div>
+                    <div className="bg-slate-900/30 rounded-lg p-3">
+                        <div className="text-slate-300 font-medium mb-1">建议描述</div>
+                        <div>业务流程与分支</div>
+                    </div>
+                </div>
                 <div className="mt-6 flex items-center justify-between">
                     <div className="text-sm text-slate-500">
                         <span className="text-indigo-400 font-semibold">{userIdea.length}</span> 字符
                     </div>
                     <button
                         onClick={onNext}
-                        disabled={userIdea.length < 20}
-                        className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg font-semibold transition-all"
+                        disabled={userIdea.length < 20 || isAnalyzing}
+                        className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg font-semibold transition-all flex items-center gap-2"
                     >
-                        开始AI评估 →
+                        {isAnalyzing ? (
+                            <><span className="pulse-anim">⚙️</span> AI 分析中...</>
+                        ) : '开始AI评估 →'}
                     </button>
-                </div>
-            </div>
-
-            <div className="mt-8 grid grid-cols-3 gap-4">
-                <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-4 text-center">
-                    <div className="text-2xl mb-2">⚡</div>
-                    <div className="text-sm text-slate-400">AI自动评估</div>
-                </div>
-                <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-4 text-center">
-                    <div className="text-2xl mb-2">📊</div>
-                    <div className="text-sm text-slate-400">复杂度分析</div>
-                </div>
-                <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-4 text-center">
-                    <div className="text-2xl mb-2">💰</div>
-                    <div className="text-sm text-slate-400">成本预估</div>
                 </div>
             </div>
         </div>
@@ -368,63 +398,143 @@ function IdeaInputPage({ selectedEmployee, userIdea, setUserIdea, onNext }) {
 
 // ===== Step 2: 复杂度评估 =====
 function ComplexityPage({ complexityScore, selectedEmployee, onNext }) {
-    if (!complexityScore) {
-        return (
-            <div className="text-center py-20">
-                <div className="text-6xl mb-4 pulse-anim">⚙️</div>
-                <p className="text-xl text-slate-400">AI 正在分析复杂度...</p>
-            </div>
-        );
-    }
+    const dims = [
+        { key: 'business', label: '业务复杂度', desc: '存在多轮对话与分支判断', color: 'from-blue-500 to-indigo-500' },
+        { key: 'data', label: '数据复杂度', desc: '字段相对清晰，但需结构化', color: 'from-cyan-500 to-blue-500' },
+        { key: 'integration', label: '集成复杂度', desc: '涉及微信接入与消息回调', color: 'from-violet-500 to-purple-500' },
+        { key: 'ai_interaction', label: 'AI交互复杂度', desc: '用户表达非标准，需多轮澄清', color: 'from-purple-500 to-pink-500' },
+        { key: 'exception', label: '异常处理复杂度', desc: '需处理模糊需求、重复输入', color: 'from-orange-500 to-red-500' },
+    ];
 
-    const estimatedCost = Math.round(selectedEmployee.price * (0.8 + complexityScore.overall * 0.4));
-    const estimatedDays = Math.round(parseInt(selectedEmployee.period) * (0.9 + complexityScore.overall * 0.2));
+    const risks = {
+        high: [
+            '用户自然语言表达不稳定',
+            '微信接口权限与消息触达限制',
+            '分单规则需要业务方反复确认',
+        ],
+        mid: [
+            '需求字段定义不完整',
+            '接单流程未标准化',
+        ],
+        low: [
+            '基础对话采集能力',
+            '数据存储与导出',
+        ],
+    };
+
+    const milestones = [
+        { id: 'M0', name: '需求澄清与原型验证', items: ['输出需求字段表', '输出对话流程图', '确认接入方式'] },
+        { id: 'M1', name: '最小虚拟员工上线', items: ['完成对话采集', '完成信息结构化', '完成后台查看'] },
+        { id: 'M2', name: '业务闭环', items: ['完成分配规则', '完成状态流转', '完成通知机制'] },
+        { id: 'M3', name: '试运行与优化', items: ['收集真实对话', '优化异常处理', '固化行业模板'] },
+    ];
 
     return (
-        <div className="fade-in max-w-4xl mx-auto">
+        <div className="fade-in max-w-5xl mx-auto">
             <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold mb-2">复杂度评估报告</h2>
-                <p className="text-slate-400">AI 已完成需求分析</p>
+                <p className="text-slate-400">AI 已完成需求分析 · {selectedEmployee?.role}</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                {/* 综合评分 */}
-                <div className="bg-gradient-to-br from-indigo-900/30 to-purple-900/30 border border-indigo-500/30 rounded-xl p-6">
-                    <div className="text-center">
-                        <div className="text-sm text-slate-400 mb-2">综合复杂度</div>
-                        <div className="text-6xl font-bold text-indigo-400 mb-2">
-                            {(complexityScore.overall * 100).toFixed(0)}
-                        </div>
-                        <div className="text-sm text-slate-500">满分100分</div>
-                    </div>
+            {/* 综合评分卡 */}
+            <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-indigo-500/30 rounded-xl p-6 mb-6 grid grid-cols-2 md:grid-cols-5 gap-4 items-center">
+                <div className="text-center md:col-span-1">
+                    <div className="text-xs text-slate-400 mb-1">综合复杂度</div>
+                    <div className="text-6xl font-black text-indigo-300">{complexityScore.overall}</div>
+                    <div className="text-xs text-slate-500 mt-1">满分 100</div>
                 </div>
+                <div className="md:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <InfoChip label="复杂度等级" value={complexityScore.level} color="text-yellow-400" />
+                    <InfoChip label="扶持建议" value={complexityScore.supportLevel} color="text-green-400" />
+                    <InfoChip label="成本区间" value={`¥${(complexityScore.minCost/10000).toFixed(0)}万 - ¥${(complexityScore.maxCost/10000).toFixed(0)}万`} color="text-indigo-400" />
+                    <InfoChip label="预计周期" value={`${complexityScore.minDays} - ${complexityScore.maxDays} 天`} color="text-purple-400" />
+                </div>
+            </div>
 
-                {/* 维度评分 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* 五维评分 */}
                 <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
+                    <h3 className="text-base font-semibold mb-4">五维复杂度评分</h3>
                     <div className="space-y-4">
-                        <ScoreBar label="技术复杂度" score={complexityScore.technical} />
-                        <ScoreBar label="业务复杂度" score={complexityScore.business} />
-                        <ScoreBar label="风险系数" score={complexityScore.risk} />
+                        {dims.map(d => (
+                            <div key={d.key}>
+                                <div className="flex justify-between text-sm mb-1">
+                                    <span className="text-slate-300">{d.label}</span>
+                                    <span className="font-bold text-slate-200">{complexityScore[d.key]}</span>
+                                </div>
+                                <div className="h-2 bg-slate-700/50 rounded-full overflow-hidden mb-1">
+                                    <div
+                                        className={`h-full bg-gradient-to-r ${d.color} transition-all duration-1000`}
+                                        style={{ width: `${complexityScore[d.key]}%` }}
+                                    />
+                                </div>
+                                <div className="text-xs text-slate-500">{d.desc}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 成本估算 */}
+                <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
+                    <h3 className="text-base font-semibold mb-4">成本估算区间</h3>
+                    <div className="bg-slate-900/50 rounded-lg p-4 mb-4 font-mono text-sm space-y-2">
+                        <div className="flex justify-between text-slate-400">
+                            <span>基础工作量</span><span className="text-slate-200">{complexityScore.baseDays} 人天</span>
+                        </div>
+                        <div className="flex justify-between text-slate-400">
+                            <span>复杂度系数</span><span className="text-slate-200">× {complexityScore.complexityFactor}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-400">
+                            <span>风险缓冲</span><span className="text-slate-200">+ {complexityScore.riskBuffer * 100}%</span>
+                        </div>
+                        <div className="border-t border-slate-700 pt-2 flex justify-between text-slate-300">
+                            <span>预计工作量</span><span>{complexityScore.minDays} - {complexityScore.maxDays} 人天</span>
+                        </div>
+                    </div>
+                    <div className="text-center bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-4">
+                        <div className="text-xs text-slate-400 mb-1">成本区间（不含税）</div>
+                        <div className="text-2xl font-bold text-indigo-300">
+                            ¥{complexityScore.minCost.toLocaleString()} — ¥{complexityScore.maxCost.toLocaleString()}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1">不提供固定报价，仅提供区间参考</div>
                     </div>
                 </div>
             </div>
 
-            {/* 成本预估 */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
-                <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 text-center">
-                    <div className="text-3xl mb-2">💰</div>
-                    <div className="text-2xl font-bold text-indigo-400 mb-1">¥{estimatedCost.toLocaleString()}</div>
-                    <div className="text-sm text-slate-500">预估成本</div>
+            {/* 风险识别 */}
+            <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 mb-6">
+                <h3 className="text-base font-semibold mb-4">⚠️ 风险识别</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <RiskBlock level="高风险" color="red" items={risks.high} />
+                    <RiskBlock level="中风险" color="yellow" items={risks.mid} />
+                    <RiskBlock level="低风险" color="green" items={risks.low} />
                 </div>
-                <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 text-center">
-                    <div className="text-3xl mb-2">⏱️</div>
-                    <div className="text-2xl font-bold text-indigo-400 mb-1">{estimatedDays}天</div>
-                    <div className="text-sm text-slate-500">预估工期</div>
-                </div>
-                <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 text-center">
-                    <div className="text-3xl mb-2">👥</div>
-                    <div className="text-2xl font-bold text-indigo-400 mb-1">3人</div>
-                    <div className="text-sm text-slate-500">团队规模</div>
+            </div>
+
+            {/* 实施路径 */}
+            <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 mb-6">
+                <h3 className="text-base font-semibold mb-4">🗺️ 推荐实施路径</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {milestones.map((m, idx) => (
+                        <div key={m.id} className="relative">
+                            {idx < milestones.length - 1 && (
+                                <div className="hidden md:block absolute top-5 left-full w-full h-px bg-indigo-500/30 z-0" />
+                            )}
+                            <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 relative z-10">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-xs font-bold px-2 py-0.5 bg-indigo-500/20 text-indigo-400 rounded-full">{m.id}</span>
+                                </div>
+                                <div className="text-sm font-medium text-slate-200 mb-2">{m.name}</div>
+                                <ul className="space-y-1">
+                                    {m.items.map((item, i) => (
+                                        <li key={i} className="text-xs text-slate-500 flex items-start gap-1">
+                                            <span className="text-indigo-500 mt-0.5">·</span>{item}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
 
@@ -440,19 +550,35 @@ function ComplexityPage({ complexityScore, selectedEmployee, onNext }) {
     );
 }
 
-function ScoreBar({ label, score }) {
+function InfoChip({ label, value, color }) {
     return (
-        <div>
-            <div className="flex justify-between text-sm mb-1">
-                <span className="text-slate-400">{label}</span>
-                <span className="text-indigo-400 font-semibold">{(score * 100).toFixed(0)}分</span>
+        <div className="bg-slate-900/40 rounded-lg p-3 text-center">
+            <div className="text-xs text-slate-500 mb-1">{label}</div>
+            <div className={`text-sm font-bold ${color}`}>{value}</div>
+        </div>
+    );
+}
+
+function RiskBlock({ level, color, items }) {
+    const colors = {
+        red: 'border-red-500/30 bg-red-500/5 text-red-400',
+        yellow: 'border-yellow-500/30 bg-yellow-500/5 text-yellow-400',
+        green: 'border-green-500/30 bg-green-500/5 text-green-400',
+    };
+    const dotColors = { red: 'bg-red-500', yellow: 'bg-yellow-500', green: 'bg-green-500' };
+    return (
+        <div className={`border rounded-lg p-4 ${colors[color]}`}>
+            <div className="flex items-center gap-2 mb-3 font-semibold text-sm">
+                <span className={`w-2 h-2 rounded-full ${dotColors[color]}`} />
+                {level}
             </div>
-            <div className="h-2 bg-slate-700/50 rounded-full overflow-hidden">
-                <div
-                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-1000"
-                    style={{ width: `${score * 100}%` }}
-                />
-            </div>
+            <ul className="space-y-2">
+                {items.map((item, i) => (
+                    <li key={i} className="text-xs text-slate-400 flex items-start gap-1.5">
+                        <span className="mt-0.5 shrink-0">—</span>{item}
+                    </li>
+                ))}
+            </ul>
         </div>
     );
 }
@@ -475,19 +601,30 @@ function EngineeringPage({ selectedModules, setSelectedModules, onNext }) {
         );
     };
 
-    const totalPrice = allAtoms
-        .filter(a => selectedModules.includes(a.id))
-        .reduce((sum, a) => sum + a.price, 0);
+    const selectedAtoms = allAtoms.filter(a => selectedModules.includes(a.id));
+    const totalPrice = selectedAtoms.reduce((sum, a) => sum + a.price, 0);
+    const totalDays = selectedAtoms.reduce((sum, a) => sum + a.days, 0);
 
-    const totalDays = allAtoms
-        .filter(a => selectedModules.includes(a.id))
-        .reduce((sum, a) => sum + a.days, 0);
+    const typeColors = {
+        eng: 'bg-blue-500/20 text-blue-400',
+        ai: 'bg-purple-500/20 text-purple-400',
+        data: 'bg-cyan-500/20 text-cyan-400',
+    };
+    const typeLabels = { eng: '工程', ai: 'AI', data: '数据' };
 
     return (
         <div className="fade-in">
-            <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold mb-2">工程任务拆解</h2>
-                <p className="text-slate-400">系统自动拆解为标准化工程原子能力</p>
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <h2 className="text-2xl font-bold">工程任务拆解</h2>
+                    <p className="text-slate-400 text-sm mt-1">按 ABCDE 五大类标准化原子能力，勾选即计价</p>
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={() => setSelectedModules(allAtoms.map(a => a.id))}
+                        className="px-3 py-1.5 text-xs bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-lg transition-all">全选</button>
+                    <button onClick={() => setSelectedModules([])}
+                        className="px-3 py-1.5 text-xs bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-lg transition-all">清空</button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -495,21 +632,22 @@ function EngineeringPage({ selectedModules, setSelectedModules, onNext }) {
                     {ENGINEERING_MODULES.map(module => {
                         const moduleSelected = module.atoms.filter(a => selectedModules.includes(a.id));
                         const modulePrice = moduleSelected.reduce((sum, a) => sum + a.price, 0);
+                        const moduleDays = moduleSelected.reduce((sum, a) => sum + a.days, 0);
 
                         return (
                             <div key={module.id} className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-5">
                                 <div className="flex items-center justify-between mb-4">
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-slate-100">
-                                            <span className="mr-2">{module.icon}</span>
-                                            {module.name}
-                                        </h3>
-                                        <p className="text-sm text-slate-500 mt-1">
-                                            已选 {moduleSelected.length}/{module.atoms.length} 项
-                                        </p>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xl">{module.icon}</span>
+                                        <div>
+                                            <h3 className="text-base font-semibold text-slate-100">{module.name}</h3>
+                                            <p className="text-xs text-slate-500 mt-0.5">
+                                                已选 {moduleSelected.length}/{module.atoms.length} 项 · {moduleDays.toFixed(1)} 天
+                                            </p>
+                                        </div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-xl font-bold text-indigo-400">¥{modulePrice.toLocaleString()}</div>
+                                        <div className="text-lg font-bold text-indigo-400">¥{modulePrice.toLocaleString()}</div>
                                     </div>
                                 </div>
 
@@ -528,16 +666,79 @@ function EngineeringPage({ selectedModules, setSelectedModules, onNext }) {
                                                     type="checkbox"
                                                     checked={selectedModules.includes(atom.id)}
                                                     onChange={() => toggleModule(atom.id)}
-                                                    className="w-4 h-4 accent-indigo-500"
+                                                    className="w-4 h-4 accent-indigo-500 shrink-0"
                                                 />
                                                 <div>
                                                     <div className="text-sm font-medium text-slate-200">{atom.name}</div>
-                                                    <div className="text-xs text-slate-500">
-                                                        复杂度 {(atom.complexity * 100).toFixed(0)}% · {atom.days}天
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <span className={`text-xs px-1.5 py-0.5 rounded ${typeColors[atom.type]}`}>
+                                                            {typeLabels[atom.type]}
+                                                        </span>
+                                                        <span className="text-xs text-slate-500">复杂度 {(atom.complexity * 100).toFixed(0)}%</span>
+                                                        <span className="text-xs text-slate-500">{atom.days}天</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="text-sm font-semibold text-indigo-400">
+                                            <div className="text-sm font-semibold text-indigo-400 shrink-0 ml-2">
+                                                ¥{atom.price.toLocaleString()}
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div className="space-y-4">
+                    <div className="bg-gradient-to-br from-indigo-900/30 to-purple-900/30 border border-indigo-500/30 rounded-xl p-6 sticky top-24">
+                        <h3 className="text-base font-semibold mb-4">方案汇总</h3>
+                        <div className="space-y-3 mb-5">
+                            <div className="flex justify-between items-center">
+                                <span className="text-slate-400 text-sm">已选任务</span>
+                                <span className="text-xl font-bold text-indigo-400">{selectedModules.length} 项</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-slate-400 text-sm">总工期</span>
+                                <span className="text-xl font-bold text-indigo-400">{Math.ceil(totalDays / 2)} 天</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-slate-400 text-sm">总成本</span>
+                                <span className="text-xl font-bold text-indigo-400">¥{totalPrice.toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        <div className="border-t border-slate-700/50 pt-4 mb-5">
+                            <div className="text-xs text-slate-500 mb-2">按类型分布</div>
+                            {['eng', 'ai', 'data'].map(type => {
+                                const typeAtoms = selectedAtoms.filter(a => a.type === type);
+                                const typePrice = typeAtoms.reduce((s, a) => s + a.price, 0);
+                                return typePrice > 0 ? (
+                                    <div key={type} className="flex justify-between text-xs mb-1.5">
+                                        <span className={`px-1.5 py-0.5 rounded ${typeColors[type]}`}>{typeLabels[type]}</span>
+                                        <span className="text-slate-400">¥{typePrice.toLocaleString()}</span>
+                                    </div>
+                                ) : null;
+                            })}
+                        </div>
+
+                        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 mb-5">
+                            <div className="text-xs text-slate-400 mb-1">政府补贴建议（30%）</div>
+                            <div className="text-xl font-bold text-green-400">¥{Math.round(totalPrice * 0.3).toLocaleString()}</div>
+                        </div>
+
+                        <button
+                            onClick={onNext}
+                            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all"
+                        >
+                            进入生产看板 →
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
                                                 ¥{atom.price.toLocaleString()}
                                             </div>
                                         </label>
