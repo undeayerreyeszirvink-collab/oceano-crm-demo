@@ -2,26 +2,37 @@ const { useState, useEffect } = React;
 
 // ===== 数据层 =====
 const VIRTUAL_EMPLOYEES = [
-    { id: 1, role: '销售顾问', icon: '💼', category: 'sales', desc: '客户需求采集、线索筛选、自动跟进', price: 8500, complexity: 0.7, period: '10-12天' },
-    { id: 2, role: '客服专员', icon: '💬', category: 'service', desc: '7x24智能应答、工单处理、满意度调查', price: 7200, complexity: 0.6, period: '8-10天' },
-    { id: 3, role: '招聘专员', icon: '👥', category: 'hr', desc: '简历筛选、候选人评分、面试安排', price: 6000, complexity: 0.5, period: '7-9天' },
-    { id: 4, role: '法务助理', icon: '⚖️', category: 'legal', desc: '合同审核、风险识别、条款建议', price: 9500, complexity: 0.8, period: '12-15天' },
-    { id: 5, role: '财务助理', icon: '💰', category: 'finance', desc: '发票识别、报销审核、账目核对', price: 7800, complexity: 0.6, period: '9-11天' },
-    { id: 6, role: '数据分析师', icon: '📊', category: 'analytics', desc: '数据清洗、报表生成、趋势分析', price: 8800, complexity: 0.7, period: '10-13天' },
-    { id: 7, role: '内容编辑', icon: '✍️', category: 'content', desc: '文案生成、内容审核、SEO优化', price: 6500, complexity: 0.5, period: '7-9天' },
-    { id: 8, role: '运营助理', icon: '📱', category: 'operations', desc: '活动策划、用户运营、数据监控', price: 7000, complexity: 0.6, period: '8-10天' },
+    // 销售与增长
+    { id: 1, role: '商机挖掘员', icon: '🔍', category: 'sales', desc: '自动识别潜在客户、商机评分、线索分配', price: 8500, complexity: 0.7, period: '10-12天' },
+    { id: 2, role: '客户跟进员', icon: '📞', category: 'sales', desc: '自动跟进客户、记录沟通、提醒关键节点', price: 7200, complexity: 0.6, period: '8-10天' },
+    { id: 3, role: '报价生成员', icon: '💰', category: 'sales', desc: '智能报价计算、成本分析、方案生成', price: 7800, complexity: 0.65, period: '9-11天' },
+
+    // 供应链与运营
+    { id: 4, role: '排单员', icon: '📋', category: 'supply', desc: '生产排程优化、产能平衡、交期预测', price: 9200, complexity: 0.8, period: '11-14天' },
+    { id: 5, role: '采购员', icon: '🛒', category: 'supply', desc: '供应商比价、采购建议、库存预警', price: 8000, complexity: 0.7, period: '9-12天' },
+    { id: 6, role: '库存优化员', icon: '📦', category: 'supply', desc: '库存分析、补货建议、呆滞预警', price: 7500, complexity: 0.65, period: '8-10天' },
+
+    // 财务与风控
+    { id: 7, role: '资金分析员', icon: '💵', category: 'finance', desc: '现金流分析、资金预测、风险预警', price: 9500, complexity: 0.8, period: '12-15天' },
+    { id: 8, role: '对账员', icon: '🧾', category: 'finance', desc: '自动对账、差异识别、账单核对', price: 6800, complexity: 0.6, period: '8-10天' },
+    { id: 9, role: '成本分析员', icon: '📊', category: 'finance', desc: '成本核算、利润分析、成本优化建议', price: 8500, complexity: 0.7, period: '10-12天' },
+
+    // 生产与制造
+    { id: 10, role: '生产计划员', icon: '🏭', category: 'production', desc: '生产计划制定、物料需求计算、进度追踪', price: 9000, complexity: 0.75, period: '11-13天' },
+    { id: 11, role: '质量监察员', icon: '🔬', category: 'production', desc: '质量数据分析、异常识别、改进建议', price: 8200, complexity: 0.7, period: '9-11天' },
+
+    // 市场与情报
+    { id: 12, role: '市场情报分析员', icon: '📈', category: 'market', desc: '市场趋势分析、行业报告生成、机会识别', price: 8800, complexity: 0.75, period: '10-13天' },
+    { id: 13, role: '竞品监控员', icon: '👁️', category: 'market', desc: '竞品动态追踪、价格监控、策略分析', price: 7500, complexity: 0.65, period: '8-10天' },
 ];
 
 const CATEGORIES = [
     { id: 'all', name: '全部岗位', icon: '🎯' },
-    { id: 'sales', name: '销售', icon: '💼' },
-    { id: 'service', name: '客服', icon: '💬' },
-    { id: 'hr', name: '人力', icon: '👥' },
-    { id: 'legal', name: '法务', icon: '⚖️' },
-    { id: 'finance', name: '财务', icon: '💰' },
-    { id: 'analytics', name: '数据', icon: '📊' },
-    { id: 'content', name: '内容', icon: '✍️' },
-    { id: 'operations', name: '运营', icon: '📱' },
+    { id: 'sales', name: '销售与增长', icon: '📈' },
+    { id: 'supply', name: '供应链与运营', icon: '🔗' },
+    { id: 'finance', name: '财务与风控', icon: '💰' },
+    { id: 'production', name: '生产与制造', icon: '🏭' },
+    { id: 'market', name: '市场与情报', icon: '🔍' },
 ];
 
 const ENGINEERING_MODULES = [
@@ -198,68 +209,102 @@ function App() {
 // ===== Step 0: AI人力市场 =====
 function MarketplacePage({ onSelectEmployee }) {
     const [category, setCategory] = useState('all');
-    const filteredEmployees = category === 'all'
-        ? VIRTUAL_EMPLOYEES
-        : VIRTUAL_EMPLOYEES.filter(e => e.category === category);
+
+    const groupedByCategory = CATEGORIES.filter(c => c.id !== 'all').map(cat => ({
+        ...cat,
+        employees: VIRTUAL_EMPLOYEES.filter(e => e.category === cat.id),
+    }));
+
+    const filteredGroups = category === 'all'
+        ? groupedByCategory
+        : groupedByCategory.filter(g => g.id === category);
 
     return (
         <div className="fade-in">
-            <div className="text-center mb-12">
-                <h2 className="text-4xl font-bold mb-4">
+            {/* 标题 */}
+            <div className="text-center mb-10">
+                <div className="inline-block px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 rounded-full text-xs text-indigo-400 mb-4">
+                    AI 人力资源市场
+                </div>
+                <h2 className="text-4xl font-bold mb-3">
                     <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                        AI 人力资源市场
+                        按职能定位虚拟员工
                     </span>
                 </h2>
-                <p className="text-slate-400 text-lg">按职能定位，选择你需要的虚拟员工</p>
+                <p className="text-slate-400 text-base">选择岗位，AI 自动评估复杂度、拆解工程、生成可交付的虚拟员工</p>
             </div>
 
             {/* 分类筛选 */}
-            <div className="flex flex-wrap justify-center gap-2 mb-8">
+            <div className="flex flex-wrap justify-center gap-2 mb-10">
                 {CATEGORIES.map(cat => (
                     <button
                         key={cat.id}
                         onClick={() => setCategory(cat.id)}
-                        className={`px-4 py-2 rounded-full text-sm transition-all ${
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                             category === cat.id
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50'
+                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
                         }`}
                     >
-                        <span className="mr-1">{cat.icon}</span>
+                        <span className="mr-1.5">{cat.icon}</span>
                         {cat.name}
                     </button>
                 ))}
             </div>
 
-            {/* 员工卡片 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {filteredEmployees.map(emp => (
-                    <div
-                        key={emp.id}
-                        onClick={() => onSelectEmployee(emp)}
-                        className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 hover:border-indigo-500/50 hover:bg-slate-800/50 transition-all cursor-pointer group"
-                    >
-                        <div className="text-4xl mb-3">{emp.icon}</div>
-                        <h3 className="text-lg font-semibold text-slate-100 mb-2">{emp.role}</h3>
-                        <p className="text-sm text-slate-400 mb-4 line-clamp-2">{emp.desc}</p>
-                        <div className="flex items-center justify-between text-sm">
-                            <span className="text-indigo-400 font-semibold">¥{emp.price.toLocaleString()}</span>
-                            <span className="text-slate-500">{emp.period}</span>
+            {/* 按分类分组展示 */}
+            <div className="space-y-10">
+                {filteredGroups.map(group => (
+                    <div key={group.id}>
+                        {/* 分类标题 */}
+                        <div className="flex items-center gap-3 mb-4">
+                            <span className="text-xl">{group.icon}</span>
+                            <h3 className="text-lg font-semibold text-slate-200">{group.name}</h3>
+                            <div className="flex-1 h-px bg-slate-700/50" />
+                            <span className="text-xs text-slate-500">{group.employees.length} 个岗位</span>
                         </div>
-                        <div className="mt-3 pt-3 border-t border-slate-700/50">
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="text-slate-500">复杂度</span>
-                                <div className="flex items-center gap-1">
-                                    {[...Array(5)].map((_, i) => (
-                                        <div
-                                            key={i}
-                                            className={`w-2 h-2 rounded-full ${
-                                                i < emp.complexity * 5 ? 'bg-indigo-500' : 'bg-slate-700'
-                                            }`}
-                                        />
-                                    ))}
+
+                        {/* 员工卡片 */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {group.employees.map(emp => (
+                                <div
+                                    key={emp.id}
+                                    onClick={() => onSelectEmployee(emp)}
+                                    className="bg-slate-800/30 border border-slate-700/40 rounded-xl p-5 hover:border-indigo-500/50 hover:bg-slate-800/60 transition-all cursor-pointer group"
+                                >
+                                    <div className="flex items-start justify-between mb-3">
+                                        <span className="text-3xl">{emp.icon}</span>
+                                        <span className="text-xs px-2 py-1 bg-slate-700/50 text-slate-400 rounded-full">
+                                            {emp.period}
+                                        </span>
+                                    </div>
+                                    <h4 className="text-base font-semibold text-slate-100 mb-1.5">{emp.role}</h4>
+                                    <p className="text-sm text-slate-400 mb-4 leading-relaxed">{emp.desc}</p>
+
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-lg font-bold text-indigo-400">¥{emp.price.toLocaleString()}</span>
+                                        <div className="flex items-center gap-1">
+                                            {[...Array(5)].map((_, i) => (
+                                                <div
+                                                    key={i}
+                                                    className={`w-1.5 h-1.5 rounded-full ${
+                                                        i < Math.round(emp.complexity * 5)
+                                                            ? 'bg-indigo-500'
+                                                            : 'bg-slate-700'
+                                                    }`}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-3 pt-3 border-t border-slate-700/40 flex items-center justify-between">
+                                        <span className="text-xs text-slate-500">点击定制</span>
+                                        <span className="text-xs text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            开始制造 →
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
+                            ))}
                         </div>
                     </div>
                 ))}
