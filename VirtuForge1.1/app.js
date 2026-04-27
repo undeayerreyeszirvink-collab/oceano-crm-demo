@@ -398,6 +398,23 @@ function IdeaInputPage({ selectedEmployee, userIdea, setUserIdea, onNext, isAnal
 
 // ===== Step 2: 复杂度评估 =====
 function ComplexityPage({ complexityScore, selectedEmployee, onNext }) {
+    // 空值保护：如果没有评估数据，显示提示
+    if (!complexityScore) {
+        return (
+            <div className="fade-in max-w-2xl mx-auto text-center py-20">
+                <div className="text-6xl mb-6">📊</div>
+                <h2 className="text-2xl font-bold mb-4">尚未完成复杂度评估</h2>
+                <p className="text-slate-400 mb-8">请先在「输入想法」页面选择虚拟员工并完成 AI 评估</p>
+                <button
+                    onClick={() => window.location.hash = '#step-1'}
+                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all"
+                >
+                    返回输入想法 →
+                </button>
+            </div>
+        );
+    }
+
     const dims = [
         { key: 'business', label: '业务复杂度', desc: '存在多轮对话与分支判断', color: 'from-blue-500 to-indigo-500' },
         { key: 'data', label: '数据复杂度', desc: '字段相对清晰，但需结构化', color: 'from-cyan-500 to-blue-500' },
