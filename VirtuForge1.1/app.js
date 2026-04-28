@@ -168,6 +168,7 @@ function App() {
                         setUserIdea={setUserIdea}
                         isAnalyzing={isAnalyzing}
                         onNext={() => {
+                            if (isAnalyzing || !selectedEmployee || userIdea.trim().length < 20) return;
                             setIsAnalyzing(true);
                             setTimeout(() => {
                                 setComplexityScore({
@@ -345,6 +346,16 @@ function MarketplacePage({ onSelectEmployee }) {
 
 // ===== Step 1: 输入想法 =====
 function IdeaInputPage({ selectedEmployee, userIdea, setUserIdea, onNext, isAnalyzing }) {
+    const templates = {
+        '智能客服': '我需要一个智能客服虚拟员工，能够通过微信公众号自动回复客户咨询，识别客户意图（咨询产品、投诉、售后等），并将高意向客户信息自动录入CRM系统，同时按地区和产品线规则分配给对应销售跟进。需要支持多轮对话澄清需求，处理模糊表达，并在无法理解时转人工。',
+        '需求收集员': '我需要一个需求收集虚拟员工，通过企业微信与客户对话，采集装修需求（面积、风格、预算、工期），自动结构化存储到数据库，并根据预算和区域自动分配给设计师。需要处理客户的不完整输入，主动追问缺失信息，并支持后台查看和导出。',
+        '订单处理员': '我需要一个订单处理虚拟员工，对接电商平台API，自动抓取新订单，校验库存和地址信息，生成发货单并推送到仓储系统。异常订单（缺货、地址不全）自动标记并通知运营人员处理。需要支持批量处理和实时状态同步。',
+        '数据分析师': '我需要一个数据分析虚拟员工，每日自动从MySQL数据库提取销售数据，生成多维度报表（按地区、产品、渠道），识别异常波动并推送预警到钉钉群。需要支持自定义查询条件，导出Excel，并能回答业务人员的自然语言提问。',
+        '招聘助理': '我需要一个招聘助理虚拟员工，自动筛选简历（匹配岗位JD关键词），通过邮件或短信邀约候选人面试，同步面试安排到HR系统日历。需要处理候选人的改期请求，自动发送面试提醒，并在面试后收集反馈。',
+    };
+
+    const currentTemplate = templates[selectedEmployee?.role];
+
     return (
         <div className="fade-in max-w-3xl mx-auto">
             <div className="text-center mb-8">
@@ -363,27 +374,45 @@ function IdeaInputPage({ selectedEmployee, userIdea, setUserIdea, onNext, isAnal
                     placeholder={`例如：我需要一个${selectedEmployee?.role}，能够通过微信自动回复客户咨询，识别客户意图，并将高意向客户信息自动录入CRM系统，同时按规则分配给对应销售跟进...`}
                     className="w-full h-48 bg-slate-900/50 border border-slate-700 rounded-lg p-4 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none"
                 />
+
+                {/* 参考模板 */}
+                {currentTemplate && (
+                    <div className="mt-4 bg-indigo-500/5 border border-indigo-500/20 rounded-lg p-4">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                            <div className="text-xs text-indigo-400 font-medium">📋 参考模板</div>
+                            <button
+                                onClick={() => setUserIdea(currentTemplate)}
+                                className="text-xs px-3 py-1 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 rounded border border-indigo-500/30 transition-all"
+                            >
+                                一键填入
+                            </button>
+                        </div>
+                        <div className="text-xs text-slate-400 leading-relaxed">{currentTemplate}</div>
+                    </div>
+                )}
+
                 <div className="mt-4 grid grid-cols-3 gap-3 text-xs text-slate-500">
                     <div className="bg-slate-900/30 rounded-lg p-3">
-                        <div className="text-slate-300 font-medium mb-1">建议描述</div>
-                        <div>触达渠道（微信/Web）</div>
+                        <div className="text-slate-300 font-medium mb-1">✅ 建议描述</div>
+                        <div>触达渠道（微信/Web/API）</div>
                     </div>
                     <div className="bg-slate-900/30 rounded-lg p-3">
-                        <div className="text-slate-300 font-medium mb-1">建议描述</div>
-                        <div>对接系统（ERP/CRM）</div>
+                        <div className="text-slate-300 font-medium mb-1">✅ 建议描述</div>
+                        <div>对接系统（ERP/CRM/数据库）</div>
                     </div>
                     <div className="bg-slate-900/30 rounded-lg p-3">
-                        <div className="text-slate-300 font-medium mb-1">建议描述</div>
-                        <div>业务流程与分支</div>
+                        <div className="text-slate-300 font-medium mb-1">✅ 建议描述</div>
+                        <div>业务流程与异常分支</div>
                     </div>
                 </div>
                 <div className="mt-6 flex items-center justify-between">
                     <div className="text-sm text-slate-500">
                         <span className="text-indigo-400 font-semibold">{userIdea.length}</span> 字符
+                        {userIdea.length < 20 && <span className="ml-2 text-orange-400">（至少 20 字）</span>}
                     </div>
                     <button
                         onClick={onNext}
-                        disabled={userIdea.length < 20 || isAnalyzing}
+                        disabled={userIdea.trim().length < 20 || isAnalyzing}
                         className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg font-semibold transition-all flex items-center gap-2"
                     >
                         {isAnalyzing ? (
