@@ -370,40 +370,70 @@ function IdeaInputPage({ selectedEmployee, userIdea, setUserIdea, onNext, isAnal
     const trimmedLen = userIdea.trim().length;
     const canSubmit = trimmedLen >= 20 && !isAnalyzing && !!selectedEmployee;
 
+    const STRUCTURED_PROMPT = {
+        goal: '你的业务目标是什么？（例如：提高转化率、缩短处理时长）',
+        users: '谁在使用？服务对象是谁？（内部员工/客户/供应商）',
+        channel: '通过什么渠道触达？（微信/企微/Web/API/电话）',
+        systems: '需要对接哪些系统？（CRM/ERP/WMS/数据库）',
+        process: '核心流程是什么？请写出 3-5 步',
+        exceptions: '异常情况有哪些？（无效输入/重复提交/超时/权限不足）',
+        output: '最终产出是什么？（报表/工单/消息提醒/API写回）',
+        sla: '时效和规模要求？（响应时间/日处理量/并发）',
+    };
+
     const templates = {
-        '智能客服': '我需要一个智能客服虚拟员工，能够通过微信公众号自动回复客户咨询，识别客户意图（咨询产品、投诉、售后等），并将高意向客户信息自动录入CRM系统，同时按地区和产品线规则分配给对应销售跟进。需要支持多轮对话澄清需求，处理模糊表达，并在无法理解时转人工。',
-        '需求收集员': '我需要一个需求收集虚拟员工，通过企业微信与客户对话，采集装修需求（面积、风格、预算、工期），自动结构化存储到数据库，并根据预算和区域自动分配给设计师。需要处理客户的不完整输入，主动追问缺失信息，并支持后台查看和导出。',
-        '订单处理员': '我需要一个订单处理虚拟员工，对接电商平台API，自动抓取新订单，校验库存和地址信息，生成发货单并推送到仓储系统。异常订单（缺货、地址不全）自动标记并通知运营人员处理。需要支持批量处理和实时状态同步。',
-        '数据分析师': '我需要一个数据分析虚拟员工，每日自动从MySQL数据库提取销售数据，生成多维度报表（按地区、产品、渠道），识别异常波动并推送预警到钉钉群。需要支持自定义查询条件，导出Excel，并能回答业务人员的自然语言提问。',
-        '招聘助理': '我需要一个招聘助理虚拟员工，自动筛选简历（匹配岗位JD关键词），通过邮件或短信邀约候选人面试，同步面试安排到HR系统日历。需要处理候选人的改期请求，自动发送面试提醒，并在面试后收集反馈。',
+        '智能客服': '1) 业务目标：提升咨询转化率并降低人工客服压力\n2) 使用对象：公众号访客与售前客户\n3) 触达渠道：微信公众号\n4) 对接系统：CRM\n5) 核心流程：客户咨询→意图识别→知识库回复→高意向线索入CRM→销售跟进\n6) 异常处理：无法理解转人工、重复提问去重、超时提醒\n7) 输出结果：会话记录、线索标签、销售任务\n8) 时效规模：2秒内响应，日均2000次会话',
+        '需求收集员': '1) 业务目标：标准化收集需求并减少信息缺失\n2) 使用对象：客户与设计顾问\n3) 触达渠道：企业微信\n4) 对接系统：CRM+数据库\n5) 核心流程：发起问询→采集面积预算风格→自动补问缺失项→生成结构化需求单→分配设计师\n6) 异常处理：预算冲突提醒、字段缺失重试、无效内容过滤\n7) 输出结果：需求单、客户画像、分配记录\n8) 时效规模：单次采集5分钟内完成，日处理300单',
+        '订单处理员': '1) 业务目标：降低订单处理错误率并提升履约效率\n2) 使用对象：运营与仓储\n3) 触达渠道：后台任务+消息通知\n4) 对接系统：电商平台API+WMS+ERP\n5) 核心流程：拉取订单→库存校验→地址校验→生成发货单→状态回传\n6) 异常处理：缺货挂起、地址不全补录、重复订单拦截\n7) 输出结果：发货单、异常队列、状态日志\n8) 时效规模：5分钟内同步，日处理5000单',
+        '数据分析师': '1) 业务目标：快速识别经营异常并支持决策\n2) 使用对象：管理层与业务负责人\n3) 触达渠道：BI看板+钉钉推送\n4) 对接系统：MySQL+ERP+CRM\n5) 核心流程：定时抽数→清洗聚合→指标计算→异常检测→自动推送\n6) 异常处理：数据缺失告警、口径冲突标记、延迟重跑\n7) 输出结果：日报、预警、专题分析\n8) 时效规模：T+0小时级更新，日分析百万级记录',
+        '招聘助理': '1) 业务目标：缩短招聘周期并提升邀约到面率\n2) 使用对象：HR与候选人\n3) 触达渠道：邮件+短信+企微\n4) 对接系统：ATS/HR系统+日历\n5) 核心流程：简历筛选→候选人分层→自动邀约→面试排期→反馈回收\n6) 异常处理：改期冲突重排、联系方式无效补录、重复投递合并\n7) 输出结果：候选人状态、面试日程、漏斗报表\n8) 时效规模：24小时内首触达，周处理2000份简历',
     };
 
     const currentTemplate = templates[selectedEmployee?.role];
 
     return (
-        <div className="fade-in max-w-3xl mx-auto">
+        <div className="fade-in max-w-4xl mx-auto">
             <div className="text-center mb-8">
                 <div className="text-5xl mb-4">{selectedEmployee?.icon}</div>
-                <h2 className="text-3xl font-bold mb-2">定制你的{selectedEmployee?.role}</h2>
-                <p className="text-slate-400">描述你的具体需求，AI 将自动评估复杂度、成本区间与风险</p>
+                <h2 className="text-3xl font-bold mb-2">定制你的AI数字员工</h2>
+                <p className="text-slate-400">用结构化方式描述需求，评估会更准确、拆解会更可执行</p>
             </div>
 
             <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-8">
+                <div className="mb-4 flex items-start justify-between gap-4">
+                    <div>
+                        <div className="text-sm text-slate-300 font-semibold">🧭 结构化需求输入</div>
+                        <div className="text-xs text-slate-500 mt-1">建议按 1-8 项填写，便于复杂度评估和工程拆解</div>
+                    </div>
+                    {selectedEmployee?.role && (
+                        <div className="text-xs px-2 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300">
+                            当前岗位：{selectedEmployee.role}
+                        </div>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+                    {Object.entries(STRUCTURED_PROMPT).map(([key, q], idx) => (
+                        <div key={key} className="text-xs text-slate-400 bg-slate-900/30 border border-slate-700/40 rounded-lg px-3 py-2">
+                            <span className="text-indigo-400 mr-1">{idx + 1}.</span>{q}
+                        </div>
+                    ))}
+                </div>
+
                 <label className="block text-sm text-slate-400 mb-3">
-                    💡 描述你的想法（越详细，评估越准确）
+                    ✍️ 输入你的需求（可直接按 1-8 回答）
                 </label>
                 <textarea
                     value={userIdea}
                     onChange={(e) => setUserIdea(e.target.value)}
-                    placeholder={`例如：我需要一个${selectedEmployee?.role}，能够通过微信自动回复客户咨询，识别客户意图，并将高意向客户信息自动录入CRM系统，同时按规则分配给对应销售跟进...`}
-                    className="w-full h-48 bg-slate-900/50 border border-slate-700 rounded-lg p-4 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none"
+                    placeholder={`示例格式：\n1) 业务目标：\n2) 使用对象：\n3) 触达渠道：\n4) 对接系统：\n5) 核心流程：\n6) 异常处理：\n7) 输出结果：\n8) 时效规模：`}
+                    className="w-full h-56 bg-slate-900/50 border border-slate-700 rounded-lg p-4 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none"
                 />
 
-                {/* 参考模板 */}
                 {currentTemplate && (
                     <div className="mt-4 bg-indigo-500/5 border border-indigo-500/20 rounded-lg p-4">
                         <div className="flex items-start justify-between gap-3 mb-2">
-                            <div className="text-xs text-indigo-400 font-medium">📋 参考模板</div>
+                            <div className="text-xs text-indigo-400 font-medium">📋 岗位参考模板（结构化）</div>
                             <button
                                 onClick={() => setUserIdea(currentTemplate)}
                                 className="text-xs px-3 py-1 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 rounded border border-indigo-500/30 transition-all"
@@ -411,24 +441,10 @@ function IdeaInputPage({ selectedEmployee, userIdea, setUserIdea, onNext, isAnal
                                 一键填入
                             </button>
                         </div>
-                        <div className="text-xs text-slate-400 leading-relaxed">{currentTemplate}</div>
+                        <div className="text-xs text-slate-400 leading-relaxed whitespace-pre-line">{currentTemplate}</div>
                     </div>
                 )}
 
-                <div className="mt-4 grid grid-cols-3 gap-3 text-xs text-slate-500">
-                    <div className="bg-slate-900/30 rounded-lg p-3">
-                        <div className="text-slate-300 font-medium mb-1">✅ 建议描述</div>
-                        <div>触达渠道（微信/Web/API）</div>
-                    </div>
-                    <div className="bg-slate-900/30 rounded-lg p-3">
-                        <div className="text-slate-300 font-medium mb-1">✅ 建议描述</div>
-                        <div>对接系统（ERP/CRM/数据库）</div>
-                    </div>
-                    <div className="bg-slate-900/30 rounded-lg p-3">
-                        <div className="text-slate-300 font-medium mb-1">✅ 建议描述</div>
-                        <div>业务流程与异常分支</div>
-                    </div>
-                </div>
                 <div className="mt-6 flex items-center justify-between">
                     <div className="text-sm text-slate-500">
                         <span className="text-indigo-400 font-semibold">{trimmedLen}</span> 有效字符（总计 {userIdea.length}）
