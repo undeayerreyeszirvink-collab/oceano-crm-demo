@@ -168,7 +168,28 @@ function App() {
                         setUserIdea={setUserIdea}
                         isAnalyzing={isAnalyzing}
                         onNext={() => {
-                            if (isAnalyzing || !selectedEmployee || userIdea.trim().length < 20) return;
+                            const trimmedIdea = userIdea.trim();
+                            if (isAnalyzing || !selectedEmployee || trimmedIdea.length < 20) return;
+
+                            const ideaRecord = {
+                                id: `idea_${Date.now()}`,
+                                createdAt: new Date().toISOString(),
+                                employeeId: selectedEmployee.id,
+                                employeeRole: selectedEmployee.role,
+                                employeeCategory: selectedEmployee.category,
+                                idea: trimmedIdea,
+                                length: trimmedIdea.length,
+                            };
+
+                            try {
+                                const history = JSON.parse(localStorage.getItem('virtuforge_idea_records') || '[]');
+                                history.unshift(ideaRecord);
+                                localStorage.setItem('virtuforge_idea_records', JSON.stringify(history.slice(0, 200)));
+                                localStorage.setItem('virtuforge_latest_idea', JSON.stringify(ideaRecord));
+                            } catch (e) {
+                                console.error('保存输入想法记录失败:', e);
+                            }
+
                             setIsAnalyzing(true);
                             setTimeout(() => {
                                 setComplexityScore({
@@ -346,6 +367,9 @@ function MarketplacePage({ onSelectEmployee }) {
 
 // ===== Step 1: 输入想法 =====
 function IdeaInputPage({ selectedEmployee, userIdea, setUserIdea, onNext, isAnalyzing }) {
+    const trimmedLen = userIdea.trim().length;
+    const canSubmit = trimmedLen >= 20 && !isAnalyzing && !!selectedEmployee;
+
     const templates = {
         '智能客服': '我需要一个智能客服虚拟员工，能够通过微信公众号自动回复客户咨询，识别客户意图（咨询产品、投诉、售后等），并将高意向客户信息自动录入CRM系统，同时按地区和产品线规则分配给对应销售跟进。需要支持多轮对话澄清需求，处理模糊表达，并在无法理解时转人工。',
         '需求收集员': '我需要一个需求收集虚拟员工，通过企业微信与客户对话，采集装修需求（面积、风格、预算、工期），自动结构化存储到数据库，并根据预算和区域自动分配给设计师。需要处理客户的不完整输入，主动追问缺失信息，并支持后台查看和导出。',
@@ -407,12 +431,13 @@ function IdeaInputPage({ selectedEmployee, userIdea, setUserIdea, onNext, isAnal
                 </div>
                 <div className="mt-6 flex items-center justify-between">
                     <div className="text-sm text-slate-500">
-                        <span className="text-indigo-400 font-semibold">{userIdea.length}</span> 字符
-                        {userIdea.length < 20 && <span className="ml-2 text-orange-400">（至少 20 字）</span>}
+                        <span className="text-indigo-400 font-semibold">{trimmedLen}</span> 有效字符（总计 {userIdea.length}）
+                        {trimmedLen < 20 && <span className="ml-2 text-orange-400">（至少 20 个有效字符）</span>}
+                        {!selectedEmployee && <span className="ml-2 text-red-400">（请先在市场选择岗位）</span>}
                     </div>
                     <button
                         onClick={onNext}
-                        disabled={userIdea.trim().length < 20 || isAnalyzing}
+                        disabled={!canSubmit}
                         className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg font-semibold transition-all flex items-center gap-2"
                     >
                         {isAnalyzing ? (
