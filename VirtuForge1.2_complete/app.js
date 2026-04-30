@@ -327,6 +327,7 @@ function App() {
     const [recommended, setRecommended] = useState([]);
     const [showDiagnosis, setShowDiagnosis] = useState(false);
     const [showConsult, setShowConsult] = useState(false);
+    const [maxReachedStep, setMaxReachedStep] = useState(0);
 
     const steps = [
         { id: 0, name: 'AI人力市场', icon: '🏪' },
@@ -340,6 +341,7 @@ function App() {
 
     const goToStep = (step) => {
         setCurrentStep(step);
+        if (step > maxReachedStep) setMaxReachedStep(step);
     };
 
     return (
@@ -362,21 +364,37 @@ function App() {
                                 <p className="text-xs text-slate-400">虚拟员工制造平台</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            {steps.map((step, idx) => (
-                                <button
-                                    key={step.id}
-                                    onClick={() => goToStep(idx)}
-                                    className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
-                                        currentStep === idx
-                                            ? 'bg-indigo-600 text-white'
-                                            : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50'
-                                    }`}
-                                >
-                                    <span className="mr-1">{step.icon}</span>
-                                    <span className="hidden md:inline">{step.name}</span>
-                                </button>
-                            ))}
+                        <div className="flex items-center gap-1">
+                            {steps.map((step, idx) => {
+                                const isActive = currentStep === idx;
+                                const isCompleted = idx < currentStep && idx <= maxReachedStep;
+                                const isAccessible = idx <= maxReachedStep;
+                                const isLocked = idx > maxReachedStep;
+
+                                return (
+                                    <React.Fragment key={step.id}>
+                                        {idx > 0 && (
+                                            <span className={`text-lg mx-0.5 ${isAccessible ? 'text-slate-500' : 'text-slate-700'}`}>›</span>
+                                        )}
+                                        <button
+                                            onClick={() => isAccessible && goToStep(idx)}
+                                            disabled={isLocked}
+                                            className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1 ${
+                                                isActive
+                                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/50'
+                                                    : isCompleted
+                                                    ? 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+                                                    : isLocked
+                                                    ? 'bg-slate-800/30 text-slate-600 cursor-not-allowed opacity-50'
+                                                    : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50'
+                                            }`}
+                                        >
+                                            <span>{isCompleted ? '✓' : step.icon}</span>
+                                            <span className="hidden md:inline">{step.name}</span>
+                                        </button>
+                                    </React.Fragment>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
