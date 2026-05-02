@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>中国宠物行业协会 · AI增长平台</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #fff7ed 0%, #fff 50%, #fef3e2 100%); margin: 0; }
+
+        /* ── Animations ── */
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+        .slide-in { animation: slideIn 0.5s ease-out forwards; }
+        @keyframes slideIn { from { opacity:0; transform:translateX(-20px); } to { opacity:1; transform:translateX(0); } }
+        .scale-in { animation: scaleIn 0.4s ease-out forwards; }
+        @keyframes scaleIn { from { opacity:0; transform:scale(0.92); } to { opacity:1; transform:scale(1); } }
+        .result-card { animation: cardAppear 0.5s ease-out forwards; opacity:0; }
+        @keyframes cardAppear { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+        /* ── AI ── */
+        .ai-thinking::after { content:'...'; animation: dots 1.5s steps(4) infinite; }
+        @keyframes dots { 0%,20% { content:'.'; } 40% { content:'..'; } 60%,100% { content:'...'; } }
+        .loading-bar { height:4px; background:linear-gradient(90deg,#f97316,#fb923c,#fbbf24); animation:loadBar 2.5s ease-out forwards; }
+        @keyframes loadBar { from { width:0%; } to { width:100%; } }
+        .pulse-dot { animation: pulseDot 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+        @keyframes pulseDot { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.6; transform:scale(1.15); } }
+
+        /* ── Cards & Buttons ── */
+        .pet-card { background:linear-gradient(135deg,#fff 0%,#fff7ed 100%); border:2px solid #fed7aa; transition:all 0.3s ease; }
+        .pet-card:hover { transform:translateY(-4px); box-shadow:0 12px 28px rgba(251,146,60,0.2); border-color:#fb923c; }
+        .orange-btn { background:linear-gradient(135deg,#f97316,#ea580c); transition:all 0.2s ease; }
+        .orange-btn:hover { background:linear-gradient(135deg,#ea580c,#c2410c); transform:translateY(-1px); box-shadow:0 4px 12px rgba(249,115,22,0.4); }
+        .orange-btn:active { transform:translateY(0); }
+        .ai-badge { background:linear-gradient(135deg,#f97316,#dc2626); }
+        .step-active { border-left:3px solid #f97316; background:#fff7ed; }
+        textarea { resize:none; }
+
+        /* ── Nav (desktop top / mobile bottom) ── */
+        .desktop-nav { display:flex; }
+        .mobile-bottom-nav { display:none; }
+
+        /* ── Mobile layout ── */
+        @media (max-width: 767px) {
+            .desktop-nav { display:none; }
+            .mobile-bottom-nav { display:flex; }
+            .mobile-pad { padding-bottom: 72px; }
+            .ai-widget { bottom: 84px !important; right: 12px !important; max-width: calc(100vw - 24px); }
+            .hero-title { font-size: 2rem !important; line-height: 1.2 !important; }
+            .hero-sub { font-size: 1rem !important; }
+            .page-py { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+            .page-px { padding-left: 1rem; padding-right: 1rem; }
+            .hide-mobile { display:none !important; }
+            .stat-grid { grid-template-columns: repeat(2,1fr) !important; }
+        }
+        @media (min-width: 768px) {
+            .mobile-only { display:none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        /* ─── AI Floating Widget ─── */
+        function AIAssistant({ message, show }) {
+            if (!show) return null;
+            return (
+                <div className="fixed ai-widget bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 slide-in z-50" style={{bottom:'1.5rem',right:'1.5rem',maxWidth:'18rem'}}>
+                    <div className="text-2xl pulse-dot flex-shrink-0">🐾</div>
+                    <div>
+                        <div className="font-semibold text-xs">AI 分析助手</div>
+                        <div className="text-xs opacity-90 ai-thinking">{message}</div>
+                    </div>
+                </div>
+            );
+        }
+
+        /* ─── AI Step Progress ─── */
+        function AILoading({ steps, currentStep }) {
+            return (
+                <div className="bg-white rounded-2xl p-5 border-2 border-orange-200 mb-6 slide-in shadow-sm">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="text-2xl pulse-dot">🐶</div>
+                        <div className="flex-1">
+                            <div className="font-bold text-gray-900 text-sm">AI 正在分析</div>
+                            <div className="text-sm text-orange-600 font-medium ai-thinking">{steps[currentStep]}</div>
+                        </div>
+                        <div className="text-xs text-gray-400 bg-orange-50 px-2 py-1 rounded-full flex-shrink-0">{currentStep+1}/{steps.length}</div>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-2">
+                        <div className="loading-bar rounded-full"></div>
+                    </div>
+                    <div className="space-y-1">
+                        {steps.map((s,i) => (
+                            <div key={i} className={`text-xs px-3 py-1.5 rounded-lg transition-all ${i<=currentStep ? 'step-active text-orange-800 font-medium' : 'text-gray-400'}`}>
+                                {i<currentStep ? '✅ ' : i===currentStep ? '⚡ ' : '○ '}{s}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        /* ─── CountUp ─── */
+        function CountUp({ target, suffix, duration }) {
+            const [v, setV] = useState(0);
+            useEffect(() => {
+                let cur = 0;
+                const step = target / (duration / 16);
+                const t = setInterval(() => { cur += step; if (cur >= target) { setV(target); clearInterval(t); } else setV(Math.floor(cur)); }, 16);
+                return () => clearInterval(t);
+            }, [target, duration]);
+            return <span>{v}{suffix}</span>;
+        }
+
+        /* ─── App Shell ─── */
+        function App() {
+            const [page, setPage] = useState(0);
+            const [aiMsg, setAiMsg] = useState('');
+            const [showAI, setShowAI] = useState(false);
+
+            const triggerAI = (msg, dur=3000) => {
+                setAiMsg(msg); setShowAI(true);
+                setTimeout(() => setShowAI(false), dur);
+            };
+            const go = (p, label) => { setPage(p); triggerAI(`正在加载${label}...`); };
+
+            const navItems = [
+                { label:'首页', icon:'🏠', short:'首页' },
+                { label:'政策商机', icon:'📜', short:'政策' },
+                { label:'资源撮合', icon:'🐾', short:'撮合' },
+                { label:'入会ROI', icon:'🐱', short:'ROI' },
+                { label:'加入我们', icon:'🐶', short:'加入' },
+            ];
+
+            return (
+                <div className="min-h-screen mobile-pad">
+                    {/* ── Desktop top nav ── */}
+                    <nav className="desktop-nav sticky top-0 z-50 shadow-sm" style={{background:'linear-gradient(135deg,#fff7ed,#fff)',borderBottom:'2px solid #fed7aa'}}>
+                        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between w-full">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl flex items-center justify-center ai-badge shadow-md">
+                                    <span className="text-lg">🐾</span>
+                                </div>
+                                <div>
+                                    <div className="text-base font-bold text-gray-900">中国宠物行业协会</div>
+                                    <div className="text-xs text-orange-600 font-medium">AI 增长平台 · 智能撮合系统</div>
+                                </div>
+                            </div>
+                            <div className="flex gap-1">
+                                {navItems.map((n,i) => (
+                                    <button key={i} onClick={() => go(i, n.label)}
+                                        className={`px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5 ${page===i ? 'bg-orange-100 text-orange-700 shadow-sm' : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'}`}>
+                                        <span>{n.icon}</span>{n.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </nav>
+
+                    {/* ── Mobile top bar ── */}
+                    <div className="mobile-only sticky top-0 z-50 flex items-center gap-2 px-4 py-3 shadow-sm" style={{background:'linear-gradient(135deg,#fff7ed,#fff)',borderBottom:'2px solid #fed7aa'}}>
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center ai-badge shadow-sm">
+                            <span className="text-base">🐾</span>
+                        </div>
+                        <div>
+                            <div className="text-sm font-bold text-gray-900">中国宠物行业协会</div>
+                            <div className="text-xs text-orange-500">AI 增长平台</div>
+                        </div>
+                    </div>
+
+                    <main>
+                        {page===0 && <LandingPage onNavigate={(p) => go(p, navItems[p].label)} />}
+                        {page===1 && <PolicyPage onNavigate={p => go(p, navItems[p].label)} triggerAI={triggerAI} />}
+                        {page===2 && <MatchingPage onNavigate={p => go(p, navItems[p].label)} triggerAI={triggerAI} />}
+                        {page===3 && <ROIPage onNavigate={p => go(p, navItems[p].label)} triggerAI={triggerAI} />}
+                        {page===4 && <ConversionPage onNavigate={p => go(p, navItems[p].label)} triggerAI={triggerAI} />}
+                    </main>
+
+                    {/* ── Mobile bottom tab bar ── */}
+                    <nav className="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-50 border-t-2 border-orange-100 shadow-lg" style={{background:'rgba(255,247,237,0.97)',backdropFilter:'blur(12px)'}}>
+                        {navItems.map((n,i) => (
+                            <button key={i} onClick={() => go(i, n.label)} style={{flex:1}}
+                                className={`flex flex-col items-center justify-center py-2 gap-0.5 transition-all ${page===i ? 'text-orange-600' : 'text-gray-400'}`}>
+                                <span className="text-xl">{n.icon}</span>
+                                <span className="text-xs font-medium">{n.short}</span>
+                                {page===i && <span className="w-1 h-1 rounded-full bg-orange-500 mt-0.5"></span>}
+                            </button>
+                        ))}
+                    </nav>
+
+                    <AIAssistant message={aiMsg} show={showAI} />
+                </div>
+            );
+        }
+
+        /* ─── Screen 1: Landing ─── */
+        function LandingPage({ onNavigate }) {
+            return (
+                <div className="fade-in">
+                    <div className="py-14 page-py" style={{background:'linear-gradient(135deg,#fff7ed 0%,#fff 60%,#fef3e2 100%)'}}>
+                        <div className="max-w-4xl mx-auto px-6 page-px text-center">
+                            <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-700 px-4 py-2 rounded-full text-sm font-semibold mb-5 shadow-sm">
+                                <span className="pulse-dot">🐾</span> AI驱动 · 宠物行业专属增长引擎
+                            </div>
+                            <h1 className="hero-title font-black text-gray-900 mb-4 leading-tight" style={{fontSize:'3rem'}}>
+                                让宠物行业协会<br/>成为会员的<span className="text-orange-500">增长引擎</span>
+                            </h1>
+                            <p className="hero-sub text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed" style={{fontSize:'1.125rem'}}>
+                                从"发通知"到"做生意"：用 AI 把宠物行业政策、供应链资源、会员需求转化为真实收入
+                            </p>
+                            <button onClick={() => onNavigate(1)} className="orange-btn text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-xl w-full sm:w-auto">
+                                🚀 体验 AI 演示
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="max-w-6xl mx-auto px-6 page-px py-12">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            {[
+                                { title:'政策 → 商机', desc:'AI 自动解析宠物行业政策，输出补贴申报路径与合规商机方案', icon:'📜', p:1 },
+                                { title:'资源 → 撮合', desc:'精准匹配宠物品牌商、供应商与渠道商，AI 提升合作成交率', icon:'🐾', p:2 },
+                                { title:'入会 → ROI', desc:'量化加入协会的真实收益：补贴、订单、资质认证一键测算', icon:'🐱', p:3 },
+                            ].map((f,i) => (
+                                <div key={i} onClick={() => onNavigate(f.p)} className="pet-card rounded-2xl p-6 cursor-pointer">
+                                    <div className="text-4xl mb-3">{f.icon}</div>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">{f.title}</h3>
+                                    <p className="text-gray-600 text-sm leading-relaxed">{f.desc}</p>
+                                    <div className="mt-3 text-orange-500 font-semibold text-sm flex items-center gap-1">查看演示 →</div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 stat-grid text-center">
+                            {[
+                                { n:'3,200+', label:'注册会员企业', icon:'🏢' },
+                                { n:'87%', label:'AI 匹配准确率', icon:'🎯' },
+                                { n:'¥12亿+', label:'累计撮合金额', icon:'💰' },
+                                { n:'30x', label:'平均入会 ROI', icon:'📈' },
+                            ].map((s,i) => (
+                                <div key={i} className="bg-white rounded-2xl p-4 shadow-sm border border-orange-100">
+                                    <div className="text-2xl mb-1">{s.icon}</div>
+                                    <div className="text-2xl font-black text-orange-500">{s.n}</div>
+                                    <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        /* ─── Screen 2: Policy ─── */
+        function PolicyPage({ onNavigate, triggerAI }) {
+            const [policyText, setPolicyText] = useState('《关于促进宠物行业规范化发展及品牌扶持专项政策（2026）》');
+            const [stage, setStage] = useState('idle');
+            const [step, setStep] = useState(0);
+            const [visible, setVisible] = useState(0);
+
+            const steps = ['读取政策原文与行业数据库...','识别适用企业类型与资质要求...','匹配可获补贴与商机路径...','生成可执行操作方案...'];
+
+            const run = () => {
+                if (stage==='loading') return;
+                setStage('loading'); setStep(0); setVisible(0);
+                triggerAI('AI 正在解析宠物行业政策...', 8000);
+                [0,700,1500,2200].forEach((t,i) => setTimeout(()=>setStep(i),t));
+                setTimeout(() => { setStage('done'); [0,1,2,3].forEach(i=>setTimeout(()=>setVisible(v=>v+1),i*300)); }, 3000);
+            };
+
+            const results = [
+                { icon:'🐱', title:'适合企业类型', items:['宠物食品生产企业（年营收 > 3000万）','宠物医疗连锁机构','宠物用品品牌商/代理商'], color:'blue' },
+                { icon:'💰', title:'可获得收益（重点）', items:['品牌认证补贴：最高 150万','政府采购（动物防疫物资）：优先入围名录','出口退税支持：合同额的 3%–5%'], color:'green', hi:true },
+                { icon:'🗺️', title:'操作路径（可执行）', items:['① 申请行业资质备案（协会推荐）','② 提交品牌合规材料','③ 进入政府采购候选池','④ 参与招标 / 定向采购'], color:'orange' },
+                { icon:'🏛️', title:'协会关键角色', items:['提供政策解读与申报模板','推荐进入政府候选名单','对接宠物行业头部渠道资源'], color:'purple' },
+            ];
+            const cc = { blue:'bg-blue-50 border-blue-200', green:'bg-green-50 border-green-300', orange:'bg-orange-50 border-orange-200', purple:'bg-purple-50 border-purple-200' };
+
+            return (
+                <div className="max-w-5xl mx-auto px-6 page-px py-10 page-py fade-in">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="text-3xl">📜</span>
+                        <h2 className="text-2xl font-black text-gray-900">政策 → 商机</h2>
+                        <span className="bg-orange-100 text-orange-700 text-xs px-3 py-1 rounded-full font-semibold">AI 实时解析</span>
+                    </div>
+                    <p className="text-gray-500 text-sm mb-6 ml-10">输入政策名称，AI 自动识别可获补贴、操作路径与协会价值</p>
+
+                    <div className="bg-white rounded-2xl p-5 border-2 border-orange-100 shadow-sm mb-6">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">🐾 政策名称（可编辑）</label>
+                        <textarea value={policyText} onChange={e=>setPolicyText(e.target.value)} rows={2}
+                            className="w-full border-2 border-orange-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-orange-400 text-sm bg-orange-50 mb-4" />
+                        <div className="flex flex-wrap items-center gap-3">
+                            <button onClick={run} disabled={stage==='loading'}
+                                className={`px-6 py-3 rounded-xl font-bold text-white shadow-md transition-all text-sm ${stage==='loading' ? 'bg-gray-400 cursor-not-allowed' : 'orange-btn'}`}>
+                                {stage==='loading' ? '🐶 AI 分析中...' : '⚡ AI 解析政策'}
+                            </button>
+                            {stage==='done' && <span className="text-green-600 font-semibold text-sm">✅ 分析完成</span>}
+                            <span className="text-xs text-gray-400 ml-auto hide-mobile">由宠物行业数据库 + 政策语义引擎支持</span>
+                        </div>
+                    </div>
+
+                    {stage==='loading' && <AILoading steps={steps} currentStep={step} />}
+
+                    {stage==='done' && (
+                        <div className="space-y-4">
+                            {results.map((r,i) => i<visible && (
+                                <div key={i} className={`result-card rounded-2xl p-5 border-2 ${cc[r.color]}`}>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <span className="text-2xl">{r.icon}</span>
+                                        <h3 className="font-bold text-gray-900 text-sm">{r.title}</h3>
+                                        {r.hi && <span className="ml-auto bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">重点</span>}
+                                    </div>
+                                    <ul className="space-y-1.5">
+                                        {r.items.map((item,j) => (
+                                            <li key={j} className="text-sm text-gray-700 flex items-start gap-2">
+                                                <span className="text-orange-400 mt-0.5 flex-shrink-0">▸</span><span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                            {visible>=4 && (
+                                <div className="result-card bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300 rounded-2xl p-4 text-center">
+                                    <p className="text-orange-800 font-bold text-sm">🔥 协会会员可获得优先推荐资格，提升中标概率约 <span className="text-xl text-orange-600">30%–50%</span></p>
+                                </div>
+                            )}
+                            {visible>=4 && (
+                                <div className="result-card flex flex-col sm:flex-row gap-3">
+                                    <button className="flex-1 orange-btn text-white py-3 rounded-xl font-bold shadow-md text-sm">获取完整申报路径</button>
+                                    <button onClick={()=>onNavigate(4)} className="flex-1 bg-white border-2 border-orange-500 text-orange-600 py-3 rounded-xl font-bold hover:bg-orange-50 transition text-sm">申请会员支持</button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        /* ─── Screen 3: Matchmaking ─── */
+        const RESOURCE_TYPES = [
+            {
+                key: 'enterprise',
+                label: '企业资源',
+                icon: '🏪',
+                color: 'green',
+                demandLabel: '需求方企业',
+                demandDefault: '某宠物食品品牌商（华东区，30人）',
+                demandDesc: ['需求：进入连锁宠物店采购体系 + 品牌背书', '痛点：无渠道 / 无认证'],
+                supplyLabel: '资源方企业',
+                supplyDefault: '某全国连锁宠物超市（全国800+门店）',
+                supplyDesc: ['资源：年采购预算 5000万 / 全国 800+ 门店', '需求：寻找优质宠物食品供应商'],
+                score: 87,
+                path: '企业A → 协会推荐 → 连锁超市试点 → 进入采购名录',
+                prob: '65%',
+                probBaseline: 'vs 无协会 25%',
+                deal: '¥200–800万',
+                reasons: ['🐟 行业匹配（宠物食品供需对齐）','✅ 品质认证要求方向一致','🏪 连锁超市当前存在供应缺口'],
+                highlight: '通过协会推荐通道，可跳过初筛环节，直接进入采购评估',
+            },
+            {
+                key: 'expert',
+                label: '宠物专家',
+                icon: '🐾',
+                color: 'purple',
+                demandLabel: '需求方企业',
+                demandDefault: '某宠物医疗连锁机构（全国50家诊所）',
+                demandDesc: ['需求：引入临床营养/行为学专家顾问', '痛点：缺乏权威专家背书 / 医疗方案待优化'],
+                supplyLabel: '宠物专家',
+                supplyDefault: '资深宠物营养师·执业兽医（从业15年）',
+                supplyDesc: ['专长：宠物临床营养、慢病管理、行为矫正', '可提供：方案设计 / 培训 / 品牌背书'],
+                score: 92,
+                path: '机构 → 协会专家库 → 精准匹配 → 签约顾问合作',
+                prob: '78%',
+                probBaseline: 'vs 自主寻找 20%',
+                deal: '顾问费 50–200万/年',
+                reasons: ['🩺 专业方向与机构需求高度吻合','🏆 专家拥有行业权威认证背书','📋 协会已完成资质核验，可直接对接'],
+                highlight: '协会专家库经过严格资质核验，匹配后可跳过背景调查，快速签约',
+            },
+            {
+                key: 'academia',
+                label: '产学研专家',
+                icon: '🔬',
+                color: 'blue',
+                demandLabel: '需求方企业',
+                demandDefault: '某宠物食品研发企业（年研发投入500万）',
+                demandDesc: ['需求：联合高校开展配方研发 + 申请科研项目', '痛点：缺乏产学研合作渠道 / 无政府课题经验'],
+                supplyLabel: '科研机构/高校',
+                supplyDefault: '农业大学动物营养研究院（国家重点实验室）',
+                supplyDesc: ['资源：国家级实验室 + 宠物营养研究成果', '可提供：联合研发 / 课题申报 / 成果转化'],
+                score: 83,
+                path: '企业 → 协会对接 → 高校联合课题 → 成果转化/专利',
+                prob: '72%',
+                probBaseline: 'vs 独立申报 18%',
+                deal: '课题经费 100–500万 + 专利共享',
+                reasons: ['🎓 研究方向与企业产品线精准匹配','📊 高校已有宠物营养基础数据支撑','🏛️ 协会可协助联合申报国家科研课题'],
+                highlight: '协会牵头产学研合作，可联合申报政府科研经费，显著降低研发成本',
+            },
+        ];
+
+        function MatchingPage({ onNavigate, triggerAI }) {
+            const [resType, setResType] = useState(0);
+            const [compA, setCompA] = useState(RESOURCE_TYPES[0].demandDefault);
+            const [compB, setCompB] = useState(RESOURCE_TYPES[0].supplyDefault);
+            const [stage, setStage] = useState('idle');
+            const [step, setStep] = useState(0);
+            const [showScore, setShowScore] = useState(false);
+            const [showPath, setShowPath] = useState(false);
+            const [showReason, setShowReason] = useState(false);
+
+            const steps = ['读取双方画像与行业数据库...','向量化匹配专家/企业资源库...','AI 计算匹配分与合作路径...','生成推荐撮合方案...'];
+
+            const switchType = (i) => {
+                setResType(i);
+                setCompA(RESOURCE_TYPES[i].demandDefault);
+                setCompB(RESOURCE_TYPES[i].supplyDefault);
+                setStage('idle');
+                setShowScore(false); setShowPath(false); setShowReason(false);
+            };
+
+            const rt = RESOURCE_TYPES[resType];
+            const colorMap = {
+                green: { badge:'bg-green-100 text-green-700', tab:'border-green-400 text-green-700 bg-green-50', textarea:'border-green-100 bg-green-50 focus:border-green-300' },
+                purple: { badge:'bg-purple-100 text-purple-700', tab:'border-purple-400 text-purple-700 bg-purple-50', textarea:'border-purple-100 bg-purple-50 focus:border-purple-300' },
+                blue: { badge:'bg-blue-100 text-blue-700', tab:'border-blue-400 text-blue-700 bg-blue-50', textarea:'border-blue-100 bg-blue-50 focus:border-blue-300' },
+            };
+
+            const run = () => {
+                if (stage==='loading') return;
+                setStage('loading'); setStep(0);
+                setShowScore(false); setShowPath(false); setShowReason(false);
+                triggerAI('AI 正在撮合宠物行业资源...', 8000);
+                [0,700,1500,2200].forEach((t,i)=>setTimeout(()=>setStep(i),t));
+                setTimeout(()=>{
+                    setStage('done');
+                    setTimeout(()=>setShowScore(true),200);
+                    setTimeout(()=>setShowPath(true),600);
+                    setTimeout(()=>setShowReason(true),1000);
+                }, 3200);
+            };
+
+            return (
+                <div className="max-w-6xl mx-auto px-6 page-px py-10 page-py fade-in">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="text-3xl">🐾</span>
+                        <h2 className="text-2xl font-black text-gray-900">资源撮合</h2>
+                        <span className="bg-orange-100 text-orange-700 text-xs px-3 py-1 rounded-full font-semibold">AI 智能匹配</span>
+                    </div>
+                    <p className="text-gray-500 text-sm mb-5 ml-10">选择资源类型，AI 计算匹配分、推荐对接路径</p>
+
+                    {/* 资源类型切换 */}
+                    <div className="flex gap-2 mb-6 flex-wrap">
+                        {RESOURCE_TYPES.map((t,i) => (
+                            <button key={i} onClick={() => switchType(i)}
+                                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all ${resType===i ? colorMap[t.color].tab : 'border-gray-200 text-gray-500 hover:border-orange-200 hover:text-orange-600 bg-white'}`}>
+                                <span>{t.icon}</span>{t.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* 三栏 → 手机单栏 */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                        {/* 需求方 */}
+                        <div className="bg-white rounded-2xl p-5 border-2 border-orange-100 shadow-sm">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold">🐱 {rt.demandLabel}</span>
+                            </div>
+                            <textarea value={compA} onChange={e=>setCompA(e.target.value)} rows={2}
+                                className="w-full border-2 border-blue-100 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-300 bg-blue-50 mb-3" />
+                            <div className="space-y-1.5 text-sm text-gray-600">
+                                {rt.demandDesc.map((d,i) => (
+                                    <div key={i}><span className={i===1 ? 'text-red-500' : ''}>{d}</span></div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* AI 中间 */}
+                        <div className="rounded-2xl p-5 border-2 border-orange-200 shadow-sm flex flex-col justify-center items-center" style={{background:'linear-gradient(135deg,#fff7ed,#fef3e2)',minHeight:'180px'}}>
+                            {stage==='idle' && (
+                                <div className="text-center w-full">
+                                    <div className="text-5xl mb-3 pulse-dot">🐶</div>
+                                    <div className="text-sm text-gray-500 mb-4">AI 智能撮合引擎</div>
+                                    <button onClick={run} className="orange-btn text-white px-6 py-3 rounded-xl font-bold shadow-md w-full text-sm">⚡ 开始 AI 匹配</button>
+                                </div>
+                            )}
+                            {stage==='loading' && (
+                                <div className="text-center w-full">
+                                    <div className="text-3xl pulse-dot mb-2">🐶</div>
+                                    <div className="text-sm text-orange-600 font-medium ai-thinking mb-3">{steps[step]}</div>
+                                    <div className="w-full bg-orange-100 rounded-full h-2 overflow-hidden"><div className="loading-bar rounded-full"></div></div>
+                                </div>
+                            )}
+                            {stage==='done' && (
+                                <div className="w-full space-y-3">
+                                    {showScore && (
+                                        <div className="result-card text-center">
+                                            <div className="text-4xl font-black text-orange-500"><CountUp target={rt.score} suffix="/100" duration={800} /></div>
+                                            <div className="text-xs text-gray-500 mt-0.5">AI 匹配评分</div>
+                                        </div>
+                                    )}
+                                    {showPath && (
+                                        <div className="result-card bg-white rounded-xl p-3 border border-orange-200">
+                                            <div className="text-xs text-gray-500 mb-1">推荐对接路径</div>
+                                            <div className="text-xs text-gray-800 font-medium leading-relaxed mb-2">{rt.path}</div>
+                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                                <div className="bg-green-50 rounded-lg p-2"><span className="text-gray-500">成交概率</span><br/><span className="font-bold text-green-600">{rt.prob}</span><br/><span className="text-gray-400">{rt.probBaseline}</span></div>
+                                                <div className="bg-blue-50 rounded-lg p-2"><span className="text-gray-500">预计价值</span><br/><span className="font-bold text-blue-600">{rt.deal}</span></div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {showReason && <button onClick={run} className="w-full text-xs text-orange-500 font-medium">重新匹配 ↺</button>}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 供给方 */}
+                        <div className="bg-white rounded-2xl p-5 border-2 border-orange-100 shadow-sm">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className={`text-xs px-2 py-1 rounded-full font-bold ${colorMap[rt.color].badge}`}>{rt.icon} {rt.supplyLabel}</span>
+                            </div>
+                            <textarea value={compB} onChange={e=>setCompB(e.target.value)} rows={2}
+                                className={`w-full border-2 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none mb-3 ${colorMap[rt.color].textarea}`} />
+                            <div className="space-y-1.5 text-sm text-gray-600">
+                                {rt.supplyDesc.map((d,i) => (
+                                    <div key={i}><span className={i===1 ? (rt.color==='green'?'text-green-600':rt.color==='purple'?'text-purple-600':'text-blue-600') : ''}>{d}</span></div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {stage==='done' && showReason && (
+                        <div className="space-y-4">
+                            <div className="result-card bg-white rounded-2xl p-5 border-2 border-orange-100 shadow-sm">
+                                <div className="font-bold text-gray-900 mb-3 text-sm">🐾 AI 匹配理由</div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    {rt.reasons.map((r,i)=>(
+                                        <div key={i} className="bg-orange-50 rounded-xl p-3 text-xs text-orange-800 font-medium text-center">{r}</div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="result-card bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300 rounded-2xl p-4 text-center">
+                                <p className="text-orange-800 font-bold text-sm">🔥 {rt.highlight}</p>
+                            </div>
+                            <div className="result-card flex flex-col sm:flex-row gap-3">
+                                <button className="flex-1 orange-btn text-white py-3 rounded-xl font-bold shadow-md text-sm">发起对接申请</button>
+                                <button onClick={()=>onNavigate(4)} className="flex-1 bg-white border-2 border-orange-500 text-orange-600 py-3 rounded-xl font-bold hover:bg-orange-50 transition text-sm">预约资源撮合</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        /* ─── Screen 4: ROI ─── */
+        function ROIPage({ onNavigate, triggerAI }) {
+            const [industry, setIndustry] = useState('宠物食品/用品');
+            const [size, setSize] = useState('30');
+            const [goal, setGoal] = useState('拓展渠道 + 获取行业认证');
+            const [revenue, setRevenue] = useState('');
+            const [stage, setStage] = useState('idle');
+            const [step, setStep] = useState(0);
+            const [visible, setVisible] = useState(0);
+
+            const steps = ['读取企业画像与行业基准...','匹配协会资源库与历史成交数据...','计算补贴机会与渠道价值...','生成 ROI 测算报告...'];
+
+            const run = () => {
+                if (stage==='loading') return;
+                setStage('loading'); setStep(0); setVisible(0);
+                triggerAI('AI 正在测算入会 ROI...', 8000);
+                [0,700,1500,2200].forEach((t,i)=>setTimeout(()=>setStep(i),t));
+                setTimeout(()=>{ setStage('done'); [0,1,2,3,4].forEach(i=>setTimeout(()=>setVisible(v=>v+1),i*400)); }, 3200);
+            };
+
+            const sel = "w-full border-2 border-orange-100 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-orange-300 bg-orange-50";
+
+            return (
+                <div className="max-w-5xl mx-auto px-6 page-px py-10 page-py fade-in">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="text-3xl">🐱</span>
+                        <h2 className="text-2xl font-black text-gray-900">入会 ROI</h2>
+                        <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-semibold">AI 量化测算</span>
+                    </div>
+                    <p className="text-gray-500 text-sm mb-6 ml-10">填写企业信息，AI 量化加入协会的真实收益</p>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-white rounded-2xl p-5 border-2 border-orange-100 shadow-sm">
+                            <h3 className="font-bold text-gray-900 mb-4 text-sm">🐾 企业信息（可编辑）</h3>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-xs font-semibold text-gray-500 mb-1 block">🐶 所在行业</label>
+                                    <select value={industry} onChange={e=>setIndustry(e.target.value)} className={sel}>
+                                        <option>宠物食品/用品</option>
+                                        <option>宠物医疗/美容</option>
+                                        <option>宠物电商/零售</option>
+                                        <option>宠物供应链/原材料</option>
+                                        <option>宠物科技/平台</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold text-gray-500 mb-1 block">🏢 公司人数</label>
+                                    <select value={size} onChange={e=>setSize(e.target.value)} className={sel}>
+                                        <option value="10">10人以下（初创）</option>
+                                        <option value="30">10–50人（成长期）</option>
+                                        <option value="100">50–200人（中型）</option>
+                                        <option value="500">200人以上（大型）</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold text-gray-500 mb-1 block">🎯 核心目标</label>
+                                    <select value={goal} onChange={e=>setGoal(e.target.value)} className={sel}>
+                                        <option>拓展渠道 + 获取行业认证</option>
+                                        <option>申请政府补贴 + 品牌背书</option>
+                                        <option>寻找供应商/采购商</option>
+                                        <option>参与行业标准制定</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold text-gray-500 mb-1 block">💰 当前年营收（选填）</label>
+                                    <input value={revenue} onChange={e=>setRevenue(e.target.value)} placeholder="如：3000万" className={sel} />
+                                </div>
+                                <button onClick={run} disabled={stage==='loading'}
+                                    className={`w-full py-3.5 rounded-xl font-bold text-white shadow-md transition-all text-sm ${stage==='loading' ? 'bg-gray-400 cursor-not-allowed' : 'orange-btn'}`}>
+                                    {stage==='loading' ? '🐶 AI 测算中...' : '⚡ 计算入会 ROI'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            {stage==='idle' && (
+                                <div className="bg-orange-50 rounded-2xl p-10 border-2 border-orange-100 flex items-center justify-center h-full min-h-48">
+                                    <div className="text-center text-gray-400">
+                                        <div className="text-5xl mb-2 opacity-40">🐾</div>
+                                        <p className="text-sm">填写信息后<br/>查看 AI ROI 分析</p>
+                                    </div>
+                                </div>
+                            )}
+                            {stage==='loading' && <AILoading steps={steps} currentStep={step} />}
+                            {stage==='done' && (
+                                <div className="space-y-3">
+                                    {visible>=1 && (
+                                        <div className="result-card bg-white rounded-2xl p-4 border-2 border-blue-100 shadow-sm">
+                                            <div className="flex items-center gap-2 mb-3"><span>📜</span><span className="font-bold text-gray-900 text-sm">预计收益（6个月）</span></div>
+                                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                                <div className="bg-blue-50 rounded-xl p-3"><span className="text-gray-500 block text-xs">政策补贴机会</span><span className="font-bold text-blue-600">50–150万</span></div>
+                                                <div className="bg-green-50 rounded-xl p-3"><span className="text-gray-500 block text-xs">渠道合作机会</span><span className="font-bold text-green-600">200–600万</span></div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {visible>=2 && (
+                                        <div className="result-card bg-white rounded-2xl p-4 border-2 border-orange-100 shadow-sm">
+                                            <div className="flex items-center gap-2 mb-3"><span>🐾</span><span className="font-bold text-gray-900 text-sm">可对接资源</span></div>
+                                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                                <div className="bg-orange-50 rounded-xl p-3"><span className="text-gray-500 block text-xs">连锁渠道</span><span className="font-bold text-orange-600">3–5 家</span></div>
+                                                <div className="bg-amber-50 rounded-xl p-3"><span className="text-gray-500 block text-xs">潜在采购商</span><span className="font-bold text-amber-600">8–15 个</span></div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {visible>=3 && (
+                                        <div className="result-card bg-white rounded-2xl p-4 border-2 border-purple-100 shadow-sm">
+                                            <div className="flex items-center gap-2 mb-3"><span>🎯</span><span className="font-bold text-gray-900 text-sm">成功概率</span></div>
+                                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                                <div className="bg-purple-50 rounded-xl p-3"><span className="text-gray-500 block text-xs">成交概率</span><span className="font-bold text-purple-600">40–60%</span></div>
+                                                <div className="bg-pink-50 rounded-xl p-3"><span className="text-gray-500 block text-xs">获取认证</span><span className="font-bold text-pink-600">70%+</span></div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {visible>=4 && (
+                                        <div className="result-card bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-4 border-2 border-green-300 shadow-sm">
+                                            <div className="text-sm text-gray-600 mb-2 font-semibold">💰 ROI 测算（关键）</div>
+                                            <div className="space-y-1.5 text-sm">
+                                                <div className="flex justify-between"><span className="text-gray-600">年度会员费</span><span className="font-semibold">3 万元</span></div>
+                                                <div className="flex justify-between"><span className="text-gray-600">预计收益（保守）</span><span className="font-bold text-green-600">100 万+</span></div>
+                                                <div className="border-t border-green-200 pt-2 flex justify-between items-center">
+                                                    <span className="font-bold">ROI</span>
+                                                    <span className="font-black text-3xl text-green-600"><CountUp target={30} suffix="x" duration={1000} /></span>
+                                                </div>
+                                                <div className="flex justify-between text-xs text-gray-500 border-t border-green-100 pt-1.5">
+                                                    <span>⏱ 回本周期</span><span className="font-semibold text-gray-700">约 1–2 个月</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {visible>=5 && (
+                                        <div className="result-card space-y-3">
+                                            <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-200 rounded-xl p-3 text-center">
+                                                <p className="text-orange-800 font-bold text-xs">🔥 加入协会，本质是购买一张"宠物行业资源通行证"</p>
+                                            </div>
+                                            <div className="flex flex-col sm:flex-row gap-3">
+                                                <button onClick={()=>onNavigate(4)} className="flex-1 orange-btn text-white py-3 rounded-xl font-bold shadow-md text-sm">🐾 立即申请会员</button>
+                                                <button className="flex-1 bg-white border-2 border-orange-400 text-orange-600 py-3 rounded-xl font-bold hover:bg-orange-50 transition text-sm">获取专属报告</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        /* ─── Screen 5: Conversion ─── */
+        function ConversionPage({ onNavigate, triggerAI }) {
+            const [name, setName] = useState('');
+            const [company, setCompany] = useState('');
+            const [phone, setPhone] = useState('');
+            const [submitted, setSubmitted] = useState(false);
+            const [submitting, setSubmitting] = useState(false);
+
+            const submit = () => {
+                if (!name||!company) { alert('请填写姓名和公司名称'); return; }
+                setSubmitting(true);
+                triggerAI('AI 正在为您生成专属方案...', 4000);
+                setTimeout(()=>{ setSubmitting(false); setSubmitted(true); }, 3000);
+            };
+
+            const inp = "w-full border-2 border-orange-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-300 bg-orange-50";
+
+            return (
+                <div className="max-w-5xl mx-auto px-6 page-px py-10 page-py fade-in">
+                    <div className="text-center mb-10">
+                        <div className="text-5xl mb-3">🐶</div>
+                        <h2 className="text-3xl font-black text-gray-900 mb-3 leading-tight">
+                            加入协会，进入宠物行业<br/><span className="text-orange-500">资源优先分配体系</span>
+                        </h2>
+                        <p className="text-gray-500">3000+ 会员企业 · AI 持续撮合 · 政策优先推荐</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+                        {[
+                            { icon:'📜', title:'优先政策申报支持', desc:'提高补贴申请通过率 30–50%' },
+                            { icon:'🏪', title:'核心渠道资源对接', desc:'连锁超市 / 宠物医院 / 头部品牌' },
+                            { icon:'🐾', title:'专属 AI 商业匹配', desc:'持续推荐采购商机，7×24h 运行' },
+                        ].map((b,i)=>(
+                            <div key={i} className="pet-card rounded-2xl p-5 text-center">
+                                <div className="text-3xl mb-2">{b.icon}</div>
+                                <h4 className="font-bold text-gray-900 mb-1 text-sm">{b.title}</h4>
+                                <p className="text-xs text-gray-500">{b.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-6 mb-8">
+                        <h3 className="font-bold text-gray-900 mb-4 text-sm">🐱 案例：某宠物食品品牌（类似规模）</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="bg-white rounded-xl p-4 border border-gray-200">
+                                <div className="text-xs font-semibold text-gray-500 mb-2">加入前</div>
+                                <div className="text-gray-700 text-xs leading-relaxed">• 无渠道合作，依赖线下展会<br/>• 无行业认证，采购商不信任<br/>• 年渠道成交额：约 50万</div>
+                            </div>
+                            <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                                <div className="text-xs font-semibold text-green-700 mb-2">加入后（6个月）</div>
+                                <div className="text-gray-700 text-xs leading-relaxed">• 获得 3 家连锁超市合作机会<br/>• 成交 2 家（约 400万）<br/>• ROI = <span className="font-bold text-green-600 text-sm">133x</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {!submitted ? (
+                        <div className="bg-white rounded-2xl p-6 border-2 border-orange-100 shadow-sm max-w-lg mx-auto">
+                            <h3 className="font-bold text-gray-900 mb-4 text-center text-sm">🐶 申请会员 · AI 为您生成专属方案</h3>
+                            <div className="space-y-3">
+                                <div><label className="text-xs font-semibold text-gray-500 mb-1 block">姓名 *</label><input value={name} onChange={e=>setName(e.target.value)} placeholder="如：张总" className={inp} /></div>
+                                <div><label className="text-xs font-semibold text-gray-500 mb-1 block">公司名称 *</label><input value={company} onChange={e=>setCompany(e.target.value)} placeholder="如：某宠物食品有限公司" className={inp} /></div>
+                                <div><label className="text-xs font-semibold text-gray-500 mb-1 block">联系电话</label><input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="方便顾问与您联系" className={inp} /></div>
+                                <button onClick={submit} disabled={submitting}
+                                    className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all ${submitting ? 'bg-gray-400 cursor-not-allowed' : 'orange-btn'}`}>
+                                    {submitting ? <span className="ai-thinking">🐾 AI 正在生成专属方案</span> : '🚀 立即申请会员'}
+                                </button>
+                                <p className="text-xs text-gray-400 text-center">填写即视为同意协会服务条款 · 顾问将在1个工作日内联系</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="scale-in bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-8 border-2 border-green-300 shadow-lg text-center max-w-lg mx-auto">
+                            <div className="text-5xl mb-3">🎉</div>
+                            <h3 className="text-xl font-black text-gray-900 mb-2">申请已提交！</h3>
+                            <p className="text-gray-600 mb-4 text-sm">AI 已为 <span className="font-bold text-gray-900">{company}</span> 生成专属入会方案</p>
+                            <div className="bg-white rounded-xl p-4 border border-green-200 text-left text-xs space-y-2 mb-5">
+                                <div>🐾 预计可申请补贴：<span className="font-bold text-green-600">50万–150万</span></div>
+                                <div>🏪 可对接渠道资源：<span className="font-bold text-blue-600">3–5家</span></div>
+                                <div>🤖 AI 匹配启动时间：<span className="font-bold text-orange-600">入会后 48小时内</span></div>
+                            </div>
+                            <button onClick={()=>{ setSubmitted(false); setName(''); setCompany(''); setPhone(''); }} className="text-xs text-gray-400 hover:text-gray-600">重新填写</button>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
