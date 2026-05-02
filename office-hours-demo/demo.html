@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>YC Office Hours · PetCare AI 分诊助手 DEMO</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #111; margin: 0; }
+        .msg-in { animation: msgIn 0.35s ease-out forwards; opacity: 0; }
+        @keyframes msgIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .typing::after { content: '●●●'; animation: typing 1s steps(3) infinite; font-size: 0.6rem; letter-spacing: 2px; }
+        @keyframes typing { 0%,33% { content:'●'; } 34%,66% { content:'●●'; } 67%,100% { content:'●●●'; } }
+        .doc-card { animation: cardIn 0.6s ease-out forwards; }
+        @keyframes cardIn { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:scale(1); } }
+        .phase-dot { transition: all 0.3s ease; }
+        .chat-scroll { scroll-behavior: smooth; }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const PHASES = ['开场', '模式确认', '六问深挖', '前提挑战', '方案选择', '设计文档'];
+
+const CONV = [
+  { ph:0, r:'yc', t:'你好，我是 Michael，YC 合伙人。今天我们有 20 分钟。\n\n我不会给你讲课，也不会帮你做决定。我只问问题，你来回答。\n\n**先说说你在做什么，以及你现在最大的困惑是什么。**' },
+  { ph:1, r:'founder', t:'我叫张明，之前做了 8 年兽医。我想做一个 AI 宠物分诊助手——帮宠物主人判断"要不要去医院"。现在还没有产品，只有一个想法。\n\n最大的困惑是：先做 App 还是先找用户？' },
+  { ph:1, r:'yc', t:'先找用户。这是唯一正确的顺序。\n\n你现在是 pre-product，所以我们进入**创业模式**——我会问你六个问题，帮你找到真正的需求和切入点。\n\n准备好了吗？' },
+  { ph:1, r:'founder', t:'准备好了。' },
+  { ph:2, r:'yc', t:'**Q1 · 需求真实性**\n\n有没有人真的想要这个东西？不是"觉得有用"，是真的想要——愿意付钱、愿意改变习惯的那种。' },
+  { ph:2, r:'founder', t:'我问过几个朋友，他们都觉得这个想法很好，说如果有这个工具会用的。' },
+  { ph:2, r:'yc', t:'停。"朋友觉得有用"不是需求。\n\n朋友不会伤害你的感情，所以他们说"好"。这不算数据。\n\n**有没有人主动找过你，问你宠物的健康问题？**' },
+  { ph:2, r:'founder', t:'有。我在几个宠物微信群里，经常有人@我问问题。上周就有三个人问我他们的猫是不是需要去医院。' },
+  { ph:2, r:'yc', t:'这才是真实需求。\n\n**Q2 · 现状替代方案**\n\n这些人现在怎么解决这个问题？如果没有你，他们怎么办？' },
+  { ph:2, r:'founder', t:'要么直接去宠物医院，要么在网上搜，要么就在群里问。去医院贵，而且很多时候只是虚惊一场，白跑一趟。' },
+  { ph:2, r:'yc', t:'所以你要解决的核心问题是：**"要不要去医院"这个判断**。\n\n你不是在替代兽医，你是在做分诊——帮人省掉不必要的就诊。这个定位很清晰。' },
+  { ph:2, r:'founder', t:'对，就是这个。我之前一直说"AI 宠物医生"，但其实核心是分诊判断。' },
+  { ph:2, r:'yc', t:'**Q3 · 极度具体**\n\n给我说一个具体的人。不是"宠物主人"这个群体，是一个真实的人——名字、年龄、他们的宠物、他们的具体问题。' },
+  { ph:2, r:'founder', t:'李梅，35 岁，在上海做 HR。有一只 12 岁的老年猫叫"豆腐"。上周她问我豆腐最近不爱吃东西，是不是要去医院。她每年在豆腐身上花 5000-8000 元。' },
+  { ph:2, r:'yc', t:'很好。李梅就是你的目标用户。\n\n**Q4 · 最窄切入点**\n\n你现在怎么接触到李梅这样的人？你的第一个 10 个用户从哪里来？' },
+  { ph:2, r:'founder', t:'就是那些微信群。我在里面已经有一定信任度了，大家知道我是兽医。我可以直接在群里提供付费咨询服务。' },
+  { ph:2, r:'yc', t:'你觉得李梅愿意为这个付多少钱？' },
+  { ph:2, r:'founder', t:'我想过，大概 99 元一个月？可以无限次问问题。' },
+  { ph:2, r:'yc', t:'**Q5 · 亲眼观察**\n\n你有没有亲眼看过李梅在用现有工具解决这个问题？她是怎么搜索的，怎么做决定的？' },
+  { ph:2, r:'founder', t:'没有亲眼看过。但我在群里帮她解答过三四次了，知道她的决策过程——她会先描述症状，然后问"严不严重"，最后问"要不要去医院"。' },
+  { ph:2, r:'yc', t:'你已经在手动做这件事了。这很有价值。\n\n**Q6 · 未来适配性**\n\n如果这个做成了，5 年后是什么样子？你想做的是一个工具，还是一个平台？' },
+  { ph:2, r:'founder', t:'我想做宠物健康管理平台，连接宠物主人、兽医和宠物医院。AI 分诊只是入口。' },
+  { ph:3, r:'yc', t:'等一下。我要挑战你的前提。\n\nAI 误判怎么办？如果 AI 说"不用去医院"，结果猫死了，你怎么处理这个责任？\n\n这不是技术问题，是信任和法律问题。' },
+  { ph:3, r:'founder', t:'这是我最担心的。所以我的想法是：AI 只做初步筛查，给出"建议就医"或"可以观察"，最终决定权在用户。而且我有兽医执照，可以做背书。' },
+  { ph:3, r:'yc', t:'兽医执照是你最大的护城河。大多数做宠物 AI 的人没有这个。\n\n但注意：你的定位必须是"辅助判断工具"，不能是"AI 医生"。措辞很重要，会影响法律风险。' },
+  { ph:4, r:'yc', t:'基于你的情况，我给你三个方向：\n\n**方案 A · 专家咨询服务**\n你本人在微信群提供付费咨询，99元/月，先做 20 个用户，验证付费意愿。成本极低，3 周可以启动。\n\n**方案 B · AI 分诊平台**\n直接开发 App，AI 做分诊，接入宠物医院。投入大，周期 6-12 个月，风险高。\n\n**方案 C · B2B 医院工具**\n把分诊工具卖给宠物医院，帮他们做预问诊。B2B 销售周期长，但客单价高。\n\n你倾向于哪个？' },
+  { ph:4, r:'founder', t:'方案 A。我现在没有资金，也没有团队，先验证需求最重要。' },
+  { ph:4, r:'yc', t:'正确答案。方案 A 是唯一务实的选择。\n\n方案 B 是大多数技术创始人的陷阱——先做产品，再找用户。你已经有用户了，先收钱。\n\n方案 C 不是不好，但 B2B 销售会消耗你大量时间，而你现在最需要的是快速验证。\n\n我来给你出一份设计文档。' },
+  { ph:5, r:'yc', t:'DOC', isDoc: true },
+];
+
+const DOC = {
+  title: 'PetCare 分诊助手',
+  problem: '宠物主人无法判断症状是否需要就医，导致过度就诊或延误治疗',
+  user: '李梅，35岁，上海职场女性，老年宠物主人，年花费 5000-8000 元',
+  wedge: '微信群付费咨询，99元/月，无限次问答',
+  recommended: '方案 A · 专家咨询服务（先收钱，再建产品）',
+  assignment: '这周联系李梅，问她愿意为"随时问兽医"付多少钱',
+  signals: ['named_users · 有具体用户', 'domain_expertise · 8年兽医执照', 'fast_update · 接受分诊定位', 'narrowest_wedge · 微信群切入'],
+  moat: '兽医执照背书，大多数竞品没有',
+};
+function renderText(t) {
+  return t.split('\n').map((line, i, arr) => {
+    const parts = line.split(/\*\*(.*?)\*\*/g);
+    return (
+      <span key={i}>
+        {parts.map((p, j) => j % 2 === 1 ? <strong key={j}>{p}</strong> : p)}
+        {i < arr.length - 1 && <br />}
+      </span>
+    );
+  });
+}
+
+function DocCard() {
+  const [show, setShow] = useState(false);
+  useEffect(() => { setTimeout(() => setShow(true), 300); }, []);
+  if (!show) return null;
+  return (
+    <div className="doc-card rounded-2xl overflow-hidden mt-2" style={{maxWidth:'520px',border:'2px solid #f97316'}}>
+      <div className="px-5 py-4 text-white" style={{background:'linear-gradient(135deg,#f97316,#ea580c)'}}>
+        <div className="text-xs font-semibold opacity-80 mb-1">YC Office Hours · 设计文档</div>
+        <div className="font-black text-lg">{DOC.title}</div>
+        <div className="text-xs opacity-80 mt-0.5">创业模式 · 方案 A · 2026年5月</div>
+      </div>
+      <div className="p-5 space-y-4" style={{background:'#1e1e1e'}}>
+        {[
+          { label:'核心问题', value: DOC.problem, color:'#f97316' },
+          { label:'目标用户', value: DOC.user, color:'#60a5fa' },
+          { label:'切入点', value: DOC.wedge, color:'#34d399' },
+          { label:'推荐方案', value: DOC.recommended, color:'#a78bfa' },
+          { label:'护城河', value: DOC.moat, color:'#fbbf24' },
+        ].map((row, i) => (
+          <div key={i}>
+            <div className="text-xs font-bold mb-1" style={{color: row.color}}>{row.label}</div>
+            <div className="text-sm text-gray-200">{row.value}</div>
+          </div>
+        ))}
+        <div>
+          <div className="text-xs font-bold mb-2" style={{color:'#f97316'}}>创始人信号</div>
+          <div className="flex flex-wrap gap-2">
+            {DOC.signals.map((s, i) => (
+              <span key={i} className="text-xs px-2 py-1 rounded-full font-medium" style={{background:'#2d2d2d',color:'#34d399',border:'1px solid #34d399'}}>{s}</span>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-xl p-4" style={{background:'#2d2d2d',border:'1px solid #f97316'}}>
+          <div className="text-xs font-bold mb-1" style={{color:'#f97316'}}>📋 本周任务</div>
+          <div className="text-sm font-semibold text-white">{DOC.assignment}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+function Bubble({ msg }) {
+  const isYC = msg.r === 'yc';
+  return (
+    <div className={`msg-in flex gap-3 ${isYC ? '' : 'flex-row-reverse'}`}>
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-black shadow ${isYC ? 'text-white' : 'text-white'}`}
+        style={{background: isYC ? 'linear-gradient(135deg,#f97316,#ea580c)' : 'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>
+        {isYC ? 'YC' : '张'}
+      </div>
+      <div style={{maxWidth:'78%'}}>
+        <div className={`text-xs font-semibold mb-1 ${isYC ? '' : 'text-right'}`} style={{color: isYC ? '#f97316' : '#60a5fa'}}>
+          {isYC ? 'Michael · YC 合伙人' : '张明 · 创始人'}
+        </div>
+        {msg.isDoc ? <DocCard /> : (
+          <div className="rounded-2xl px-4 py-3 text-sm leading-relaxed shadow"
+            style={isYC
+              ? {background:'#1e1e1e', border:'1px solid #333', color:'#e5e7eb', borderTopLeftRadius:'4px'}
+              : {background:'#1d4ed8', color:'white', borderTopRightRadius:'4px'}}>
+            {renderText(msg.t)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PhaseBar({ current }) {
+  return (
+    <div className="flex items-center gap-1 overflow-x-auto pb-1">
+      {PHASES.map((p, i) => (
+        <div key={i} className="flex items-center gap-1 flex-shrink-0">
+          <div className="phase-dot flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
+            style={i <= current
+              ? {background:'#f97316', color:'white'}
+              : {background:'#2d2d2d', color:'#6b7280'}}>
+            <span>{i <= current ? '✓' : i + 1}</span>
+            <span className="hidden sm:inline">{p}</span>
+          </div>
+          {i < PHASES.length - 1 && <div className="w-3 h-0.5 flex-shrink-0" style={{background: i < current ? '#f97316' : '#333'}} />}
+        </div>
+      ))}
+    </div>
+  );
+}
+function App() {
+  const [shown, setShown] = useState(0);
+  const [typing, setTyping] = useState(false);
+  const [autoPlay, setAuto] = useState(false);
+  const chatRef = useRef(null);
+  const timerRef = useRef(null);
+
+  const currentPhase = shown > 0 ? CONV[shown - 1].ph : 0;
+  const done = shown >= CONV.length;
+
+  const advance = () => {
+    if (done) return;
+    const next = CONV[shown];
+    if (next.r === 'yc') {
+      setTyping(true);
+      const delay = next.isDoc ? 1000 : Math.min(600 + next.t.length * 7, 2200);
+      timerRef.current = setTimeout(() => { setTyping(false); setShown(s => s + 1); }, delay);
+    } else {
+      setShown(s => s + 1);
+    }
+  };
+
+  useEffect(() => {
+    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+  }, [shown, typing]);
+
+  useEffect(() => {
+    if (!autoPlay || done) return;
+    const delay = typing ? 100 : (shown > 0 && CONV[shown - 1].r === 'founder' ? 1000 : 300);
+    timerRef.current = setTimeout(advance, delay);
+    return () => clearTimeout(timerRef.current);
+  }, [autoPlay, shown, typing, done]);
+
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  return (
+    <div className="min-h-screen flex flex-col" style={{background:'#111'}}>
+      <div className="sticky top-0 z-10 px-4 py-3" style={{background:'#1a1a1a',borderBottom:'1px solid #2d2d2d'}}>
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-black text-xs shadow" style={{background:'linear-gradient(135deg,#f97316,#ea580c)'}}>YC</div>
+              <div>
+                <div className="text-sm font-black text-white">YC Office Hours</div>
+                <div className="text-xs" style={{color:'#f97316'}}>PetCare AI 分诊助手 · 创始人模拟 DEMO</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setAuto(a => !a)}
+                className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all"
+                style={autoPlay ? {background:'#f97316',color:'white'} : {background:'#2d2d2d',color:'#9ca3af'}}>
+                {autoPlay ? '⏸ 暂停' : '▶ 自动播放'}
+              </button>
+              <button onClick={() => { setShown(CONV.length); setTyping(false); setAuto(false); }}
+                className="text-xs px-3 py-1.5 rounded-lg font-semibold"
+                style={{background:'#14532d',color:'#4ade80'}}>
+                ⚡ 直接看结论
+              </button>
+            </div>
+          </div>
+          <PhaseBar current={currentPhase} />
+        </div>
+      </div>
+
+      <div ref={chatRef} className="chat-scroll flex-1 overflow-y-auto px-4 py-6" style={{maxHeight:'calc(100vh - 130px)'}}>
+        <div className="max-w-2xl mx-auto space-y-5">
+          {shown === 0 && (
+            <div className="text-center py-12" style={{color:'#6b7280'}}>
+              <div className="text-4xl mb-3">🚀</div>
+              <div className="text-sm font-medium text-gray-400">点击"开始对话"体验完整的 YC Office Hours 流程</div>
+              <div className="text-xs mt-1" style={{color:'#4b5563'}}>模拟场景：PetCare AI 分诊助手 × 张明（前兽医创始人）</div>
+            </div>
+          )}
+          {CONV.slice(0, shown).map((msg, i) => <Bubble key={i} msg={msg} />)}
+          {typing && (
+            <div className="msg-in flex gap-3">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-black flex-shrink-0" style={{background:'linear-gradient(135deg,#f97316,#ea580c)'}}>YC</div>
+              <div className="rounded-2xl px-4 py-3 shadow" style={{background:'#1e1e1e',border:'1px solid #333',borderTopLeftRadius:'4px'}}>
+                <span className="typing text-xs" style={{color:'#f97316'}} />
+              </div>
+            </div>
+          )}
+          {done && <div className="text-center py-4 text-xs" style={{color:'#4b5563'}}>── Office Hours 结束 · 共 {CONV.length} 轮对话 ──</div>}
+        </div>
+      </div>
+
+      <div className="sticky bottom-0 px-4 py-3" style={{background:'#1a1a1a',borderTop:'1px solid #2d2d2d'}}>
+        <div className="max-w-2xl mx-auto flex items-center gap-3">
+          {!done ? (
+            <>
+              <button onClick={advance} disabled={typing}
+                className="flex-1 py-3 rounded-xl font-bold text-sm transition-all"
+                style={typing ? {background:'#2d2d2d',color:'#4b5563',cursor:'not-allowed'} : {background:'linear-gradient(135deg,#f97316,#ea580c)',color:'white'}}>
+                {typing ? 'YC 合伙人正在思考...' : shown === 0 ? '🚀 开始对话' : CONV[shown]?.r === 'yc' ? '⬇ 下一条（YC）' : '⬇ 下一条（创始人）'}
+              </button>
+              <div className="text-xs flex-shrink-0" style={{color:'#4b5563'}}>{shown}/{CONV.length}</div>
+            </>
+          ) : (
+            <button onClick={() => { setShown(0); setTyping(false); setAuto(false); }}
+              className="flex-1 py-3 rounded-xl font-bold text-sm"
+              style={{background:'#2d2d2d',color:'#9ca3af'}}>
+              ↺ 重新播放
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
