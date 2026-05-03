@@ -10,7 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; margin: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9fafb; margin: 0; }
         .msg-in { animation: msgIn 0.35s ease-out forwards; opacity: 0; }
         @keyframes msgIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
         .typing::after { content: '●●●'; animation: typing 1s steps(3) infinite; font-size: 0.6rem; letter-spacing: 2px; }
@@ -20,7 +20,7 @@
         .phase-dot { transition: all 0.3s ease; }
         .chat-scroll { scroll-behavior: smooth; }
         .scenario-card { transition: all 0.3s ease; cursor: pointer; }
-        .scenario-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(249,115,22,0.3); }
+        .scenario-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(249,115,22,0.2); }
         .signal-badge { animation: badgeIn 0.4s ease-out forwards; opacity: 0; }
         @keyframes badgeIn { from { opacity:0; transform:scale(0.8); } to { opacity:1; transform:scale(1); } }
         .gradient-text { background: linear-gradient(135deg, #f97316, #ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -651,14 +651,14 @@ function ScenarioCard({ scenario, onSelect }) {
   return (
     <div onClick={() => onSelect(scenario.id)}
       className="scenario-card rounded-2xl p-6 cursor-pointer"
-      style={{background:'#1a1a1a', border:'2px solid #2d2d2d'}}>
+      style={{background:'#ffffff', border:'2px solid #e5e7eb'}}>
       <div className="text-4xl mb-3">{scenario.icon}</div>
-      <div className="text-lg font-bold text-white mb-2">{scenario.title}</div>
-      <div className="text-sm text-gray-400 mb-3">{scenario.desc}</div>
+      <div className="text-lg font-bold text-gray-900 mb-2">{scenario.title}</div>
+      <div className="text-sm text-gray-600 mb-3">{scenario.desc}</div>
       <div className="flex flex-wrap gap-2 mb-3">
         {scenario.tags.map((tag, i) => (
           <span key={i} className="text-xs px-2 py-1 rounded-full"
-            style={{background:'#2d2d2d', color:'#f97316'}}>
+            style={{background:'#e5e7eb', color:'#f97316'}}>
             {tag}
           </span>
         ))}
@@ -676,31 +676,31 @@ function AlternativesCard() {
 
   return (
     <div className="card-in rounded-2xl overflow-hidden mt-2" style={{maxWidth:'720px', border:'2px solid #f97316'}}>
-      <div className="px-5 py-4 text-white" style={{background:'linear-gradient(135deg,#f97316,#ea580c)'}}>
+      <div className="px-5 py-4 text-gray-900" style={{background:'linear-gradient(135deg,#f97316,#ea580c)'}}>
         <div className="text-xs font-semibold opacity-80 mb-1">方案对比分析</div>
         <div className="font-black text-lg">{ALTERNATIVES_DATA.title}</div>
       </div>
-      <div className="p-5 space-y-3" style={{background:'#1e1e1e'}}>
+      <div className="p-5 space-y-3" style={{background:'#f3f4f6'}}>
         {ALTERNATIVES_DATA.options.map((opt, i) => (
           <div key={i} className="rounded-xl p-4"
             style={{
-              background: opt.recommended ? '#14532d' : '#2d2d2d',
-              border: opt.recommended ? '2px solid #22c55e' : '1px solid #333'
+              background: opt.recommended ? '#14532d' : '#e5e7eb',
+              border: opt.recommended ? '2px solid #22c55e' : '1px solid #d1d5db'
             }}>
             <div className="flex items-center justify-between mb-3">
-              <div className="font-bold text-white">{opt.name}</div>
+              <div className="font-bold text-gray-900">{opt.name}</div>
               {opt.recommended && (
                 <span className="text-xs px-2 py-1 rounded-full font-semibold"
-                  style={{background:'#22c55e', color:'white'}}>
+                  style={{background:'#22c55e', color:'#111827'}}>
                   ✓ 推荐
                 </span>
               )}
             </div>
             <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
-              <div><span className="text-gray-400">成本：</span><span className="text-white font-semibold">{opt.cost}</span></div>
-              <div><span className="text-gray-400">周期：</span><span className="text-white font-semibold">{opt.time}</span></div>
-              <div><span className="text-gray-400">风险：</span><span className="text-white font-semibold">{opt.risk}</span></div>
-              <div><span className="text-gray-400">收入：</span><span className="text-white font-semibold">{opt.revenue}</span></div>
+              <div><span className="text-gray-600">成本：</span><span className="text-gray-900 font-semibold">{opt.cost}</span></div>
+              <div><span className="text-gray-600">周期：</span><span className="text-gray-900 font-semibold">{opt.time}</span></div>
+              <div><span className="text-gray-600">风险：</span><span className="text-gray-900 font-semibold">{opt.risk}</span></div>
+              <div><span className="text-gray-600">收入：</span><span className="text-gray-900 font-semibold">{opt.revenue}</span></div>
             </div>
             <div className="space-y-1 mb-2">
               <div className="text-xs font-semibold" style={{color:'#22c55e'}}>优势：</div>
@@ -730,30 +730,30 @@ function ExecutionCard() {
 
   return (
     <div className="card-in rounded-2xl overflow-hidden mt-2" style={{maxWidth:'720px', border:'2px solid #3b82f6'}}>
-      <div className="px-5 py-4 text-white" style={{background:'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>
+      <div className="px-5 py-4 text-gray-900" style={{background:'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>
         <div className="text-xs font-semibold opacity-80 mb-1">执行路线图</div>
         <div className="font-black text-lg">{EXECUTION_PLAN.title}</div>
       </div>
-      <div className="flex border-b" style={{background:'#1a1a1a', borderColor:'#2d2d2d'}}>
+      <div className="flex border-b" style={{background:'#ffffff', borderColor:'#e5e7eb'}}>
         {EXECUTION_PLAN.weeks.map((week, i) => (
           <button key={i} onClick={() => setActiveWeek(i)}
             className="flex-1 px-4 py-3 text-xs font-semibold transition-all"
             style={activeWeek === i
               ? {color:'#3b82f6', borderBottom:'2px solid #3b82f6'}
-              : {color:'#6b7280'}}>
+              : {color:'#9ca3af'}}>
             第{week.week}周
           </button>
         ))}
       </div>
-      <div className="p-5" style={{background:'#1e1e1e'}}>
+      <div className="p-5" style={{background:'#f3f4f6'}}>
         {EXECUTION_PLAN.weeks.map((week, i) => activeWeek === i && (
           <div key={i} className="space-y-4">
             <div className="flex items-center gap-3">
               <span className="text-xs px-3 py-1 rounded-full font-bold"
-                style={{background:'#3b82f6', color:'white'}}>
+                style={{background:'#3b82f6', color:'#111827'}}>
                 {week.phase}
               </span>
-              <span className="text-sm font-semibold text-white">目标：{week.goal}</span>
+              <span className="text-sm font-semibold text-gray-900">目标：{week.goal}</span>
             </div>
             <div>
               <div className="text-xs font-bold mb-2" style={{color:'#3b82f6'}}>核心任务</div>
@@ -771,7 +771,7 @@ function ExecutionCard() {
               <div className="space-y-1">
                 {week.metrics.map((metric, j) => (
                   <div key={j} className="text-xs px-3 py-2 rounded-lg"
-                    style={{background:'#2d2d2d', color:'#22c55e'}}>
+                    style={{background:'#e5e7eb', color:'#22c55e'}}>
                     ✓ {metric}
                   </div>
                 ))}
@@ -792,17 +792,17 @@ function RisksCard() {
 
   return (
     <div className="card-in rounded-2xl overflow-hidden mt-2" style={{maxWidth:'720px', border:'2px solid #ef4444'}}>
-      <div className="px-5 py-4 text-white" style={{background:'linear-gradient(135deg,#ef4444,#dc2626)'}}>
+      <div className="px-5 py-4 text-gray-900" style={{background:'linear-gradient(135deg,#ef4444,#dc2626)'}}>
         <div className="text-xs font-semibold opacity-80 mb-1">风险管理</div>
         <div className="font-black text-lg">{RISKS_DATA.title}</div>
       </div>
-      <div className="p-5 space-y-3" style={{background:'#1e1e1e'}}>
+      <div className="p-5 space-y-3" style={{background:'#f3f4f6'}}>
         {RISKS_DATA.risks.map((risk, i) => (
-          <div key={i} className="rounded-xl p-4" style={{background:'#2d2d2d', border:'1px solid #ef4444'}}>
+          <div key={i} className="rounded-xl p-4" style={{background:'#e5e7eb', border:'1px solid #ef4444'}}>
             <div className="flex items-start gap-3 mb-3">
               <span className="text-2xl">⚠️</span>
               <div className="flex-1">
-                <div className="font-bold text-white mb-1">{risk.risk}</div>
+                <div className="font-bold text-gray-900 mb-1">{risk.risk}</div>
                 <div className="flex gap-2 text-xs">
                   <span className="px-2 py-0.5 rounded" style={{background:'#7f1d1d', color:'#fca5a5'}}>
                     风险等级：{risk.level}
@@ -827,7 +827,7 @@ function RisksCard() {
                 ))}
               </div>
             </div>
-            <div className="text-xs text-gray-400">预算：{risk.cost}</div>
+            <div className="text-xs text-gray-600">预算：{risk.cost}</div>
           </div>
         ))}
       </div>
@@ -844,15 +844,15 @@ function downloadFundraisingReport(report) {
 <meta charset="UTF-8">
 <title>${report.title}</title>
 <style>
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#e5e7eb;margin:0;padding:24px}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9fafb;color:#e5e7eb;margin:0;padding:24px}
   .wrap{max-width:900px;margin:0 auto}
   h1{color:#3b82f6;font-size:2rem;margin-bottom:4px}
-  h2{color:#3b82f6;font-size:1.1rem;margin:28px 0 10px;border-bottom:1px solid #2d2d2d;padding-bottom:6px}
+  h2{color:#3b82f6;font-size:1.1rem;margin:28px 0 10px;border-bottom:1px solid #e5e7eb;padding-bottom:6px}
   h3{color:#60a5fa;font-size:.95rem;margin:16px 0 6px}
-  .meta{color:#6b7280;font-size:.85rem;margin-bottom:24px}
+  .meta{color:#9ca3af;font-size:.85rem;margin-bottom:24px}
   .verdict{background:#422006;border:2px solid #fbbf24;border-radius:12px;padding:16px 20px;margin-bottom:20px}
   .verdict .label{color:#fbbf24;font-weight:700;font-size:1.1rem}
-  .card{background:#1e1e1e;border:1px solid #2d2d2d;border-radius:10px;padding:14px 18px;margin-bottom:12px}
+  .card{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;margin-bottom:12px}
   .card.blue{border-color:#3b82f6}
   .card.red{border-color:#ef4444}
   .card.green{border-color:#22c55e;background:#14532d}
@@ -860,10 +860,10 @@ function downloadFundraisingReport(report) {
   ul{margin:6px 0;padding-left:20px;line-height:1.8}
   li{color:#d1d5db;font-size:.9rem}
   table{width:100%;border-collapse:collapse;margin:10px 0}
-  th{background:#2d2d2d;color:#9ca3af;font-size:.8rem;padding:8px 12px;text-align:left}
-  td{padding:8px 12px;border-bottom:1px solid #2d2d2d;font-size:.9rem}
-  .tag{display:inline-block;background:#2d2d2d;color:#3b82f6;border:1px solid #3b82f6;border-radius:6px;padding:3px 10px;font-size:.75rem;margin:3px}
-  .footer{margin-top:40px;padding-top:16px;border-top:1px solid #2d2d2d;color:#4b5563;font-size:.8rem;text-align:center}
+  th{background:#e5e7eb;color:#9ca3af;font-size:.8rem;padding:8px 12px;text-align:left}
+  td{padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:.9rem}
+  .tag{display:inline-block;background:#e5e7eb;color:#3b82f6;border:1px solid #3b82f6;border-radius:6px;padding:3px 10px;font-size:.75rem;margin:3px}
+  .footer{margin-top:40px;padding-top:16px;border-top:1px solid #e5e7eb;color:#6b7280;font-size:.8rem;text-align:center}
   @media print{body{background:#fff;color:#111}.card{border:1px solid #ccc;background:#f9f9f9}h1,h2{color:#2563eb}}
 </style>
 </head>
@@ -959,15 +959,15 @@ function downloadReport(report) {
 <meta charset="UTF-8">
 <title>${report.title}</title>
 <style>
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#e5e7eb;margin:0;padding:24px}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9fafb;color:#e5e7eb;margin:0;padding:24px}
   .wrap{max-width:900px;margin:0 auto}
   h1{color:#f97316;font-size:2rem;margin-bottom:4px}
-  h2{color:#f97316;font-size:1.1rem;margin:28px 0 10px;border-bottom:1px solid #2d2d2d;padding-bottom:6px}
+  h2{color:#f97316;font-size:1.1rem;margin:28px 0 10px;border-bottom:1px solid #e5e7eb;padding-bottom:6px}
   h3{color:#60a5fa;font-size:.95rem;margin:16px 0 6px}
-  .meta{color:#6b7280;font-size:.85rem;margin-bottom:24px}
+  .meta{color:#9ca3af;font-size:.85rem;margin-bottom:24px}
   .verdict{background:#14532d;border:2px solid #22c55e;border-radius:12px;padding:16px 20px;margin-bottom:20px}
   .verdict .label{color:#22c55e;font-weight:700;font-size:1.1rem}
-  .card{background:#1e1e1e;border:1px solid #2d2d2d;border-radius:10px;padding:14px 18px;margin-bottom:12px}
+  .card{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;margin-bottom:12px}
   .card.orange{border-color:#f97316}
   .card.blue{border-color:#3b82f6}
   .card.red{border-color:#ef4444}
@@ -975,12 +975,12 @@ function downloadReport(report) {
   ul{margin:6px 0;padding-left:20px;line-height:1.8}
   li{color:#d1d5db;font-size:.9rem}
   table{width:100%;border-collapse:collapse;margin:10px 0}
-  th{background:#2d2d2d;color:#9ca3af;font-size:.8rem;padding:8px 12px;text-align:left}
-  td{padding:8px 12px;border-bottom:1px solid #2d2d2d;font-size:.9rem}
-  .tag{display:inline-block;background:#2d2d2d;color:#f97316;border:1px solid #f97316;border-radius:6px;padding:3px 10px;font-size:.75rem;margin:3px}
+  th{background:#e5e7eb;color:#9ca3af;font-size:.8rem;padding:8px 12px;text-align:left}
+  td{padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:.9rem}
+  .tag{display:inline-block;background:#e5e7eb;color:#f97316;border:1px solid #f97316;border-radius:6px;padding:3px 10px;font-size:.75rem;margin:3px}
   .tag.green{color:#22c55e;border-color:#22c55e;background:#14532d}
   .tag.red{color:#fca5a5;border-color:#ef4444;background:#7f1d1d}
-  .footer{margin-top:40px;padding-top:16px;border-top:1px solid #2d2d2d;color:#4b5563;font-size:.8rem;text-align:center}
+  .footer{margin-top:40px;padding-top:16px;border-top:1px solid #e5e7eb;color:#6b7280;font-size:.8rem;text-align:center}
   @media print{body{background:#fff;color:#111}.card{border:1px solid #ccc;background:#f9f9f9}h1,h2{color:#ea580c}.verdict{background:#f0fdf4;border-color:#22c55e}.verdict .label{color:#16a34a}}
 </style>
 </head>
@@ -1051,7 +1051,7 @@ function downloadReport(report) {
       <span class="tag">概率:${r.probability}</span>
       <span class="tag">影响:${r.impact}</span>
       <ul>${rows(r.mitigation)}</ul>
-      <div style="color:#6b7280;font-size:.8rem">预算：${r.cost}</div>
+      <div style="color:#9ca3af;font-size:.8rem">预算：${r.cost}</div>
     </div>`).join('')}
 
   <h2>决策框架</h2>
@@ -1088,7 +1088,7 @@ function FinalReportCard() {
 
   return (
     <div className="card-in rounded-2xl overflow-hidden mt-2" style={{maxWidth:'800px', border:'3px solid #f97316'}}>
-      <div className="px-6 py-5 text-white" style={{background:'linear-gradient(135deg,#f97316,#ea580c)'}}>
+      <div className="px-6 py-5 text-gray-900" style={{background:'linear-gradient(135deg,#f97316,#ea580c)'}}>
         <div className="flex items-center justify-between mb-2">
           <div>
             <div className="text-xs font-semibold opacity-80 mb-1">YC Office Hours 完整诊断报告</div>
@@ -1104,7 +1104,7 @@ function FinalReportCard() {
         </div>
       </div>
 
-      <div className="flex border-b overflow-x-auto" style={{background:'#1a1a1a', borderColor:'#2d2d2d'}}>
+      <div className="flex border-b overflow-x-auto" style={{background:'#ffffff', borderColor:'#e5e7eb'}}>
         {[
           {id:'summary', label:'📋 核心结论', icon:'📋'},
           {id:'problem', label:'🎯 问题分析', icon:'🎯'},
@@ -1119,13 +1119,13 @@ function FinalReportCard() {
             className="px-4 py-3 text-xs font-semibold transition-all whitespace-nowrap"
             style={activeTab === tab.id
               ? {color:'#f97316', borderBottom:'2px solid #f97316'}
-              : {color:'#6b7280'}}>
+              : {color:'#9ca3af'}}>
             {tab.label}
           </button>
         ))}
       </div>
 
-      <div className="p-6 space-y-4" style={{background:'#1e1e1e', maxHeight:'600px', overflowY:'auto'}}>
+      <div className="p-6 space-y-4" style={{background:'#f3f4f6', maxHeight:'600px', overflowY:'auto'}}>
 
         {activeTab === 'summary' && (
           <>
@@ -1133,7 +1133,7 @@ function FinalReportCard() {
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-3xl">✅</span>
                 <div>
-                  <div className="font-bold text-white text-lg">{report.executive_summary.verdict}</div>
+                  <div className="font-bold text-gray-900 text-lg">{report.executive_summary.verdict}</div>
                   <div className="text-sm text-gray-300">置信度：{report.executive_summary.confidence}</div>
                 </div>
               </div>
@@ -1146,16 +1146,16 @@ function FinalReportCard() {
                 ))}
               </div>
             </div>
-            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+            <div className="rounded-xl p-4" style={{background:'#e5e7eb'}}>
               <div className="text-xs font-bold mb-2" style={{color:'#f97316'}}>推荐行动</div>
-              <div className="text-sm text-white">{report.executive_summary.recommendation}</div>
+              <div className="text-sm text-gray-900">{report.executive_summary.recommendation}</div>
             </div>
-            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+            <div className="rounded-xl p-4" style={{background:'#e5e7eb'}}>
               <div className="text-xs font-bold mb-2" style={{color:'#3b82f6'}}>YC 投资意向</div>
-              <div className="text-sm text-white mb-2">{report.yc_verdict.summary}</div>
+              <div className="text-sm text-gray-900 mb-2">{report.yc_verdict.summary}</div>
               <div className="flex gap-4 text-xs">
-                <div><span className="text-gray-400">是否投资：</span><span className="text-green-400 font-semibold">{report.yc_verdict.would_invest}</span></div>
-                <div><span className="text-gray-400">估值：</span><span className="text-yellow-400 font-semibold">{report.yc_verdict.estimated_valuation}</span></div>
+                <div><span className="text-gray-600">是否投资：</span><span className="text-green-400 font-semibold">{report.yc_verdict.would_invest}</span></div>
+                <div><span className="text-gray-600">估值：</span><span className="text-yellow-400 font-semibold">{report.yc_verdict.estimated_valuation}</span></div>
               </div>
             </div>
             <div>
@@ -1182,25 +1182,25 @@ function FinalReportCard() {
           <>
             <div>
               <div className="text-xs font-bold mb-2" style={{color:'#f97316'}}>核心问题</div>
-              <div className="text-sm text-white mb-3">{report.problem_analysis.core_problem}</div>
+              <div className="text-sm text-gray-900 mb-3">{report.problem_analysis.core_problem}</div>
             </div>
             <div>
               <div className="text-xs font-bold mb-2" style={{color:'#ef4444'}}>痛点分析</div>
               <div className="space-y-2">
                 {report.problem_analysis.pain_points.map((pain, i) => (
                   <div key={i} className="rounded-lg p-3 text-sm text-gray-200"
-                    style={{background:'#2d2d2d'}}>
+                    style={{background:'#e5e7eb'}}>
                     • {pain}
                   </div>
                 ))}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg p-3" style={{background:'#2d2d2d'}}>
+              <div className="rounded-lg p-3" style={{background:'#e5e7eb'}}>
                 <div className="text-xs font-bold mb-1" style={{color:'#3b82f6'}}>市场规模</div>
                 <div className="text-xs text-gray-300">{report.problem_analysis.market_size}</div>
               </div>
-              <div className="rounded-lg p-3" style={{background:'#2d2d2d'}}>
+              <div className="rounded-lg p-3" style={{background:'#e5e7eb'}}>
                 <div className="text-xs font-bold mb-1" style={{color:'#3b82f6'}}>目标用户</div>
                 <div className="text-xs text-gray-300">{report.problem_analysis.target_user}</div>
               </div>
@@ -1211,27 +1211,27 @@ function FinalReportCard() {
         {activeTab === 'solution' && (
           <>
             <div className="space-y-3">
-              <div className="rounded-lg p-4" style={{background:'#2d2d2d'}}>
+              <div className="rounded-lg p-4" style={{background:'#e5e7eb'}}>
                 <div className="text-xs font-bold mb-1" style={{color:'#f97316'}}>产品定位</div>
-                <div className="text-sm text-white">{report.solution_design.positioning}</div>
+                <div className="text-sm text-gray-900">{report.solution_design.positioning}</div>
               </div>
-              <div className="rounded-lg p-4" style={{background:'#2d2d2d'}}>
+              <div className="rounded-lg p-4" style={{background:'#e5e7eb'}}>
                 <div className="text-xs font-bold mb-1" style={{color:'#f97316'}}>价值主张</div>
-                <div className="text-sm text-white">{report.solution_design.value_proposition}</div>
+                <div className="text-sm text-gray-900">{report.solution_design.value_proposition}</div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg p-3" style={{background:'#2d2d2d'}}>
+                <div className="rounded-lg p-3" style={{background:'#e5e7eb'}}>
                   <div className="text-xs font-bold mb-1" style={{color:'#22c55e'}}>定价策略</div>
-                  <div className="text-sm text-white">{report.solution_design.pricing}</div>
+                  <div className="text-sm text-gray-900">{report.solution_design.pricing}</div>
                 </div>
-                <div className="rounded-lg p-3" style={{background:'#2d2d2d'}}>
+                <div className="rounded-lg p-3" style={{background:'#e5e7eb'}}>
                   <div className="text-xs font-bold mb-1" style={{color:'#22c55e'}}>分发渠道</div>
-                  <div className="text-sm text-white">{report.solution_design.distribution}</div>
+                  <div className="text-sm text-gray-900">{report.solution_design.distribution}</div>
                 </div>
               </div>
               <div className="rounded-lg p-4" style={{background:'#14532d', border:'1px solid #22c55e'}}>
                 <div className="text-xs font-bold mb-1" style={{color:'#22c55e'}}>护城河</div>
-                <div className="text-sm text-white">{report.solution_design.moat}</div>
+                <div className="text-sm text-gray-900">{report.solution_design.moat}</div>
               </div>
             </div>
           </>
@@ -1244,9 +1244,9 @@ function FinalReportCard() {
               <div className="space-y-2">
                 {report.financial_model.unit_economics.map((item, i) => (
                   <div key={i} className="flex justify-between items-center rounded-lg p-3"
-                    style={{background:'#2d2d2d'}}>
+                    style={{background:'#e5e7eb'}}>
                     <span className="text-sm text-gray-300">{item.metric}</span>
-                    <span className="text-sm font-semibold text-white">{item.value}</span>
+                    <span className="text-sm font-semibold text-gray-900">{item.value}</span>
                   </div>
                 ))}
               </div>
@@ -1256,19 +1256,19 @@ function FinalReportCard() {
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr style={{background:'#2d2d2d'}}>
-                      <th className="px-3 py-2 text-left text-gray-400">月份</th>
-                      <th className="px-3 py-2 text-right text-gray-400">用户数</th>
-                      <th className="px-3 py-2 text-right text-gray-400">收入</th>
-                      <th className="px-3 py-2 text-right text-gray-400">成本</th>
-                      <th className="px-3 py-2 text-right text-gray-400">利润</th>
+                    <tr style={{background:'#e5e7eb'}}>
+                      <th className="px-3 py-2 text-left text-gray-600">月份</th>
+                      <th className="px-3 py-2 text-right text-gray-600">用户数</th>
+                      <th className="px-3 py-2 text-right text-gray-600">收入</th>
+                      <th className="px-3 py-2 text-right text-gray-600">成本</th>
+                      <th className="px-3 py-2 text-right text-gray-600">利润</th>
                     </tr>
                   </thead>
                   <tbody>
                     {report.financial_model.revenue_projection.map((row, i) => (
-                      <tr key={i} style={{borderBottom:'1px solid #2d2d2d'}}>
-                        <td className="px-3 py-2 text-white">第 {row.month} 月</td>
-                        <td className="px-3 py-2 text-right text-white">{row.users}</td>
+                      <tr key={i} style={{borderBottom:'1px solid #e5e7eb'}}>
+                        <td className="px-3 py-2 text-gray-900">第 {row.month} 月</td>
+                        <td className="px-3 py-2 text-right text-gray-900">{row.users}</td>
                         <td className="px-3 py-2 text-right text-green-400">{row.revenue}</td>
                         <td className="px-3 py-2 text-right text-red-400">{row.cost}</td>
                         <td className="px-3 py-2 text-right text-yellow-400 font-semibold">{row.profit}</td>
@@ -1280,7 +1280,7 @@ function FinalReportCard() {
             </div>
             <div className="rounded-lg p-3" style={{background:'#14532d', border:'1px solid #22c55e'}}>
               <div className="text-xs font-bold mb-1" style={{color:'#22c55e'}}>盈亏平衡点</div>
-              <div className="text-sm text-white">{report.financial_model.breakeven}</div>
+              <div className="text-sm text-gray-900">{report.financial_model.breakeven}</div>
             </div>
           </>
         )}
@@ -1288,14 +1288,14 @@ function FinalReportCard() {
         {activeTab === 'execution' && (
           <div className="space-y-4">
             {report.execution_roadmap.weeks.map((week, i) => (
-              <div key={i} className="rounded-xl p-4" style={{background:'#2d2d2d', border:'1px solid #3b82f6'}}>
+              <div key={i} className="rounded-xl p-4" style={{background:'#e5e7eb', border:'1px solid #3b82f6'}}>
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-xs px-3 py-1 rounded-full font-bold"
-                    style={{background:'#3b82f6', color:'white'}}>
+                    style={{background:'#3b82f6', color:'#111827'}}>
                     第{week.week}周
                   </span>
-                  <span className="text-sm font-semibold text-white">{week.phase}</span>
-                  <span className="text-xs text-gray-400">目标：{week.goal}</span>
+                  <span className="text-sm font-semibold text-gray-900">{week.phase}</span>
+                  <span className="text-xs text-gray-600">目标：{week.goal}</span>
                 </div>
                 <div className="space-y-2 mb-3">
                   {week.tasks.map((task, j) => (
@@ -1321,11 +1321,11 @@ function FinalReportCard() {
         {activeTab === 'risks' && (
           <div className="space-y-3">
             {report.risk_assessment.risks.map((risk, i) => (
-              <div key={i} className="rounded-xl p-4" style={{background:'#2d2d2d', border:'1px solid #ef4444'}}>
+              <div key={i} className="rounded-xl p-4" style={{background:'#e5e7eb', border:'1px solid #ef4444'}}>
                 <div className="flex items-start gap-3 mb-2">
                   <span className="text-xl">⚠️</span>
                   <div className="flex-1">
-                    <div className="font-bold text-white text-sm mb-1">{risk.risk}</div>
+                    <div className="font-bold text-gray-900 text-sm mb-1">{risk.risk}</div>
                     <div className="flex gap-2 text-xs mb-2">
                       <span className="px-2 py-0.5 rounded" style={{background:'#7f1d1d', color:'#fca5a5'}}>
                         {risk.level}
@@ -1342,7 +1342,7 @@ function FinalReportCard() {
                         <div key={j} className="text-xs text-gray-300">✓ {m}</div>
                       ))}
                     </div>
-                    <div className="text-xs text-gray-400 mt-2">预算：{risk.cost}</div>
+                    <div className="text-xs text-gray-600 mt-2">预算：{risk.cost}</div>
                   </div>
                 </div>
               </div>
@@ -1368,7 +1368,7 @@ function FinalReportCard() {
                 ))}
               </div>
             </div>
-            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+            <div className="rounded-xl p-4" style={{background:'#e5e7eb'}}>
               <div className="text-xs font-bold mb-2" style={{color:'#fbbf24'}}>Pivot 选项</div>
               <div className="space-y-1">
                 {report.decision_framework.pivot_options.map((o, i) => (
@@ -1381,18 +1381,18 @@ function FinalReportCard() {
 
         {activeTab === 'actions' && (
           <>
-            <div className="rounded-xl p-4" style={{background:'#2d2d2d', border:'2px solid #f97316'}}>
+            <div className="rounded-xl p-4" style={{background:'#e5e7eb', border:'2px solid #f97316'}}>
               <div className="text-xs font-bold mb-2" style={{color:'#f97316'}}>本周行动（立即执行）</div>
               <div className="space-y-2">
                 {report.next_actions.this_week.map((action, i) => (
-                  <div key={i} className="flex items-start gap-2 text-sm text-white">
+                  <div key={i} className="flex items-start gap-2 text-sm text-gray-900">
                     <span style={{color:'#f97316'}}>▸</span>
                     <span>{action}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+            <div className="rounded-xl p-4" style={{background:'#e5e7eb'}}>
               <div className="text-xs font-bold mb-2" style={{color:'#3b82f6'}}>本月里程碑</div>
               <div className="space-y-2">
                 {report.next_actions.this_month.map((action, i) => (
@@ -1400,7 +1400,7 @@ function FinalReportCard() {
                 ))}
               </div>
             </div>
-            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+            <div className="rounded-xl p-4" style={{background:'#e5e7eb'}}>
               <div className="text-xs font-bold mb-2" style={{color:'#a78bfa'}}>本季度目标</div>
               <div className="space-y-2">
                 {report.next_actions.this_quarter.map((action, i) => (
@@ -1414,12 +1414,12 @@ function FinalReportCard() {
       </div>
 
       <div className="px-6 py-4 border-t flex items-center justify-between"
-        style={{background:'#1a1a1a', borderColor:'#2d2d2d'}}>
-        <div className="text-xs text-gray-400">
+        style={{background:'#ffffff', borderColor:'#e5e7eb'}}>
+        <div className="text-xs text-gray-600">
           💾 报告已生成 · 可导出为 PDF 或分享给投资人
         </div>
         <button onClick={() => downloadReport(report)} className="px-4 py-2 rounded-lg text-xs font-semibold"
-          style={{background:'#f97316', color:'white'}}>
+          style={{background:'#f97316', color:'#111827'}}>
           📥 下载完整报告
         </button>
       </div>
@@ -1437,31 +1437,31 @@ function FundraisingPlanCard() {
   const plan = FUNDRAISING_PLAN_DATA;
   return (
     <div className="card-in rounded-2xl overflow-hidden mt-2" style={{maxWidth:'720px', border:'2px solid #3b82f6'}}>
-      <div className="px-5 py-4 text-white" style={{background:'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>
+      <div className="px-5 py-4 text-gray-900" style={{background:'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>
         <div className="text-xs font-semibold opacity-80 mb-1">融资执行计划</div>
         <div className="font-black text-lg">{plan.title}</div>
         <div className="text-xs opacity-80 mt-1">{plan.subtitle}</div>
       </div>
-      <div className="flex border-b" style={{background:'#1a1a1a', borderColor:'#2d2d2d'}}>
+      <div className="flex border-b" style={{background:'#ffffff', borderColor:'#e5e7eb'}}>
         {plan.milestones.map((m, i) => (
           <button key={i} onClick={() => setActiveMonth(i)}
             className="flex-1 px-4 py-3 text-xs font-semibold transition-all"
-            style={activeMonth === i ? {color:'#3b82f6', borderBottom:'2px solid #3b82f6'} : {color:'#6b7280'}}>
+            style={activeMonth === i ? {color:'#3b82f6', borderBottom:'2px solid #3b82f6'} : {color:'#9ca3af'}}>
             {m.month}
           </button>
         ))}
         <button onClick={() => setActiveMonth(3)}
           className="flex-1 px-4 py-3 text-xs font-semibold transition-all"
-          style={activeMonth === 3 ? {color:'#f97316', borderBottom:'2px solid #f97316'} : {color:'#6b7280'}}>
+          style={activeMonth === 3 ? {color:'#f97316', borderBottom:'2px solid #f97316'} : {color:'#9ca3af'}}>
           BP 结构
         </button>
       </div>
-      <div className="p-5" style={{background:'#1e1e1e'}}>
+      <div className="p-5" style={{background:'#f3f4f6'}}>
         {activeMonth < 3 && (() => { const m = plan.milestones[activeMonth]; return (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <span className="text-xs px-3 py-1 rounded-full font-bold" style={{background:'#3b82f6', color:'white'}}>{m.phase}</span>
-              <span className="text-sm font-semibold text-white">目标：{m.goal}</span>
+              <span className="text-xs px-3 py-1 rounded-full font-bold" style={{background:'#3b82f6', color:'#111827'}}>{m.phase}</span>
+              <span className="text-sm font-semibold text-gray-900">目标：{m.goal}</span>
             </div>
             <div>
               <div className="text-xs font-bold mb-2" style={{color:'#3b82f6'}}>核心任务</div>
@@ -1482,11 +1482,11 @@ function FundraisingPlanCard() {
           <div className="space-y-2">
             <div className="text-xs font-bold mb-3" style={{color:'#f97316'}}>BP 10 页结构（投资人最爱看的顺序）</div>
             {plan.bp_structure.map((s, i) => (
-              <div key={i} className="flex items-start gap-3 rounded-lg p-3" style={{background:'#2d2d2d'}}>
-                <span className="text-xs font-bold px-2 py-0.5 rounded flex-shrink-0" style={{background:'#f97316', color:'white'}}>P{s.slide}</span>
+              <div key={i} className="flex items-start gap-3 rounded-lg p-3" style={{background:'#e5e7eb'}}>
+                <span className="text-xs font-bold px-2 py-0.5 rounded flex-shrink-0" style={{background:'#f97316', color:'#111827'}}>P{s.slide}</span>
                 <div>
-                  <div className="text-sm font-semibold text-white">{s.title}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">{s.content}</div>
+                  <div className="text-sm font-semibold text-gray-900">{s.title}</div>
+                  <div className="text-xs text-gray-600 mt-0.5">{s.content}</div>
                 </div>
               </div>
             ))}
@@ -1503,17 +1503,17 @@ function FundraisingRisksCard() {
   if (!show) return null;
   return (
     <div className="card-in rounded-2xl overflow-hidden mt-2" style={{maxWidth:'720px', border:'2px solid #ef4444'}}>
-      <div className="px-5 py-4 text-white" style={{background:'linear-gradient(135deg,#ef4444,#dc2626)'}}>
+      <div className="px-5 py-4 text-gray-900" style={{background:'linear-gradient(135deg,#ef4444,#dc2626)'}}>
         <div className="text-xs font-semibold opacity-80 mb-1">融资风险管理</div>
         <div className="font-black text-lg">{FUNDRAISING_RISKS_DATA.title}</div>
       </div>
-      <div className="p-5 space-y-3" style={{background:'#1e1e1e'}}>
+      <div className="p-5 space-y-3" style={{background:'#f3f4f6'}}>
         {FUNDRAISING_RISKS_DATA.risks.map((risk, i) => (
-          <div key={i} className="rounded-xl p-4" style={{background:'#2d2d2d', border:'1px solid #ef4444'}}>
+          <div key={i} className="rounded-xl p-4" style={{background:'#e5e7eb', border:'1px solid #ef4444'}}>
             <div className="flex items-start gap-3 mb-3">
               <span className="text-xl">⚠️</span>
               <div className="flex-1">
-                <div className="font-bold text-white mb-2">{risk.risk}</div>
+                <div className="font-bold text-gray-900 mb-2">{risk.risk}</div>
                 <div className="flex gap-2 text-xs mb-3">
                   <span className="px-2 py-0.5 rounded" style={{background:'#7f1d1d', color:'#fca5a5'}}>等级：{risk.level}</span>
                   <span className="px-2 py-0.5 rounded" style={{background:'#422006', color:'#fbbf24'}}>概率：{risk.probability}</span>
@@ -1543,7 +1543,7 @@ function FundraisingReportCard() {
 
   return (
     <div className="card-in rounded-2xl overflow-hidden mt-2" style={{maxWidth:'800px', border:'3px solid #3b82f6'}}>
-      <div className="px-6 py-5 text-white" style={{background:'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>
+      <div className="px-6 py-5 text-gray-900" style={{background:'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>
         <div className="flex items-center justify-between mb-2">
           <div>
             <div className="text-xs font-semibold opacity-80 mb-1">YC Office Hours 融资诊断报告</div>
@@ -1558,7 +1558,7 @@ function FundraisingReportCard() {
         </div>
       </div>
 
-      <div className="flex border-b overflow-x-auto" style={{background:'#1a1a1a', borderColor:'#2d2d2d'}}>
+      <div className="flex border-b overflow-x-auto" style={{background:'#ffffff', borderColor:'#e5e7eb'}}>
         {[
           {id:'summary', label:'📋 核心结论'},
           {id:'metrics', label:'📊 关键指标'},
@@ -1571,13 +1571,13 @@ function FundraisingReportCard() {
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className="px-4 py-3 text-xs font-semibold transition-all whitespace-nowrap"
-            style={activeTab === tab.id ? {color:'#3b82f6', borderBottom:'2px solid #3b82f6'} : {color:'#6b7280'}}>
+            style={activeTab === tab.id ? {color:'#3b82f6', borderBottom:'2px solid #3b82f6'} : {color:'#9ca3af'}}>
             {tab.label}
           </button>
         ))}
       </div>
 
-      <div className="p-6 space-y-4" style={{background:'#1e1e1e', maxHeight:'600px', overflowY:'auto'}}>
+      <div className="p-6 space-y-4" style={{background:'#f3f4f6', maxHeight:'600px', overflowY:'auto'}}>
 
         {activeTab === 'summary' && (
           <>
@@ -1585,7 +1585,7 @@ function FundraisingReportCard() {
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-3xl">⚠️</span>
                 <div>
-                  <div className="font-bold text-white text-lg">{report.executive_summary.verdict}</div>
+                  <div className="font-bold text-gray-900 text-lg">{report.executive_summary.verdict}</div>
                   <div className="text-sm text-gray-300">置信度：{report.executive_summary.confidence}</div>
                 </div>
               </div>
@@ -1595,16 +1595,16 @@ function FundraisingReportCard() {
                 </div>
               ))}
             </div>
-            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+            <div className="rounded-xl p-4" style={{background:'#e5e7eb'}}>
               <div className="text-xs font-bold mb-2" style={{color:'#3b82f6'}}>推荐行动</div>
-              <div className="text-sm text-white">{report.executive_summary.recommendation}</div>
+              <div className="text-sm text-gray-900">{report.executive_summary.recommendation}</div>
             </div>
-            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+            <div className="rounded-xl p-4" style={{background:'#e5e7eb'}}>
               <div className="text-xs font-bold mb-2" style={{color:'#3b82f6'}}>YC 评估</div>
-              <div className="text-sm text-white mb-2">{report.yc_verdict.summary}</div>
+              <div className="text-sm text-gray-900 mb-2">{report.yc_verdict.summary}</div>
               <div className="flex gap-4 text-xs">
-                <div><span className="text-gray-400">是否投资：</span><span className="text-yellow-400 font-semibold">{report.yc_verdict.would_invest}</span></div>
-                <div><span className="text-gray-400">目标估值：</span><span className="text-green-400 font-semibold">{report.yc_verdict.estimated_valuation}</span></div>
+                <div><span className="text-gray-600">是否投资：</span><span className="text-yellow-400 font-semibold">{report.yc_verdict.would_invest}</span></div>
+                <div><span className="text-gray-600">目标估值：</span><span className="text-green-400 font-semibold">{report.yc_verdict.estimated_valuation}</span></div>
               </div>
             </div>
             <div>
@@ -1627,12 +1627,12 @@ function FundraisingReportCard() {
             <div className="text-xs font-bold mb-3" style={{color:'#3b82f6'}}>当前指标</div>
             <div className="space-y-2 mb-5">
               {report.current_metrics.map((m, i) => (
-                <div key={i} className="flex justify-between items-center rounded-lg p-3" style={{background:'#2d2d2d'}}>
+                <div key={i} className="flex justify-between items-center rounded-lg p-3" style={{background:'#e5e7eb'}}>
                   <span className="text-sm text-gray-300">{m.metric}</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-white">{m.value}</span>
+                    <span className="text-sm font-semibold text-gray-900">{m.value}</span>
                     <span className="text-xs px-2 py-0.5 rounded"
-                      style={{background: m.status.includes('✅') ? '#14532d' : m.status.includes('⚠️') ? '#7f1d1d' : '#2d2d2d',
+                      style={{background: m.status.includes('✅') ? '#14532d' : m.status.includes('⚠️') ? '#7f1d1d' : '#e5e7eb',
                               color: m.status.includes('✅') ? '#22c55e' : m.status.includes('⚠️') ? '#fca5a5' : '#9ca3af'}}>
                       {m.status}
                     </span>
@@ -1642,19 +1642,19 @@ function FundraisingReportCard() {
             </div>
             <div className="text-xs font-bold mb-3" style={{color:'#22c55e'}}>3 个月目标指标</div>
             <table className="w-full text-xs">
-              <thead><tr style={{background:'#2d2d2d'}}>
-                <th className="px-3 py-2 text-left text-gray-400">指标</th>
-                <th className="px-3 py-2 text-right text-gray-400">当前</th>
-                <th className="px-3 py-2 text-right text-gray-400">目标</th>
-                <th className="px-3 py-2 text-right text-gray-400">截止</th>
+              <thead><tr style={{background:'#e5e7eb'}}>
+                <th className="px-3 py-2 text-left text-gray-600">指标</th>
+                <th className="px-3 py-2 text-right text-gray-600">当前</th>
+                <th className="px-3 py-2 text-right text-gray-600">目标</th>
+                <th className="px-3 py-2 text-right text-gray-600">截止</th>
               </tr></thead>
               <tbody>
                 {report.target_metrics.map((m, i) => (
-                  <tr key={i} style={{borderBottom:'1px solid #2d2d2d'}}>
-                    <td className="px-3 py-2 text-white">{m.metric}</td>
+                  <tr key={i} style={{borderBottom:'1px solid #e5e7eb'}}>
+                    <td className="px-3 py-2 text-gray-900">{m.metric}</td>
                     <td className="px-3 py-2 text-right text-red-400">{m.current}</td>
                     <td className="px-3 py-2 text-right text-green-400 font-semibold">{m.target}</td>
-                    <td className="px-3 py-2 text-right text-gray-400">{m.deadline}</td>
+                    <td className="px-3 py-2 text-right text-gray-600">{m.deadline}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1664,7 +1664,7 @@ function FundraisingReportCard() {
 
         {activeTab === 'valuation' && (
           <div className="space-y-3">
-            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+            <div className="rounded-xl p-4" style={{background:'#e5e7eb'}}>
               <div className="text-xs font-bold mb-2" style={{color:'#fbbf24'}}>估值方法：{report.valuation_model.method}</div>
               <div className="space-y-2">
                 {[
@@ -1676,8 +1676,8 @@ function FundraisingReportCard() {
                   ['稀释比例', report.valuation_model.dilution],
                 ].map(([k, v], i) => (
                   <div key={i} className="flex justify-between text-sm">
-                    <span className="text-gray-400">{k}</span>
-                    <span className="text-white font-semibold">{v}</span>
+                    <span className="text-gray-600">{k}</span>
+                    <span className="text-gray-900 font-semibold">{v}</span>
                   </div>
                 ))}
               </div>
@@ -1687,20 +1687,20 @@ function FundraisingReportCard() {
 
         {activeTab === 'investors' && (
           <div className="space-y-4">
-            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+            <div className="rounded-xl p-4" style={{background:'#e5e7eb'}}>
               <div className="text-xs font-bold mb-2" style={{color:'#f97316'}}>策略</div>
               <div className="text-sm text-gray-200">{report.investor_targeting.strategy}</div>
             </div>
             {[
               {label:'Tier 1 · 顶级机构', list: report.investor_targeting.tier1, color:'#f97316'},
               {label:'Tier 2 · 主流机构', list: report.investor_targeting.tier2, color:'#3b82f6'},
-              {label:'Tier 3 · 备选机构', list: report.investor_targeting.tier3, color:'#6b7280'},
+              {label:'Tier 3 · 备选机构', list: report.investor_targeting.tier3, color:'#9ca3af'},
             ].map((tier, i) => (
-              <div key={i} className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+              <div key={i} className="rounded-xl p-4" style={{background:'#e5e7eb'}}>
                 <div className="text-xs font-bold mb-2" style={{color: tier.color}}>{tier.label}</div>
                 <div className="flex flex-wrap gap-2">
                   {tier.list.map((inv, j) => (
-                    <span key={j} className="text-xs px-3 py-1 rounded-full" style={{background:'#1e1e1e', color:'#e5e7eb', border:'1px solid #333'}}>{inv}</span>
+                    <span key={j} className="text-xs px-3 py-1 rounded-full" style={{background:'#f3f4f6', color:'#e5e7eb', border:'1px solid #d1d5db'}}>{inv}</span>
                   ))}
                 </div>
               </div>
@@ -1711,11 +1711,11 @@ function FundraisingReportCard() {
         {activeTab === 'execution' && (
           <div className="space-y-4">
             {report.execution_roadmap.milestones.map((m, i) => (
-              <div key={i} className="rounded-xl p-4" style={{background:'#2d2d2d', border:'1px solid #3b82f6'}}>
+              <div key={i} className="rounded-xl p-4" style={{background:'#e5e7eb', border:'1px solid #3b82f6'}}>
                 <div className="flex items-center gap-3 mb-3">
-                  <span className="text-xs px-3 py-1 rounded-full font-bold" style={{background:'#3b82f6', color:'white'}}>{m.month}</span>
-                  <span className="text-sm font-semibold text-white">{m.phase}</span>
-                  <span className="text-xs text-gray-400">目标：{m.goal}</span>
+                  <span className="text-xs px-3 py-1 rounded-full font-bold" style={{background:'#3b82f6', color:'#111827'}}>{m.month}</span>
+                  <span className="text-sm font-semibold text-gray-900">{m.phase}</span>
+                  <span className="text-xs text-gray-600">目标：{m.goal}</span>
                 </div>
                 {m.tasks.map((t, j) => (
                   <div key={j} className="text-xs text-gray-300 flex items-start gap-2 mb-1">
@@ -1735,8 +1735,8 @@ function FundraisingReportCard() {
         {activeTab === 'risks' && (
           <div className="space-y-3">
             {report.risk_assessment.risks.map((risk, i) => (
-              <div key={i} className="rounded-xl p-4" style={{background:'#2d2d2d', border:'1px solid #ef4444'}}>
-                <div className="font-bold text-white mb-2">⚠️ {risk.risk}</div>
+              <div key={i} className="rounded-xl p-4" style={{background:'#e5e7eb', border:'1px solid #ef4444'}}>
+                <div className="font-bold text-gray-900 mb-2">⚠️ {risk.risk}</div>
                 <div className="flex gap-2 text-xs mb-2">
                   <span className="px-2 py-0.5 rounded" style={{background:'#7f1d1d', color:'#fca5a5'}}>{risk.level}</span>
                   <span className="px-2 py-0.5 rounded" style={{background:'#422006', color:'#fbbf24'}}>概率:{risk.probability}</span>
@@ -1762,7 +1762,7 @@ function FundraisingReportCard() {
               <div className="text-xs font-bold mb-2" style={{color:'#fca5a5'}}>NO-GO 标准（立即融资）</div>
               {report.decision_framework.no_go_criteria.map((c, i) => <div key={i} className="text-sm text-gray-200">✗ {c}</div>)}
             </div>
-            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+            <div className="rounded-xl p-4" style={{background:'#e5e7eb'}}>
               <div className="text-xs font-bold mb-2" style={{color:'#fbbf24'}}>Pivot 选项</div>
               {report.decision_framework.pivot_options.map((o, i) => <div key={i} className="text-sm text-gray-200">→ {o}</div>)}
             </div>
@@ -1771,19 +1771,19 @@ function FundraisingReportCard() {
 
         {activeTab === 'actions' && (
           <>
-            <div className="rounded-xl p-4" style={{background:'#2d2d2d', border:'2px solid #3b82f6'}}>
+            <div className="rounded-xl p-4" style={{background:'#e5e7eb', border:'2px solid #3b82f6'}}>
               <div className="text-xs font-bold mb-2" style={{color:'#3b82f6'}}>本周行动（立即执行）</div>
               {report.next_actions.this_week.map((a, i) => (
-                <div key={i} className="flex items-start gap-2 text-sm text-white mb-1">
+                <div key={i} className="flex items-start gap-2 text-sm text-gray-900 mb-1">
                   <span style={{color:'#3b82f6'}}>▸</span><span>{a}</span>
                 </div>
               ))}
             </div>
-            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+            <div className="rounded-xl p-4" style={{background:'#e5e7eb'}}>
               <div className="text-xs font-bold mb-2" style={{color:'#22c55e'}}>本月里程碑</div>
               {report.next_actions.this_month.map((a, i) => <div key={i} className="text-sm text-gray-200">• {a}</div>)}
             </div>
-            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+            <div className="rounded-xl p-4" style={{background:'#e5e7eb'}}>
               <div className="text-xs font-bold mb-2" style={{color:'#a78bfa'}}>本季度目标</div>
               {report.next_actions.this_quarter.map((a, i) => <div key={i} className="text-sm text-gray-200">• {a}</div>)}
             </div>
@@ -1792,11 +1792,11 @@ function FundraisingReportCard() {
 
       </div>
 
-      <div className="px-6 py-4 border-t flex items-center justify-between" style={{background:'#1a1a1a', borderColor:'#2d2d2d'}}>
-        <div className="text-xs text-gray-400">💾 融资诊断报告已生成 · 可分享给投资人</div>
+      <div className="px-6 py-4 border-t flex items-center justify-between" style={{background:'#ffffff', borderColor:'#e5e7eb'}}>
+        <div className="text-xs text-gray-600">💾 融资诊断报告已生成 · 可分享给投资人</div>
         <button onClick={() => downloadFundraisingReport(report)}
           className="px-4 py-2 rounded-lg text-xs font-semibold"
-          style={{background:'#3b82f6', color:'white'}}>
+          style={{background:'#3b82f6', color:'#111827'}}>
           📥 下载融资报告
         </button>
       </div>
@@ -1819,7 +1819,7 @@ function Bubble({ msg }) {
     <div className={`msg-in flex gap-3 ${isYC ? '' : 'flex-row-reverse'}`}>
       <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-black shadow`}
         style={{background: isYC ? 'linear-gradient(135deg,#f97316,#ea580c)' : 'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>
-        <span className="text-white">{isYC ? 'YC' : '创'}</span>
+        <span className="text-gray-900">{isYC ? 'YC' : '创'}</span>
       </div>
       <div style={{maxWidth:'80%'}}>
         <div className={`text-xs font-semibold mb-1 ${isYC ? '' : 'text-right'}`}
@@ -1828,8 +1828,8 @@ function Bubble({ msg }) {
         </div>
         <div className="rounded-2xl px-4 py-3 text-sm leading-relaxed shadow"
           style={isYC
-            ? {background:'#1e1e1e', border:'1px solid #333', color:'#e5e7eb', borderTopLeftRadius:'4px'}
-            : {background:'#1d4ed8', color:'white', borderTopRightRadius:'4px'}}>
+            ? {background:'#f3f4f6', border:'1px solid #d1d5db', color:'#e5e7eb', borderTopLeftRadius:'4px'}
+            : {background:'#1d4ed8', color:'#111827', borderTopRightRadius:'4px'}}>
           {renderText(msg.t)}
         </div>
       </div>
@@ -1843,11 +1843,11 @@ function PhaseBar({ current, phases }) {
       {phases.map((p, i) => (
         <div key={i} className="flex items-center gap-1 flex-shrink-0">
           <div className="phase-dot flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
-            style={i <= current ? {background:'#f97316', color:'white'} : {background:'#2d2d2d', color:'#6b7280'}}>
+            style={i <= current ? {background:'#f97316', color:'#111827'} : {background:'#e5e7eb', color:'#9ca3af'}}>
             <span>{i <= current ? '✓' : i + 1}</span>
             <span className="hidden sm:inline">{p}</span>
           </div>
-          {i < phases.length - 1 && <div className="w-3 h-0.5 flex-shrink-0" style={{background: i < current ? '#f97316' : '#333'}} />}
+          {i < phases.length - 1 && <div className="w-3 h-0.5 flex-shrink-0" style={{background: i < current ? '#f97316' : '#d1d5db'}} />}
         </div>
       ))}
     </div>
@@ -1901,7 +1901,7 @@ function App() {
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
   return (
-    <div className="flex h-screen" style={{background:'#0a0a0a'}}>
+    <div className="flex h-screen" style={{background:'#f9fafb'}}>
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
@@ -1910,13 +1910,13 @@ function App() {
 
       {/* Left Sidebar */}
       <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:relative w-64 h-full flex-shrink-0 flex flex-col z-30 transition-transform duration-300`}
-        style={{background:'#171717',borderRight:'1px solid #2d2d2d'}}>
-        <div className="p-4 border-b" style={{borderColor:'#2d2d2d'}}>
+        style={{background:'#ffffff',borderRight:'1px solid #e5e7eb'}}>
+        <div className="p-4 border-b" style={{borderColor:'#e5e7eb'}}>
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-black text-xs shadow"
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-900 font-black text-xs shadow"
               style={{background:'linear-gradient(135deg,#f97316,#ea580c)'}}>YC</div>
             <div>
-              <div className="text-sm font-bold text-white">Office Hours</div>
+              <div className="text-sm font-bold text-gray-900">Office Hours</div>
               <div className="text-xs" style={{color:'#9ca3af'}}>专业创业问答</div>
             </div>
           </div>
@@ -1925,12 +1925,12 @@ function App() {
           <div className="space-y-4">
             {/* 产品与市场 */}
             <div>
-              <div className="text-xs font-semibold mb-2 px-2" style={{color:'#6b7280'}}>产品与市场</div>
+              <div className="text-xs font-semibold mb-2 px-2" style={{color:'#9ca3af'}}>产品与市场</div>
               <div className="space-y-1">
                 <button onClick={() => handleScenarioSelect('pre-product')}
                   className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
                   style={selectedScenario === 'pre-product'
-                    ? {background:'#f97316', color:'white'}
+                    ? {background:'#f97316', color:'#111827'}
                     : {background:'transparent', color:'#9ca3af'}}>
                   <div className="flex items-center gap-2">
                     <span className="text-base">🚀</span>
@@ -1940,7 +1940,7 @@ function App() {
                 <button onClick={() => handleScenarioSelect('growth')}
                   className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
                   style={selectedScenario === 'growth'
-                    ? {background:'#f97316', color:'white'}
+                    ? {background:'#f97316', color:'#111827'}
                     : {background:'transparent', color:'#9ca3af'}}>
                   <div className="flex items-center gap-2">
                     <span className="text-base">📈</span>
@@ -1952,12 +1952,12 @@ function App() {
 
             {/* 融资 */}
             <div>
-              <div className="text-xs font-semibold mb-2 px-2" style={{color:'#6b7280'}}>融资</div>
+              <div className="text-xs font-semibold mb-2 px-2" style={{color:'#9ca3af'}}>融资</div>
               <div className="space-y-1">
                 <button onClick={() => handleScenarioSelect('fundraising')}
                   className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
                   style={selectedScenario === 'fundraising'
-                    ? {background:'#f97316', color:'white'}
+                    ? {background:'#f97316', color:'#111827'}
                     : {background:'transparent', color:'#9ca3af'}}>
                   <div className="flex items-center gap-2">
                     <span className="text-base">💰</span>
@@ -1969,12 +1969,12 @@ function App() {
 
             {/* 团队与战略 */}
             <div>
-              <div className="text-xs font-semibold mb-2 px-2" style={{color:'#6b7280'}}>团队与战略</div>
+              <div className="text-xs font-semibold mb-2 px-2" style={{color:'#9ca3af'}}>团队与战略</div>
               <div className="space-y-1">
                 <button onClick={() => handleScenarioSelect('team')}
                   className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
                   style={selectedScenario === 'team'
-                    ? {background:'#f97316', color:'white'}
+                    ? {background:'#f97316', color:'#111827'}
                     : {background:'transparent', color:'#9ca3af'}}>
                   <div className="flex items-center gap-2">
                     <span className="text-base">👥</span>
@@ -1984,7 +1984,7 @@ function App() {
                 <button onClick={() => handleScenarioSelect('pivot')}
                   className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
                   style={selectedScenario === 'pivot'
-                    ? {background:'#f97316', color:'white'}
+                    ? {background:'#f97316', color:'#111827'}
                     : {background:'transparent', color:'#9ca3af'}}>
                   <div className="flex items-center gap-2">
                     <span className="text-base">🔄</span>
@@ -1996,12 +1996,12 @@ function App() {
 
             {/* 自定义 */}
             <div>
-              <div className="text-xs font-semibold mb-2 px-2" style={{color:'#6b7280'}}>自定义</div>
+              <div className="text-xs font-semibold mb-2 px-2" style={{color:'#9ca3af'}}>自定义</div>
               <div className="space-y-1">
                 <button onClick={() => handleScenarioSelect('custom')}
                   className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
                   style={selectedScenario === 'custom'
-                    ? {background:'#f97316', color:'white'}
+                    ? {background:'#f97316', color:'#111827'}
                     : {background:'transparent', color:'#9ca3af'}}>
                   <div className="flex items-center gap-2">
                     <span className="text-base">💡</span>
@@ -2017,19 +2017,19 @@ function App() {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col w-full md:w-auto">
         {/* Header */}
-        <div className="px-4 py-3 border-b" style={{background:'#1a1a1a',borderColor:'#2d2d2d'}}>
+        <div className="px-4 py-3 border-b" style={{background:'#ffffff',borderColor:'#e5e7eb'}}>
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <button onClick={() => setSidebarOpen(true)}
-                  className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center text-gray-400"
-                  style={{background:'#2d2d2d'}}>☰</button>
-                <div className="text-sm font-bold text-white">YC Office Hours</div>
+                  className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center text-gray-600"
+                  style={{background:'#e5e7eb'}}>☰</button>
+                <div className="text-sm font-bold text-gray-900">YC Office Hours</div>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => setAuto(a => !a)}
                   className="text-xs px-2 md:px-3 py-1.5 rounded-lg font-semibold transition-all"
-                  style={autoPlay ? {background:'#f97316',color:'white'} : {background:'#2d2d2d',color:'#9ca3af'}}>
+                  style={autoPlay ? {background:'#f97316',color:'#111827'} : {background:'#e5e7eb',color:'#9ca3af'}}>
                   {autoPlay ? '⏸' : '▶'}
                 </button>
                 <button onClick={() => { setShown(conversation.length); setTyping(false); setAuto(false); }}
@@ -2045,10 +2045,10 @@ function App() {
         <div ref={chatRef} className="chat-scroll flex-1 overflow-y-auto px-4 py-6">
           <div className="max-w-4xl mx-auto space-y-5">
             {shown === 0 && (
-              <div className="text-center py-12" style={{color:'#6b7280'}}>
+              <div className="text-center py-12" style={{color:'#9ca3af'}}>
                 <div className="text-4xl mb-3">💬</div>
-                <div className="text-sm font-medium text-gray-400">点击"开始对话"体验完整的 YC Office Hours 流程</div>
-                <div className="text-xs mt-1" style={{color:'#4b5563'}}>
+                <div className="text-sm font-medium text-gray-600">点击"开始对话"体验完整的 YC Office Hours 流程</div>
+                <div className="text-xs mt-1" style={{color:'#6b7280'}}>
                   场景：{SCENARIOS.find(s => s.id === selectedScenario)?.example}
                 </div>
               </div>
@@ -2056,19 +2056,19 @@ function App() {
             {conversation.slice(0, shown).map((msg, i) => <Bubble key={i} msg={msg} />)}
             {typing && (
               <div className="msg-in flex gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-black flex-shrink-0"
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-gray-900 text-sm font-black flex-shrink-0"
                   style={{background:'linear-gradient(135deg,#f97316,#ea580c)'}}>YC</div>
-                <div className="rounded-2xl px-4 py-3 shadow" style={{background:'#1e1e1e',border:'1px solid #333',borderTopLeftRadius:'4px'}}>
+                <div className="rounded-2xl px-4 py-3 shadow" style={{background:'#f3f4f6',border:'1px solid #d1d5db',borderTopLeftRadius:'4px'}}>
                   <span className="typing text-xs" style={{color:'#f97316'}} />
                 </div>
               </div>
             )}
             {done && (
               <div className="text-center py-6">
-                <div className="text-xs mb-3" style={{color:'#4b5563'}}>── Office Hours 结束 · 共 {conversation.length} 轮对话 ──</div>
-                <div className="inline-block rounded-xl p-4" style={{background:'#1a1a1a', border:'2px solid #f97316'}}>
-                  <div className="text-sm font-bold text-white mb-2">🎉 完整诊断报告已生成</div>
-                  <div className="text-xs text-gray-400">向上滚动查看完整报告，或点击"下载完整报告"保存</div>
+                <div className="text-xs mb-3" style={{color:'#6b7280'}}>── Office Hours 结束 · 共 {conversation.length} 轮对话 ──</div>
+                <div className="inline-block rounded-xl p-4" style={{background:'#ffffff', border:'2px solid #f97316'}}>
+                  <div className="text-sm font-bold text-gray-900 mb-2">🎉 完整诊断报告已生成</div>
+                  <div className="text-xs text-gray-600">向上滚动查看完整报告，或点击"下载完整报告"保存</div>
                 </div>
               </div>
             )}
@@ -2076,21 +2076,21 @@ function App() {
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-3 border-t" style={{background:'#1a1a1a',borderColor:'#2d2d2d'}}>
+        <div className="px-4 py-3 border-t" style={{background:'#ffffff',borderColor:'#e5e7eb'}}>
           <div className="max-w-4xl mx-auto flex items-center gap-3">
             {!done ? (
               <>
                 <button onClick={advance} disabled={typing}
                   className="flex-1 py-3 rounded-xl font-bold text-sm transition-all"
-                  style={typing ? {background:'#2d2d2d',color:'#4b5563',cursor:'not-allowed'} : {background:'linear-gradient(135deg,#f97316,#ea580c)',color:'white'}}>
+                  style={typing ? {background:'#e5e7eb',color:'#6b7280',cursor:'not-allowed'} : {background:'linear-gradient(135deg,#f97316,#ea580c)',color:'#111827'}}>
                   {typing ? 'YC 合伙人正在思考...' : shown === 0 ? '🚀 开始对话' : conversation[shown]?.r === 'yc' ? '⬇ 下一条（YC）' : '⬇ 下一条（创始人）'}
                 </button>
-                <div className="text-xs flex-shrink-0" style={{color:'#4b5563'}}>{shown}/{conversation.length}</div>
+                <div className="text-xs flex-shrink-0" style={{color:'#6b7280'}}>{shown}/{conversation.length}</div>
               </>
             ) : (
               <button onClick={() => { setShown(0); setTyping(false); setAuto(false); }}
                 className="flex-1 py-3 rounded-xl font-bold text-sm"
-                style={{background:'#2d2d2d',color:'#9ca3af'}}>↺ 重新播放</button>
+                style={{background:'#e5e7eb',color:'#9ca3af'}}>↺ 重新播放</button>
             )}
           </div>
         </div>
