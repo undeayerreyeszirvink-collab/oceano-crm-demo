@@ -10,63 +10,34 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background: #0b1020;
-      color: #e5e7eb;
-    }
-    .msg-in { animation: msgIn 0.28s ease-out forwards; opacity: 0; }
-    @keyframes msgIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
-    .typing::after { content: "●●●"; animation: typing 1s steps(3) infinite; letter-spacing: 2px; font-size: 10px; }
-    @keyframes typing { 0%,33% { content: "●";} 34%,66% { content: "●●";} 67%,100% { content: "●●●";} }
-    .glass {
-      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-      border: 1px solid rgba(148,163,184,0.2);
-      backdrop-filter: blur(6px);
-    }
-    .soft-panel {
-      background: #111a33;
-      border: 1px solid #1f2b4a;
-    }
-    .metric-card {
-      background: #0f1830;
-      border: 1px solid #243359;
-    }
-    .report-section {
-      background: #0f1830;
-      border: 1px solid #213157;
-      border-radius: 16px;
-      padding: 16px;
-    }
-    .chip {
-      border: 1px solid #2b3d6b;
-      background: #121d3a;
-      color: #cbd5e1;
-    }
-    .progress-track {
-      background: #1e293b;
-      border-radius: 9999px;
-      height: 8px;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 8px;
-      border-radius: 9999px;
-      transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
-    }
-    .sidebar-btn { transition: all .18s ease; }
-    .sidebar-btn:hover { background: #1a2647; }
-    .sidebar-active { background: #243659; border-color: #35518a; }
+    body { margin:0; font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; background:#0b1020; color:#e5e7eb; }
+    .msg-in { animation:msgIn 0.28s ease-out forwards; opacity:0; }
+    @keyframes msgIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    .typing::after { content:"●●●"; animation:typing 1s steps(3) infinite; letter-spacing:2px; font-size:10px; }
+    @keyframes typing { 0%,33%{content:"●"} 34%,66%{content:"●●"} 67%,100%{content:"●●●"} }
+    .glass { background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03)); border:1px solid rgba(148,163,184,0.2); backdrop-filter:blur(6px); }
+    .soft-panel { background:#111a33; border:1px solid #1f2b4a; }
+    .metric-card { background:#0f1830; border:1px solid #243359; }
+    .report-section { background:#0f1830; border:1px solid #213157; border-radius:16px; padding:16px; }
+    .chip { border:1px solid #2b3d6b; background:#121d3a; color:#cbd5e1; }
+    .progress-track { background:#1e293b; border-radius:9999px; height:8px; overflow:hidden; }
+    .progress-fill { height:8px; border-radius:9999px; transition:width 0.8s cubic-bezier(0.4,0,0.2,1); }
+    .sidebar-btn { transition:all .18s ease; }
+    .sidebar-btn:hover { background:#1a2647; }
+    .sidebar-active { background:#243659; border-color:#35518a; }
+    .ev-tag { display:inline-flex; align-items:center; padding:1px 5px; border-radius:3px; font-size:9px; font-weight:700; background:#0f2040; border:1px solid #1e4080; color:#7dd3fc; margin-left:3px; white-space:nowrap; }
+    .gate-pass { background:#052e16; border-color:#166534; color:#4ade80; }
+    .gate-warn { background:#1c1003; border-color:#854d0e; color:#fbbf24; }
+    .gate-fail { background:#1c0505; border-color:#7f1d1d; color:#f87171; }
+    .action-card { background:linear-gradient(135deg,#052e16,#0a3d1f); border:1px solid #166534; border-radius:14px; padding:16px; }
   </style>
 </head>
 <body>
   <div id="root"></div>
-
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    const PHASES = ["开场", "企业画像", "场景聚焦", "方案推荐", "深度评估", "评估报告"];
+    const PHASES = ["开场","企业画像","场景聚焦","方案推荐","深度评估","评估报告"];
 
     const CONV = [
       { ph:0, r:"beacon", t:"您好！我是 Beacon，专注企业AI应用价值评估的顾问，有管理咨询和AI技术双重背景。\n\n今天我们聊大概20-30分钟，没有标准答案，目的是一起找到AI能真正帮到您的地方。结束后我会给您一份评估报告。\n\n先问您：**您公司目前最大的业务头疼问题是什么？**" },
@@ -96,38 +67,60 @@
       { ph:4, r:"beacon", t:"几千张对初期训练偏少，但做POC够用，后期需要持续积累。\n\n最后一个问题——质检员对引入AI系统，您觉得他们会是什么态度？" },
       { ph:4, r:"company", t:"这个我有点担心，他们可能觉得AI是来替代他们的。不过我们打算跟他们说是\"辅助工具\"，让他们做最终确认。" },
       { ph:4, r:"beacon", t:"\"AI辅助+人工确认\"的定位能有效降低变革阻力，这个策略是对的。\n\n好，信息已经足够了。我现在给您出评估结果。" },
-      { ph:5, r:"beacon", t:"REPORT", isReport: true }
+      { ph:5, r:"beacon", t:"REPORT", isReport:true }
     ];
 
     const REPORT = {
-      value: [
-        { name:"效率提升", score:5, weight:35, note:"检测速度提升5-10倍，质检人员可减少60-80%" },
-        { name:"成本节省", score:4, weight:25, note:"年质量损失300-400万+人力110万，节省20-30%+" },
-        { name:"收入增长", score:2, weight:20, note:"间接影响，减少退货索赔，难以直接归因" },
-        { name:"体验改善", score:3, weight:20, note:"质检员减少重复劳动，客户退货明显减少" }
+      versions: { framework:"AIVA-v1.1", calibration:"CAL-2026.05-v2", trend:"TREND-2026.05" },
+      industry: {
+        name:"制造业",
+        baseline:{ value:3.8, readiness:2.8, risk:3.2 },
+        actual:{ value:3.75, readiness:3.00, risk:3.30 }
+      },
+      gate: {
+        passed:true,
+        decision:"推进",
+        decisionNote:"所有关键屏障通过，建议3个月内启动单产线POC",
+        budget:"30-50万",
+        riskStop:"若POC后漏检率改善<30%，暂停全面推广",
+        barriers:[
+          { name:"方法论屏障", status:"pass", note:"AIVA框架已装载，制造业基线已校准" },
+          { name:"数据屏障", status:"pass", note:"数据成熟度3.0≥2.5，MES历史记录可用" },
+          { name:"流程屏障", status:"pass", note:"ISO认证，质检SOP完整，流程标准化4分" },
+          { name:"交付屏障", status:"warn", note:"无专职AI团队，需外部服务商支持，建议指定项目负责人" },
+          { name:"结果屏障", status:"pass", note:"漏检率可量化，ROI可测算，结果指标明确" }
+        ]
+      },
+      evidence:[
+        { id:"E-INT-MF-01", type:"访谈原话", content:"每班3个质检员，一人一天看2000-3000件，到后半班眼睛就花了，漏检率明显上升", source:"质检主管访谈", time:"2026-05", credibility:"高" },
+        { id:"E-DATA-MF-01", type:"数据来源", content:"年质量损失300-400万（退货+返工+罚款），质检人力成本110万/年，漏检率3-6%", source:"财务数据+HR数据", time:"2026-05", credibility:"高" },
+        { id:"E-DOC-MF-01", type:"文档片段", content:"MES系统运行3年，有ISO认证，质检SOP完整，缺陷图片约几千张（近半年）", source:"MES系统+ISO文件", time:"2026-05", credibility:"中" }
       ],
-      readiness: [
-        { name:"数据成熟度", score:3, weight:25, note:"有MES历史记录，图片数据仅几千张，质量尚可" },
-        { name:"技术基础", score:3, weight:25, note:"有云服务，5人IT团队，无AI经验" },
-        { name:"组织能力", score:2, weight:25, note:"无AI团队，管理层支持但无专项预算" },
-        { name:"流程标准化", score:4, weight:25, note:"有ISO认证，质检SOP完整，执行一致性高" }
+      value:[
+        { name:"效率提升", score:5, weight:35, note:"检测速度提升5-10倍，质检人员可减少60-80%", evidence:["E-INT-MF-01","E-DOC-MF-01"] },
+        { name:"成本节省", score:4, weight:25, note:"年质量损失300-400万+人力110万，节省20-30%+", evidence:["E-DATA-MF-01"] },
+        { name:"收入增长", score:2, weight:20, note:"间接影响，减少退货索赔，难以直接归因", evidence:["E-DATA-MF-01"] },
+        { name:"体验改善", score:3, weight:20, note:"质检员减少重复劳动，客户退货明显减少", evidence:["E-INT-MF-01"] }
       ],
-      risk: [
-        { name:"技术复杂度", score:3, weight:25, note:"需定制视觉模型，有成熟框架可用，中等难度" },
-        { name:"变革阻力", score:3, weight:30, note:"质检员有顾虑，管理层支持，需变革管理" },
-        { name:"数据隐私", score:5, weight:15, note:"工业图像数据，无个人信息，极低风险" },
-        { name:"供应商依赖", score:3, weight:30, note:"有一定依赖，主流替代方案存在，可控" }
+      readiness:[
+        { name:"数据成熟度", score:3, weight:25, note:"有MES历史记录，图片数据仅几千张，质量尚可", evidence:["E-DOC-MF-01"] },
+        { name:"技术基础", score:3, weight:25, note:"有云服务，5人IT团队，无AI经验", evidence:["E-DOC-MF-01","E-INT-MF-01"] },
+        { name:"组织能力", score:2, weight:25, note:"无AI团队，管理层支持但无专项预算", evidence:["E-INT-MF-01"] },
+        { name:"流程标准化", score:4, weight:25, note:"有ISO认证，质检SOP完整，执行一致性高", evidence:["E-DOC-MF-01"] }
       ],
-      corrections: [
+      risk:[
+        { name:"技术复杂度", score:3, weight:25, note:"需定制视觉模型，有成熟框架可用，中等难度", evidence:["E-DOC-MF-01"] },
+        { name:"变革阻力", score:3, weight:30, note:"质检员有顾虑，管理层支持，需变革管理", evidence:["E-INT-MF-01"] },
+        { name:"数据隐私", score:5, weight:15, note:"工业图像数据，无个人信息，极低风险", evidence:["E-DATA-MF-01"] },
+        { name:"供应商依赖", score:3, weight:30, note:"有一定依赖，主流替代方案存在，可控", evidence:["E-DOC-MF-01"] }
+      ],
+      corrections:[
         { label:"工业视觉AI市场成熟，有多家成熟SaaS产品", value:"+0.50" },
         { label:"多模态图像理解技术成熟，实施门槛降低", value:"+0.30" },
         { label:"叠加修正（max+min×0.5）", value:"+0.65" }
       ],
-      layerScores: { value:3.75, readiness:3.00, risk:3.30 },
-      baseScore:3.39,
-      correction:0.65,
-      finalScore:4.04,
-      rating:"强烈建议实施",
+      layerScores:{ value:3.75, readiness:3.00, risk:3.30 },
+      baseScore:3.39, correction:0.65, finalScore:4.04, rating:"强烈建议实施",
       actions:[
         "立即启动单产线POC，预算30-50万，周期3个月",
         "优先补充缺陷图片数据标注，目标积累1万张以上",
@@ -135,10 +128,7 @@
         "POC成功后，评估全产线推广（预计ROI回收期8-12个月）"
       ],
       roi:{
-        investment:"30-50万",
-        annualSaving:"126-208万",
-        payback:"8-12个月",
-        roiPct:"252%-693%",
+        investment:"30-50万", annualSaving:"126-208万", payback:"8-12个月", roiPct:"252%-693%",
         items:[
           { label:"质量损失节省（20-30%）", value:"60-120万/年", color:"#22c55e" },
           { label:"人力成本节省（60-80%）", value:"66-88万/年", color:"#22c55e" },
@@ -147,10 +137,15 @@
         ]
       },
       timeline:[
-        { week:"第1-4周", title:"POC启动", tasks:["选定单条产线", "采购/部署视觉设备", "数据标注（目标1万张）"] },
-        { week:"第5-8周", title:"模型训练", tasks:["缺陷类型分类训练", "与MES系统对接", "质检员培训"] },
-        { week:"第9-12周", title:"上线验证", tasks:["并行运行（AI+人工）", "漏检率对比测量", "ROI核算"] },
-        { week:"第13周+", title:"全面推广", tasks:["评估全产线推广", "供应商选型", "规模化部署"] }
+        { week:"第1-4周", title:"POC启动", tasks:["选定单条产线","采购/部署视觉设备","数据标注（目标1万张）"] },
+        { week:"第5-8周", title:"模型训练", tasks:["缺陷类型分类训练","与MES系统对接","质检员培训"] },
+        { week:"第9-12周", title:"上线验证", tasks:["并行运行（AI+人工）","漏检率对比测量","ROI核算"] },
+        { week:"第13周+", title:"全面推广", tasks:["评估全产线推广","供应商选型","规模化部署"] }
+      ],
+      feedback:[
+        { month:3, label:"POC结束", tasks:["验证漏检率改善目标","核算实际投入偏差","决定是否全面推广"] },
+        { month:6, label:"推广决策点", tasks:["验证ROI趋势","评估全产线方案","更新制造业基线"] },
+        { month:12, label:"首年ROI验证", tasks:["完整ROI核算","回填案例库","更新评分标准"] }
       ]
     };
 
@@ -169,78 +164,220 @@
 
     function ScoreBar({ score, color }) {
       const [w, setW] = useState(0);
-      useEffect(() => {
-        const timer = setTimeout(() => setW((score / 5) * 100), 80);
-        return () => clearTimeout(timer);
-      }, [score]);
+      useEffect(() => { const t = setTimeout(() => setW((score/5)*100), 80); return () => clearTimeout(t); }, [score]);
       return (
         <div className="flex items-center gap-3">
           <div className="progress-track flex-1">
-            <div className="progress-fill" style={{ width: `${w}%`, background: color }} />
+            <div className="progress-fill" style={{ width:`${w}%`, background:color }} />
           </div>
           <span className="text-xs font-semibold text-slate-300 w-6 text-right">{score}</span>
         </div>
       );
     }
 
+    function EvidenceTags({ ids }) {
+      return <span>{ids.map(id => <span key={id} className="ev-tag">{id}</span>)}</span>;
+    }
+
+    function GateStatus({ gate }) {
+      const statusStyle = { pass:"gate-pass", warn:"gate-warn", fail:"gate-fail" };
+      const statusIcon = { pass:"✓", warn:"!", fail:"✗" };
+      const decisionColor = gate.decision === "推进" ? "#4ade80" : gate.decision === "试点" ? "#fbbf24" : "#f87171";
+      return (
+        <div className="report-section">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-sm font-semibold text-white">治理层屏障检查</div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400">Gate-first决策</span>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold border" style={{ color:decisionColor, borderColor:decisionColor, background:`${decisionColor}18` }}>
+                {gate.decision}
+              </span>
+            </div>
+          </div>
+          <div className="space-y-2 mb-3">
+            {gate.barriers.map((b, i) => (
+              <div key={i} className={`rounded-lg px-3 py-2 border flex items-start gap-3 ${statusStyle[b.status]}`}>
+                <span className="text-xs font-bold w-4 flex-shrink-0 mt-0.5">{statusIcon[b.status]}</span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-xs font-semibold">{b.name}</span>
+                  <span className="text-xs opacity-75 ml-2">{b.note}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="soft-panel rounded-lg px-3 py-2 flex items-center gap-2">
+            <span className="text-xs text-slate-400">止损前提：</span>
+            <span className="text-xs text-amber-300">{gate.riskStop}</span>
+          </div>
+        </div>
+      );
+    }
+
+    function IndustryCalibration({ industry }) {
+      const layers = [
+        { label:"价值层", baseline:industry.baseline.value, actual:industry.actual.value, color:"#fb923c" },
+        { label:"就绪度层", baseline:industry.baseline.readiness, actual:industry.actual.readiness, color:"#60a5fa" },
+        { label:"风险层", baseline:industry.baseline.risk, actual:industry.actual.risk, color:"#a78bfa" }
+      ];
+      return (
+        <div className="report-section">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-sm font-semibold text-white">行业基线校准</div>
+            <span className="chip rounded-full px-2.5 py-0.5 text-xs">{industry.name}</span>
+          </div>
+          <div className="space-y-3">
+            {layers.map((l, i) => (
+              <div key={i}>
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="text-slate-300">{l.label}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-slate-500">行业基线 {l.baseline}</span>
+                    <span className="font-semibold" style={{color:l.color}}>本案 {l.actual}</span>
+                    <span className={`text-xs ${l.actual >= l.baseline ? "text-emerald-400" : "text-red-400"}`}>
+                      {l.actual >= l.baseline ? "▲" : "▼"}{Math.abs(l.actual - l.baseline).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                <div className="relative h-2 rounded-full bg-slate-800 overflow-hidden">
+                  <div className="absolute h-full rounded-full opacity-30" style={{ width:`${(l.baseline/5)*100}%`, background:l.color }} />
+                  <div className="absolute h-full rounded-full" style={{ width:`${(l.actual/5)*100}%`, background:l.color, opacity:0.85 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function EvidenceLedger({ evidence }) {
+      const typeColor = { "访谈原话":"#7dd3fc", "数据来源":"#4ade80", "文档片段":"#fbbf24" };
+      return (
+        <div className="report-section">
+          <div className="text-sm font-semibold text-white mb-3">证据台账（Evidence Ledger）</div>
+          <div className="space-y-2">
+            {evidence.map((e, i) => (
+              <div key={i} className="soft-panel rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="ev-tag">{e.id}</span>
+                  <span className="text-xs font-semibold" style={{color:typeColor[e.type]||"#cbd5e1"}}>{e.type}</span>
+                  <span className="text-xs text-slate-500 ml-auto">{e.source} · {e.time}</span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded border ${e.credibility==="高"?"border-emerald-700 text-emerald-400":"border-amber-700 text-amber-400"}`}>可信度{e.credibility}</span>
+                </div>
+                <div className="text-xs text-slate-300 leading-relaxed">{e.content}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function FeedbackLoop({ feedback }) {
+      return (
+        <div className="report-section">
+          <div className="text-sm font-semibold text-white mb-3">结果回流计划（3/6/12个月）</div>
+          <div className="flex gap-3">
+            {feedback.map((f, i) => (
+              <div key={i} className="flex-1 soft-panel rounded-lg p-3">
+                <div className="text-xs font-bold text-cyan-300 mb-1">{f.month}个月后</div>
+                <div className="text-xs text-slate-200 font-semibold mb-2">{f.label}</div>
+                <div className="space-y-1">
+                  {f.tasks.map((task, j) => (
+                    <div key={j} className="text-xs text-slate-400 flex gap-1.5">
+                      <span className="text-slate-600">·</span><span>{task}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     function ReportCard() {
       const [show, setShow] = useState(false);
-      useEffect(() => {
-        const t = setTimeout(() => setShow(true), 140);
-        return () => clearTimeout(t);
-      }, []);
+      useEffect(() => { const t = setTimeout(() => setShow(true), 140); return () => clearTimeout(t); }, []);
       if (!show) return null;
 
+      const { versions, industry, gate, evidence, value, readiness, risk, corrections, layerScores, baseScore, correction, finalScore, rating, actions, roi, timeline, feedback } = REPORT;
+
       return (
-        <div className="msg-in w-full max-w-[920px] mx-auto">
+        <div className="msg-in w-full max-w-[960px] mx-auto">
           <div className="glass rounded-2xl overflow-hidden shadow-2xl">
             <div className="px-6 py-5 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600">
-              <div className="text-[11px] uppercase tracking-[0.16em] text-blue-100 mb-2">Beacon Assessment Report</div>
-              <div className="text-2xl font-bold text-white">AI应用价值评估报告</div>
-              <div className="mt-2 text-sm text-blue-100">某精密零部件制造企业 · AI视觉质检系统（单产线POC） · 2026年5月</div>
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-[11px] uppercase tracking-[0.16em] text-blue-100 mb-1">Beacon Assessment Report</div>
+                  <div className="text-2xl font-bold text-white">AI应用价值评估报告</div>
+                  <div className="mt-1.5 text-sm text-blue-100">某精密零部件制造企业 · AI视觉质检系统（单产线POC） · 2026年5月</div>
+                </div>
+                <div className="flex flex-col gap-1 items-end text-right">
+                  <span className="text-[10px] text-blue-200 bg-white/10 rounded px-2 py-0.5">{versions.framework}</span>
+                  <span className="text-[10px] text-blue-200 bg-white/10 rounded px-2 py-0.5">{versions.calibration}</span>
+                  <span className="text-[10px] text-blue-200 bg-white/10 rounded px-2 py-0.5">{versions.trend}</span>
+                </div>
+              </div>
             </div>
 
             <div className="p-6 space-y-5">
+              <div className="action-card">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center">
+                    <span className="text-emerald-300 text-lg font-black">↑</span>
+                  </div>
+                  <div>
+                    <div className="text-xs text-emerald-400 font-semibold uppercase tracking-wide">决策建议</div>
+                    <div className="text-2xl font-black text-emerald-300">{gate.decision}</div>
+                  </div>
+                  <div className="ml-auto text-right">
+                    <div className="text-xs text-slate-400">预算区间</div>
+                    <div className="text-xl font-bold text-white">{gate.budget}</div>
+                  </div>
+                </div>
+                <div className="text-sm text-emerald-100 mb-2">{gate.decisionNote}</div>
+                <div className="flex items-center gap-2 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                  <span className="font-bold">止损前提：</span><span>{gate.riskStop}</span>
+                </div>
+              </div>
+
               <div className="report-section">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <div className="md:col-span-2 metric-card rounded-xl p-4">
                     <div className="text-xs text-slate-400">综合评分</div>
                     <div className="mt-1 flex items-end gap-3">
-                      <div className="text-5xl font-extrabold text-emerald-400 leading-none">{REPORT.finalScore}</div>
+                      <div className="text-5xl font-extrabold text-emerald-400 leading-none">{finalScore}</div>
                       <div className="pb-1 text-sm text-slate-300">/ 5.0</div>
                     </div>
                     <div className="mt-3 inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-semibold border border-emerald-400/30">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
-                      {REPORT.rating}
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />{rating}
                     </div>
-                    <div className="mt-3 text-sm text-slate-300">场景价值高、组织具备可落地基础、主要风险可控，建议3个月内启动POC。</div>
+                    <div className="mt-3 text-sm text-slate-300">基础分 {baseScore} + 趋势修正 +{correction} = {finalScore}</div>
                   </div>
-
                   <div className="metric-card rounded-xl p-4">
                     <div className="text-xs text-slate-400">预计投入</div>
-                    <div className="mt-2 text-2xl font-bold text-white">{REPORT.roi.investment}</div>
+                    <div className="mt-2 text-2xl font-bold text-white">{roi.investment}</div>
                     <div className="text-xs text-slate-400 mt-1">单产线POC一次性投入</div>
                   </div>
-
                   <div className="metric-card rounded-xl p-4">
                     <div className="text-xs text-slate-400">预计回收周期</div>
-                    <div className="mt-2 text-2xl font-bold text-white">{REPORT.roi.payback}</div>
+                    <div className="mt-2 text-2xl font-bold text-white">{roi.payback}</div>
                     <div className="text-xs text-slate-400 mt-1">按保守收益测算</div>
                   </div>
                 </div>
               </div>
 
+              <GateStatus gate={gate} />
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div className="report-section lg:col-span-2">
                   <div className="flex items-center justify-between mb-3">
                     <div className="text-sm font-semibold text-white">三层评估得分</div>
-                    <div className="text-xs text-slate-400">总分=基础分+趋势修正</div>
+                    <div className="text-xs text-slate-400">分数后标签为证据来源</div>
                   </div>
-
                   {[
-                    { label:"价值层", dims:REPORT.value, score:REPORT.layerScores.value, weight:"40%", color:"#fb923c" },
-                    { label:"就绪度层", dims:REPORT.readiness, score:REPORT.layerScores.readiness, weight:"30%", color:"#60a5fa" },
-                    { label:"风险层（反向）", dims:REPORT.risk, score:REPORT.layerScores.risk, weight:"30%", color:"#a78bfa" }
+                    { label:"价值层", dims:value, score:layerScores.value, weight:"40%", color:"#fb923c" },
+                    { label:"就绪度层", dims:readiness, score:layerScores.readiness, weight:"30%", color:"#60a5fa" },
+                    { label:"风险层（反向）", dims:risk, score:layerScores.risk, weight:"30%", color:"#a78bfa" }
                   ].map((layer, idx) => (
                     <div key={idx} className="mt-4 first:mt-0">
                       <div className="flex items-center justify-between text-xs mb-2">
@@ -250,9 +387,12 @@
                       <div className="space-y-2">
                         {layer.dims.map((d, i) => (
                           <div key={i} className="soft-panel rounded-lg p-2.5">
-                            <div className="flex items-start justify-between gap-3 mb-2">
-                              <div className="text-xs text-slate-200">{d.name} <span className="text-slate-400">({d.weight}%)</span></div>
-                              <div className="text-[11px] text-slate-400 text-right max-w-[62%]">{d.note}</div>
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="text-xs text-slate-200 flex items-center flex-wrap gap-1">
+                                {d.name} <span className="text-slate-400">({d.weight}%)</span>
+                                <EvidenceTags ids={d.evidence} />
+                              </div>
+                              <div className="text-[11px] text-slate-400 text-right max-w-[50%] flex-shrink-0">{d.note}</div>
                             </div>
                             <ScoreBar score={d.score} color={layer.color} />
                           </div>
@@ -262,39 +402,43 @@
                   ))}
                 </div>
 
-                <div className="report-section">
-                  <div className="text-sm font-semibold text-white mb-3">修正与结论</div>
-                  <div className="soft-panel rounded-lg p-3">
-                    {REPORT.corrections.map((c, i) => (
-                      <div key={i} className="flex items-center justify-between text-xs py-1">
-                        <span className="text-slate-300">{c.label}</span>
-                        <span className="text-cyan-300 font-semibold">{c.value}</span>
+                <div className="space-y-4">
+                  <div className="report-section">
+                    <div className="text-sm font-semibold text-white mb-3">趋势修正</div>
+                    <div className="soft-panel rounded-lg p-3">
+                      {corrections.map((c, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs py-1">
+                          <span className="text-slate-300">{c.label}</span>
+                          <span className="text-cyan-300 font-semibold">{c.value}</span>
+                        </div>
+                      ))}
+                      <div className="border-t border-slate-700 mt-2 pt-2 text-xs flex items-center justify-between">
+                        <span className="text-slate-400">基础分 {baseScore} + 修正 {correction}</span>
+                        <span className="text-emerald-300 font-semibold">最终 {finalScore}</span>
                       </div>
-                    ))}
-                    <div className="border-t border-slate-700 mt-2 pt-2 text-xs flex items-center justify-between">
-                      <span className="text-slate-400">基础分 {REPORT.baseScore} + 修正 {REPORT.correction}</span>
-                      <span className="text-emerald-300 font-semibold">最终 {REPORT.finalScore}</span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-1 gap-2">
+                      <div className="metric-card rounded-lg p-3">
+                        <div className="text-xs text-slate-400">年化收益（保守）</div>
+                        <div className="text-xl font-bold text-emerald-300 mt-1">{roi.annualSaving}</div>
+                      </div>
+                      <div className="metric-card rounded-lg p-3">
+                        <div className="text-xs text-slate-400">第一年ROI</div>
+                        <div className="text-xl font-bold text-amber-300 mt-1">{roi.roiPct}</div>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="mt-3 grid grid-cols-1 gap-2">
-                    <div className="metric-card rounded-lg p-3">
-                      <div className="text-xs text-slate-400">年化收益（保守）</div>
-                      <div className="text-xl font-bold text-emerald-300 mt-1">{REPORT.roi.annualSaving}</div>
-                    </div>
-                    <div className="metric-card rounded-lg p-3">
-                      <div className="text-xs text-slate-400">第一年ROI</div>
-                      <div className="text-xl font-bold text-amber-300 mt-1">{REPORT.roi.roiPct}</div>
-                    </div>
-                  </div>
+                  <IndustryCalibration industry={industry} />
                 </div>
               </div>
+
+              <EvidenceLedger evidence={evidence} />
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="report-section">
                   <div className="text-sm font-semibold text-white mb-3">实施路线图</div>
                   <div className="space-y-3">
-                    {REPORT.timeline.map((t, i) => (
+                    {timeline.map((t, i) => (
                       <div key={i} className="soft-panel rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
                           <div className="text-xs font-semibold text-cyan-300">{t.week}</div>
@@ -303,8 +447,7 @@
                         <div className="space-y-1.5">
                           {t.tasks.map((task, j) => (
                             <div key={j} className="text-xs text-slate-300 flex gap-2">
-                              <span className="text-cyan-400">•</span>
-                              <span>{task}</span>
+                              <span className="text-cyan-400">•</span><span>{task}</span>
                             </div>
                           ))}
                         </div>
@@ -316,18 +459,17 @@
                 <div className="report-section">
                   <div className="text-sm font-semibold text-white mb-3">管理层行动建议</div>
                   <div className="space-y-2.5">
-                    {REPORT.actions.map((a, i) => (
+                    {actions.map((a, i) => (
                       <div key={i} className="soft-panel rounded-lg p-3 flex items-start gap-3">
                         <div className="w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-300 text-[11px] flex items-center justify-center font-semibold flex-shrink-0">{i+1}</div>
                         <div className="text-sm text-slate-200 leading-relaxed">{a}</div>
                       </div>
                     ))}
                   </div>
-
                   <div className="mt-3 soft-panel rounded-lg p-3">
                     <div className="text-xs text-slate-400 mb-2">收益构成</div>
                     <div className="space-y-1.5">
-                      {REPORT.roi.items.map((item, i) => (
+                      {roi.items.map((item, i) => (
                         <div key={i} className="flex items-center justify-between text-xs">
                           <span className="text-slate-300">{item.label}</span>
                           <span className="font-semibold" style={{color:item.color}}>{item.value}</span>
@@ -337,6 +479,8 @@
                   </div>
                 </div>
               </div>
+
+              <FeedbackLoop feedback={feedback} />
             </div>
           </div>
         </div>
@@ -350,7 +494,7 @@
           <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold ${isBeacon ? "bg-gradient-to-br from-indigo-500 to-cyan-500 text-white" : "bg-gradient-to-br from-slate-500 to-slate-700 text-white"}`}>
             {isBeacon ? "B" : "企"}
           </div>
-          <div style={{ maxWidth: "78%" }}>
+          <div style={{ maxWidth:"78%" }}>
             <div className={`text-xs mb-1 ${isBeacon ? "text-cyan-300" : "text-slate-300 text-right"}`}>
               {isBeacon ? "Beacon · AI价值顾问" : "某精密零部件制造企业"}
             </div>
@@ -382,22 +526,17 @@
         if (next.r === "beacon") {
           setTyping(true);
           const delay = next.isReport ? 1000 : Math.min(700 + next.t.length * 7, 2200);
-          timerRef.current = setTimeout(() => {
-            setTyping(false);
-            setShown((s) => s + 1);
-          }, delay);
+          timerRef.current = setTimeout(() => { setTyping(false); setShown(s => s + 1); }, delay);
         } else {
-          setShown((s) => s + 1);
+          setShown(s => s + 1);
         }
       };
 
-      useEffect(() => {
-        if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
-      }, [shown, typing]);
+      useEffect(() => { if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight; }, [shown, typing]);
 
       useEffect(() => {
         if (!autoPlay || done) return;
-        const delay = typing ? 120 : (shown > 0 && CONV[shown - 1].r === "company" ? 1000 : 360);
+        const delay = typing ? 120 : (shown > 0 && CONV[shown-1].r === "company" ? 1000 : 360);
         timerRef.current = setTimeout(advance, delay);
         return () => clearTimeout(timerRef.current);
       }, [autoPlay, shown, typing, done]);
@@ -425,7 +564,7 @@
                   return (
                     <div key={i} className={`sidebar-btn border rounded-lg px-3 py-2 text-sm ${active ? "sidebar-active text-slate-100" : "border-slate-800 text-slate-400 bg-transparent"}`}>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs w-4 text-center">{active ? "✓" : i + 1}</span>
+                        <span className="text-xs w-4 text-center">{active ? "✓" : i+1}</span>
                         <span>{p}</span>
                       </div>
                     </div>
@@ -433,9 +572,24 @@
                 })}
               </div>
 
+              <div className="text-[11px] uppercase tracking-wide text-slate-500 px-2 mt-5 mb-2">Governance</div>
+              <div className="space-y-1">
+                {[
+                  { label:"行业基线", value:REPORT.industry.name, ok:true },
+                  { label:"证据台账", value:`${REPORT.evidence.length}条`, ok:true },
+                  { label:"屏障检查", value:REPORT.gate.passed?"通过":"未通过", ok:REPORT.gate.passed },
+                  { label:"框架版本", value:REPORT.versions.framework, ok:true }
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-[#0d1a30] border border-slate-800">
+                    <span className="text-xs text-slate-400">{item.label}</span>
+                    <span className={`text-xs font-semibold ${item.ok ? "text-emerald-400" : "text-red-400"}`}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+
               <div className="text-[11px] uppercase tracking-wide text-slate-500 px-2 mt-5 mb-2">Controls</div>
               <div className="space-y-2">
-                <button onClick={() => setAuto((a) => !a)} className={`w-full text-left px-3 py-2 rounded-lg border text-sm ${autoPlay ? "bg-indigo-600/30 border-indigo-400/40 text-indigo-100" : "bg-[#101c39] border-slate-700 text-slate-300"}`}>
+                <button onClick={() => setAuto(a => !a)} className={`w-full text-left px-3 py-2 rounded-lg border text-sm ${autoPlay ? "bg-indigo-600/30 border-indigo-400/40 text-indigo-100" : "bg-[#101c39] border-slate-700 text-slate-300"}`}>
                   {autoPlay ? "暂停自动播放" : "自动播放"}
                 </button>
                 <button onClick={() => { setShown(CONV.length); setTyping(false); setAuto(false); }} className="w-full text-left px-3 py-2 rounded-lg border bg-[#101c39] border-slate-700 text-slate-300 text-sm">
@@ -457,7 +611,10 @@
                   <div className="text-sm font-semibold text-white">汽车零部件企业 · AI视觉质检评估</div>
                   <div className="text-xs text-slate-400 mt-0.5">企业访谈驱动的价值评估与实施建议</div>
                 </div>
-                <div className="chip rounded-full px-3 py-1 text-xs">AIVA Framework</div>
+                <div className="flex items-center gap-2">
+                  <div className="chip rounded-full px-3 py-1 text-xs">AIVA Framework</div>
+                  <div className="chip rounded-full px-3 py-1 text-xs text-emerald-400 border-emerald-800">Gate-first</div>
+                </div>
               </div>
             </header>
 
@@ -470,9 +627,7 @@
                     <div className="text-xs text-slate-400 mt-2">将输出结构化、可汇报的AI应用价值评估报告</div>
                   </div>
                 )}
-
                 {CONV.slice(0, shown).map((msg, i) => <Bubble key={i} msg={msg} />)}
-
                 {typing && (
                   <div className="msg-in flex gap-3">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 text-white text-sm font-bold flex items-center justify-center flex-shrink-0">B</div>
@@ -487,11 +642,7 @@
             <footer className="border-t border-slate-800 bg-[#0d162d] px-5 py-3">
               <div className="max-w-5xl mx-auto">
                 {!done ? (
-                  <button
-                    onClick={advance}
-                    disabled={typing}
-                    className={`w-full py-3 rounded-xl text-sm font-semibold transition-all ${typing ? "bg-slate-700 text-slate-400 cursor-not-allowed" : "bg-gradient-to-r from-indigo-600 to-cyan-600 text-white hover:brightness-110"}`}
-                  >
+                  <button onClick={advance} disabled={typing} className={`w-full py-3 rounded-xl text-sm font-semibold transition-all ${typing ? "bg-slate-700 text-slate-400 cursor-not-allowed" : "bg-gradient-to-r from-indigo-600 to-cyan-600 text-white hover:brightness-110"}`}>
                     {typing ? "顾问正在分析..." : shown === 0 ? "开始访谈" : CONV[shown]?.r === "beacon" ? "下一条（顾问）" : "下一条（企业）"}
                   </button>
                 ) : (

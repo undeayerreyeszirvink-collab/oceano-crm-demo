@@ -9,6 +9,20 @@
 ## 依赖资源
 
 - [references/report-templates.md]：三种报告格式的模板与结构说明
+- [assets/decision-matrix.md]：阈值到动作（推进/试点/暂缓）映射
+- [assets/calibration-baselines.md]：行业校准依据
+- [assets/case-library.md]：历史案例参考
+- [references/retrospectives.md]：复盘回流模板
+
+---
+
+## 报告必含模块（不可缺失）
+
+1. **动作建议卡**：必须明确 `推进 / 试点 / 暂缓`
+2. **阈值判定理由**：说明为什么得出该动作（含Gate-first判断）
+3. **证据映射附录**：每个关键分数对应Evidence IDs与来源
+4. **行业校准说明**：说明使用了哪个行业基线
+5. **版本信息**：Framework Version / Calibration Version / Trend Version
 
 ---
 
@@ -28,6 +42,7 @@
 评估场景：[场景名称]
 综合评分：[X.X / 5.0]
 评级：[强烈推荐上马 / 建议有条件推进 / 建议先做准备再推进 / 暂不建议]
+动作建议：[推进 / 试点 / 暂缓]
 
 核心价值：
 • 预计年节省成本：约[XX-XX]万元
@@ -39,6 +54,12 @@
 
 主要风险：
 • [1-2句话，来源于实际数据]
+
+阈值判定：
+• [Gate判定结果 + 综合分映射理由]
+
+证据锚点：
+• [E-INT-xx, E-DOC-xx, E-DATA-xx]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```

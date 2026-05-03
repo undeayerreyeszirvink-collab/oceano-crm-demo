@@ -60,6 +60,51 @@ metadata:
 3. **向用户确认**：总结提取到的关键信息，请用户确认或补充
 4. **注入上下文**：将确认后的信息融入后续访谈流程
 
+## 评估治理层（必经）
+
+在执行5阶段流程前，必须先执行治理层规则。治理层用于保证稳定性、可追溯、可决策、可积累。
+
+### 治理层目标
+
+1. 方法论壁垒：使用统一AIVA框架，保证同类客户口径一致。
+2. 数据壁垒：把历史项目、行业基线、ROI、失败案例持续沉淀。
+3. 流程壁垒：把评估嵌入售前、尽调、立项、实施、复盘全流程。
+4. 交付壁垒：输出优先级、预算区间、路线图、组织建议，不只给结论。
+5. 结果壁垒：用项目真实结果反哺规则，使系统越用越准。
+
+### 统一执行顺序（不可跳过）
+
+1. 行业识别与基线装载
+   - 装载资源：`assets/calibration-baselines.md` + `assets/industries/{行业}.md`
+2. 证据采集与证据登记
+   - 每个评分必须绑定证据：访谈原话 / 文档片段 / 数据来源
+3. 屏障检查（Gate-first）
+   - 方法论、数据、流程、交付、结果五类屏障先判断再评分
+4. 12维评分
+   - 无证据的维度标记`待补证`，禁止直接给高分
+5. 阈值判定与动作映射
+   - 输出动作必须是：`推进 / 试点 / 暂缓`
+6. 报告输出
+   - 报告中必须包含证据链、阈值理由、风险前提、版本号
+7. 项目回流
+   - 将真实ROI、失败原因、周期偏差回灌到案例库与复盘库
+
+### 稳定性与版本规则
+
+- 同类客户优先复用同版本规则（框架版本、校准版本、趋势版本）。
+- 每份报告必须标注：`Framework Version`、`Calibration Version`、`Trend Version`。
+- 当行业基线或阈值发生变更时，必须在复盘中记录变更原因和影响范围。
+
+### 结果回流SOP（3/6/12）
+
+- 项目后3个月：记录POC结果与实施偏差
+- 项目后6个月：记录阶段ROI与组织采纳情况
+- 项目后12个月：记录年度ROI、失败教训、规则修正建议
+
+回流位置：
+- `assets/case-library.md`
+- `references/retrospectives.md`
+
 ## 流程
 
 ### 阶段1：企业画像
@@ -91,16 +136,16 @@ metadata:
 - **目标**：对推荐方案进行量化价值评估，产出评分卡
 - **进入条件**：阶段3完成，方案已推荐
 - **加载指引**：[references/phases/04-deep-evaluation.md](references/phases/04-deep-evaluation.md)
-- **依赖资源**：[references/evaluation-framework.md](references/evaluation-framework.md) + [assets/scoring-rubrics.md](assets/scoring-rubrics.md)
-- **完成标记**：产出完整评分卡，价值量化清晰
+- **依赖资源**：[references/evaluation-framework.md](references/evaluation-framework.md) + [assets/scoring-rubrics.md](assets/scoring-rubrics.md) + [assets/decision-matrix.md](assets/decision-matrix.md) + [assets/calibration-baselines.md](assets/calibration-baselines.md)
+- **完成标记**：产出完整评分卡，价值量化清晰，且每个维度分数都绑定证据ID
 
 ### 阶段5：报告输出
 
 - **目标**：生成完整的AI应用价值评估报告
 - **进入条件**：阶段4完成，评估数据充分
 - **加载指引**：[references/phases/05-report-output.md](references/phases/05-report-output.md)
-- **依赖资源**：[references/report-templates.md](references/report-templates.md)
-- **完成标记**：报告已生成并交付用户
+- **依赖资源**：[references/report-templates.md](references/report-templates.md) + [assets/case-library.md](assets/case-library.md) + [references/retrospectives.md](references/retrospectives.md)
+- **完成标记**：报告已生成并交付用户，包含动作建议（推进/试点/暂缓）与证据映射附录
 
 ## 阶段转换原则
 
