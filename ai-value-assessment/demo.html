@@ -99,6 +99,21 @@ const REPORT = {
     '制定质检员沟通方案，明确"AI辅助+人工确认"定位',
     'POC成功后，评估全产线推广（预计ROI回收期8-12个月）',
   ],
+  roi: {
+    investment: '30–50万', annualSaving: '126–208万', payback: '8–12个月', roiPct: '252–693%',
+    items: [
+      { label:'质量损失节省（20-30%）', value:'60–120万/年', color:'green' },
+      { label:'人力成本节省（60-80%）', value:'66–88万/年', color:'green' },
+      { label:'客户退货减少（间接）',   value:'难以量化',   color:'blue' },
+      { label:'POC投入（一次性）',      value:'30–50万',   color:'red' },
+    ],
+  },
+  timeline: [
+    { week:'第1-4周', title:'POC启动', tasks:['选定单条产线','采购/部署视觉设备','数据标注（目标1万张）'] },
+    { week:'第5-8周', title:'模型训练', tasks:['缺陷类型分类训练','与MES系统对接','质检员培训'] },
+    { week:'第9-12周', title:'上线验证', tasks:['并行运行（AI+人工）','漏检率对比测量','ROI核算'] },
+    { week:'第13周+', title:'全面推广', tasks:['评估全产线推广','供应商选型','规模化部署'] },
+  ],
 };
 
 function renderText(t) {
@@ -131,15 +146,9 @@ function ReportCard() {
   const [show, setShow] = useState(false);
   useEffect(() => { setTimeout(() => setShow(true), 200); }, []);
   if (!show) return null;
-
-  const layerScore = (dims) => {
-    const total = dims.reduce((s, d) => s + d.score * d.weight, 0);
-    const wsum  = dims.reduce((s, d) => s + d.weight, 0);
-    return (total / wsum).toFixed(2);
-  };
-
   return (
-    <div className="report-card bg-white rounded-2xl border-2 border-orange-200 shadow-lg overflow-hidden mt-2" style={{maxWidth:'560px'}}>
+    <div className="report-card bg-white rounded-2xl border-2 border-orange-200 shadow-lg overflow-hidden mt-2" style={{maxWidth:'580px'}}>
+      {/* Header */}
       <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-5 py-4 text-white">
         <div className="text-xs font-semibold opacity-80 mb-1">AIVA · AI应用价值评估报告</div>
         <div className="font-black text-lg">某精密零部件制造企业</div>
@@ -147,19 +156,32 @@ function ReportCard() {
       </div>
 
       <div className="p-5 space-y-5">
-        {/* Final Score */}
+        {/* 综合评分 */}
         <div className="flex items-center gap-4 bg-green-50 rounded-xl p-4 border-2 border-green-200">
-          <div className="text-center">
+          <div className="text-center flex-shrink-0">
             <div className="text-5xl font-black text-green-600">4.04</div>
             <div className="text-xs text-gray-500 mt-0.5">综合得分 / 5.0</div>
           </div>
-          <div>
-            <div className="text-base font-black text-green-700">🟢 强烈建议实施</div>
-            <div className="text-xs text-gray-600 mt-1">场景价值高、组织就绪、风险可控<br/>建议3个月内启动POC</div>
+          <div className="flex-1">
+            <div className="text-base font-black text-green-700 mb-1">🟢 强烈建议实施</div>
+            <div className="text-xs text-gray-600">场景价值高、组织就绪、风险可控，建议3个月内启动POC</div>
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              {[
+                { label:'价值层', score:'3.75', weight:'40%', bg:'#fff7ed', border:'#fed7aa', tc:'#ea580c' },
+                { label:'就绪度层', score:'3.00', weight:'30%', bg:'#eff6ff', border:'#bfdbfe', tc:'#2563eb' },
+                { label:'风险层', score:'3.30', weight:'30%', bg:'#faf5ff', border:'#e9d5ff', tc:'#7c3aed' },
+              ].map((l,i) => (
+                <div key={i} className="rounded-lg p-2 text-center" style={{background:l.bg,border:`1px solid ${l.border}`}}>
+                  <div className="text-base font-black" style={{color:l.tc}}>{l.score}</div>
+                  <div className="text-xs text-gray-500">{l.label}</div>
+                  <div className="text-xs text-gray-400">{l.weight}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Three layers */}
+        {/* 三层评分 */}
         {[
           { label:'价值层', color:'orange', dims: REPORT.value,     layerW:'40%', score: REPORT.layerScores.value },
           { label:'就绪度层', color:'blue', dims: REPORT.readiness, layerW:'30%', score: REPORT.layerScores.readiness },
@@ -188,24 +210,68 @@ function ReportCard() {
           </div>
         ))}
 
-        {/* AI Trend Correction */}
+        {/* AI趋势修正 */}
         <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
           <div className="text-xs font-bold text-blue-700 mb-2">⚡ AI趋势修正因子</div>
           {REPORT.corrections.map((c, i) => (
             <div key={i} className="flex justify-between text-xs text-gray-700 py-0.5">
-              <span>{c.label}</span>
-              <span className="font-bold text-blue-600">{c.value}</span>
+              <span>{c.label}</span><span className="font-bold text-blue-600">{c.value}</span>
             </div>
           ))}
           <div className="border-t border-blue-200 mt-2 pt-2 flex justify-between text-xs font-bold">
-            <span>基础分 {REPORT.baseScore} + 修正 {REPORT.correction}</span>
+            <span className="text-gray-600">基础分 {REPORT.baseScore} + 修正 {REPORT.correction}</span>
             <span className="text-green-600">= 最终 {REPORT.finalScore}</span>
           </div>
         </div>
 
-        {/* Actions */}
+        {/* ROI测算 */}
         <div>
-          <div className="text-xs font-bold text-gray-700 mb-2">📋 建议行动</div>
+          <div className="text-xs font-bold text-gray-700 mb-2">💰 ROI测算</div>
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            {[
+              { label:'POC投入', value: REPORT.roi.investment, sub:'一次性', bg:'#fef2f2', border:'#fecaca', tc:'#dc2626' },
+              { label:'年化收益', value: REPORT.roi.annualSaving, sub:'保守估算', bg:'#f0fdf4', border:'#bbf7d0', tc:'#16a34a' },
+              { label:'投资回报率', value: REPORT.roi.roiPct, sub:'第一年', bg:'#fff7ed', border:'#fed7aa', tc:'#ea580c' },
+              { label:'回收周期', value: REPORT.roi.payback, sub:'预计', bg:'#eff6ff', border:'#bfdbfe', tc:'#2563eb' },
+            ].map((m,i) => (
+              <div key={i} className="rounded-xl p-3" style={{background:m.bg,border:`1px solid ${m.border}`}}>
+                <div className="text-xs text-gray-500 mb-0.5">{m.label}</div>
+                <div className="text-base font-black" style={{color:m.tc}}>{m.value}</div>
+                <div className="text-xs text-gray-400">{m.sub}</div>
+              </div>
+            ))}
+          </div>
+          {REPORT.roi.items.map((item, i) => (
+            <div key={i} className="flex justify-between items-center text-xs py-1.5 border-b border-gray-100">
+              <span className="text-gray-600">{item.label}</span>
+              <span className="font-bold" style={{color:item.color==='green'?'#16a34a':item.color==='blue'?'#2563eb':'#dc2626'}}>{item.value}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* 实施路线 */}
+        <div>
+          <div className="text-xs font-bold text-gray-700 mb-2">🗓 实施路线（12周）</div>
+          <div className="space-y-2">
+            {REPORT.timeline.map((t, i) => (
+              <div key={i} className="flex gap-3">
+                <div className="flex-shrink-0 w-14 text-xs font-bold text-orange-600 pt-0.5">{t.week}</div>
+                <div className="flex-1 border-l-2 border-orange-100 pl-3">
+                  <div className="text-xs font-bold text-gray-800 mb-0.5">{t.title}</div>
+                  {t.tasks.map((task, j) => (
+                    <div key={j} className="text-xs text-gray-500 flex gap-1.5">
+                      <span className="text-orange-300 flex-shrink-0">▸</span><span>{task}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 建议行动 */}
+        <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+          <div className="text-xs font-bold text-orange-700 mb-2">📋 建议行动</div>
           <div className="space-y-1.5">
             {REPORT.actions.map((a, i) => (
               <div key={i} className="flex gap-2 text-xs text-gray-700">
