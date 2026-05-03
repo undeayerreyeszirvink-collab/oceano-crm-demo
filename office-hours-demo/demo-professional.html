@@ -1,0 +1,2105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>YC Office Hours · 专业创业问答平台</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; margin: 0; }
+        .msg-in { animation: msgIn 0.35s ease-out forwards; opacity: 0; }
+        @keyframes msgIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .typing::after { content: '●●●'; animation: typing 1s steps(3) infinite; font-size: 0.6rem; letter-spacing: 2px; }
+        @keyframes typing { 0%,33% { content:'●'; } 34%,66% { content:'●●'; } 67%,100% { content:'●●●'; } }
+        .card-in { animation: cardIn 0.6s ease-out forwards; }
+        @keyframes cardIn { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:scale(1); } }
+        .phase-dot { transition: all 0.3s ease; }
+        .chat-scroll { scroll-behavior: smooth; }
+        .scenario-card { transition: all 0.3s ease; cursor: pointer; }
+        .scenario-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(249,115,22,0.3); }
+        .signal-badge { animation: badgeIn 0.4s ease-out forwards; opacity: 0; }
+        @keyframes badgeIn { from { opacity:0; transform:scale(0.8); } to { opacity:1; transform:scale(1); } }
+        .gradient-text { background: linear-gradient(135deg, #f97316, #ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// 创业场景配置
+const SCENARIOS = [
+  {
+    id: 'pre-product',
+    icon: '🚀',
+    title: 'Pre-Product 需求验证',
+    desc: '还没有产品，想验证需求是否真实',
+    tags: ['需求验证', 'MVP', '用户访谈'],
+    example: 'PetCare AI 分诊助手'
+  },
+  {
+    id: 'fundraising',
+    icon: '💰',
+    title: '融资准备与策略',
+    desc: '准备融资，需要梳理商业逻辑和估值',
+    tags: ['融资策略', 'BP优化', '投资人对接'],
+    example: 'SaaS 平台 Pre-A 轮融资'
+  },
+  {
+    id: 'growth',
+    icon: '📈',
+    title: '增长瓶颈突破',
+    desc: '有用户但增长停滞，需要找到增长杠杆',
+    tags: ['增长黑客', 'PMF优化', '渠道拓展'],
+    example: 'B2B SaaS 增长策略'
+  },
+  {
+    id: 'team',
+    icon: '👥',
+    title: '团队与组织',
+    desc: '团队管理、合伙人冲突、招聘难题',
+    tags: ['团队建设', '股权分配', '文化塑造'],
+    example: '技术团队扩张'
+  },
+  {
+    id: 'pivot',
+    icon: '🔄',
+    title: '战略转型决策',
+    desc: '当前方向遇阻，考虑是否需要转型',
+    tags: ['战略调整', 'Pivot决策', '方向选择'],
+    example: '从 B2C 转向 B2B'
+  },
+  {
+    id: 'custom',
+    icon: '💡',
+    title: '自定义问题',
+    desc: '其他创业相关问题',
+    tags: ['开放式', '定制化', '综合咨询'],
+    example: '任意创业问题'
+  }
+];
+
+// 阶段配置
+const PHASES = ['场景选择', '问题诊断', '深度追问', '前提挑战', '方案设计', '执行计划', '风险评估', '完整报告'];
+
+// Pre-Product 场景对话
+const CONV_PRE_PRODUCT = [
+  { ph:0, r:'yc', t:'你好，我是 Michael Seibel，YC CEO。\n\n我看到你选择了 **Pre-Product 需求验证**。在我们开始之前，我需要了解你的具体情况。\n\n**请用 2-3 句话描述：你想做什么？现在最大的困惑是什么？**' },
+  { ph:1, r:'founder', t:'我叫张明，之前做了 8 年兽医。我想做一个 AI 宠物分诊助手——帮宠物主人判断"要不要去医院"。现在还没有产品，只有一个想法。\n\n最大的困惑是：先做 App 还是先找用户？' },
+  { ph:1, r:'yc', t:'**先找用户。这是唯一正确的顺序。**\n\n你现在是 pre-product 阶段，我会用 YC 的六问框架帮你验证需求真实性。这些问题会很直接，甚至不舒服——但这正是你需要的。\n\n准备好了吗？' },
+  { ph:1, r:'founder', t:'准备好了。' },
+
+  // Phase 2: 深度追问
+  { ph:2, r:'yc', t:'**Q1 · 需求真实性**\n\n有没有人**真的**想要这个东西？不是"觉得有用"，是真的想要——愿意付钱、愿意改变习惯、如果你的服务挂了会打电话来骂你的那种。' },
+  { ph:2, r:'founder', t:'我问过几个朋友，他们都觉得这个想法很好，说如果有这个工具会用的。' },
+  { ph:2, r:'yc', t:'**停。"朋友觉得有用"不是需求。**\n\n朋友不会伤害你的感情，所以他们说"好"。这不算数据。\n\n**有没有人主动找过你，问你宠物的健康问题？有没有人在你的服务挂了之后催你？**' },
+  { ph:2, r:'founder', t:'有。我在几个宠物微信群里，经常有人@我问问题。上周就有三个人问我他们的猫是不是需要去医院。有一次我两天没回复，有个用户私信我说很着急。' },
+  { ph:2, r:'yc', t:'**这才是真实需求。**用户催你，说明他们真的需要。\n\n**Q2 · 现状替代方案**\n\n这些人现在怎么解决这个问题？如果没有你，他们怎么办？他们为现有方案付出了什么代价？' },
+  { ph:2, r:'founder', t:'要么直接去宠物医院（300-800元/次），要么在网上搜（信息不可靠），要么就在群里问。去医院贵，而且很多时候只是虚惊一场，白跑一趟。' },
+  { ph:2, r:'yc', t:'所以你要解决的核心问题是：**"要不要去医院"这个判断**。\n\n你不是在替代兽医，你是在做**分诊**——帮人省掉不必要的就诊。这个定位很清晰。\n\n每次不必要就诊的成本是 300-800 元 + 2-3 小时时间。这是你的价值锚点。' },
+  { ph:2, r:'founder', t:'对，就是这个。我之前一直说"AI 宠物医生"，但其实核心是分诊判断。' },
+  { ph:2, r:'yc', t:'**Q3 · 极度具体**\n\n给我说一个具体的人。不是"宠物主人"这个群体，是一个真实的人——名字、年龄、职业、他们的宠物、他们的具体问题、他们每年在宠物上花多少钱。' },
+  { ph:2, r:'founder', t:'李梅，35 岁，在上海做 HR，月收入 1.8 万。有一只 12 岁的老年猫叫"豆腐"。上周她问我豆腐最近不爱吃东西，是不是要去医院。她每年在豆腐身上花 5000-8000 元，其中 2000 元是不必要的就诊。' },
+  { ph:2, r:'yc', t:'**很好。李梅就是你的目标用户。**\n\n她每年浪费 2000 元在不必要就诊上。如果你能帮她省掉一半，就是 1000 元/年的价值。\n\n**Q4 · 最窄切入点**\n\n你现在怎么接触到李梅这样的人？你的第一个 10 个付费用户从哪里来？不要告诉我"做广告"或"SEO"——我要的是这周就能执行的方案。' },
+  { ph:2, r:'founder', t:'就是那些微信群。我在 3 个宠物群里，总共 800 人左右。我在里面已经有一定信任度了，大家知道我是兽医。我可以直接在群里提供付费咨询服务。' },
+  { ph:2, r:'yc', t:'**这是你最大的资产。**800 个已经信任你的潜在用户，获客成本为零。\n\n你觉得李梅愿意为"随时问兽医"这个服务付多少钱？' },
+  { ph:2, r:'founder', t:'我想过，大概 99 元一个月？可以无限次问问题，3 分钟内响应。' },
+  { ph:2, r:'yc', t:'99 元/月 = 1188 元/年。她每年浪费 2000 元，你收 1188 元，ROI 是正的。定价合理。\n\n**Q5 · 亲眼观察**\n\n你有没有亲眼看过李梅在用现有工具解决这个问题？她是怎么搜索的，怎么做决定的？她在哪个环节最痛苦？' },
+  { ph:2, r:'founder', t:'没有亲眼看过。但我在群里帮她解答过三四次了，知道她的决策过程——她会先描述症状（很详细，有照片），然后问"严不严重"，最后问"要不要去医院"。她最痛苦的是**不确定性**——不知道是小问题还是大问题。' },
+  { ph:2, r:'yc', t:'**你已经在手动做这件事了。这很有价值。**\n\n你现在要做的不是"开发产品"，而是**把手动服务变成付费服务**。产品可以等，收钱不能等。\n\n**Q6 · 未来适配性**\n\n如果这个做成了，3 年后是什么样子？你想做的是一个工具，还是一个平台？' },
+  { ph:2, r:'founder', t:'我想做宠物健康管理平台，连接宠物主人、兽医和宠物医院。AI 分诊只是入口，后面可以做健康档案、疫苗提醒、保险对接。' },
+
+  // Phase 3: 前提挑战
+  { ph:3, r:'yc', t:'**等一下。我要挑战你的前提。**\n\n**前提 1：AI 误判怎么办？**\n如果 AI 说"不用去医院"，结果猫死了，你怎么处理这个责任？这不是技术问题，是信任和法律问题。' },
+  { ph:3, r:'founder', t:'这是我最担心的。所以我的想法是：AI 只做初步筛查，给出"建议就医"或"可以观察"，最终决定权在用户。而且我有兽医执照，可以做背书。所有建议都会加免责声明。' },
+  { ph:3, r:'yc', t:'**兽医执照是你最大的护城河。**大多数做宠物 AI 的人没有这个。\n\n但注意：你的定位必须是"辅助判断工具"，不能是"AI 医生"。措辞很重要，会影响法律风险。\n\n**前提 2：人工服务不可扩展**\n你一个人能服务多少用户？20 个？50 个？如果有 200 个用户，你怎么办？' },
+  { ph:3, r:'founder', t:'我算过，如果每个用户平均每周问 2 次，每次回复 5 分钟，20 个用户就是 200 分钟/周，大概 3-4 小时。50 个用户就是 8-10 小时/周，还能接受。200 个用户就需要雇人或者用 AI 辅助了。' },
+  { ph:3, r:'yc', t:'**很好，你算过账。**\n\n这就是为什么我建议你先做 20 个用户——验证需求 + 积累数据 + 测试定价。3 个月后，你会知道：\n1. 用户真实付费意愿\n2. 常见问题类型（可以做 AI 训练）\n3. 服务成本和时间\n4. 是否需要转向 AI 产品\n\n**前提确认：**\n✓ 分诊工具，不是诊断工具\n✓ 兽医执照是核心差异化\n✓ 微信群是最快切入点\n✓ 先做 20 个用户验证，再考虑扩展' },
+
+  // Phase 4: 方案设计
+  { ph:4, r:'yc', t:'ALTERNATIVES', isAlternatives: true },
+  { ph:4, r:'founder', t:'方案 A。我现在没有资金，也没有团队，先验证需求最重要。而且我可以立即开始，这周就能收到第一笔钱。' },
+  { ph:4, r:'yc', t:'**正确答案。**\n\n方案 A 是唯一务实的选择。方案 B 是大多数技术创始人的陷阱——先做产品，再找用户。你已经有用户了，**先收钱**。\n\n方案 C 不是不好，但 B2B 销售会消耗你大量时间，而你现在最需要的是**快速验证**。\n\n我来给你出一份完整的执行计划和风险评估报告。' },
+
+  // Phase 5: 执行计划
+  { ph:5, r:'yc', t:'EXECUTION', isExecution: true },
+
+  // Phase 6: 风险评估
+  { ph:6, r:'yc', t:'RISKS', isRisks: true },
+
+  // Phase 7: 完整报告
+  { ph:7, r:'yc', t:'REPORT', isReport: true },
+];
+
+// 融资场景对话
+const CONV_FUNDRAISING = [
+  { ph:0, r:'yc', t:'你好，我是 Michael Seibel，YC CEO。\n\n我看到你选择了 **融资准备与策略**。在我们开始之前，我需要了解你的具体情况。\n\n**请告诉我：\n1. 你的公司现在处于什么阶段？（Pre-seed / Seed / Pre-A / A轮）\n2. 你想融多少钱？\n3. 最大的困惑是什么？**' },
+  { ph:1, r:'founder', t:'我们是一家 B2B SaaS 公司，做企业知识管理平台。现在有 15 个付费客户，月收入 8 万，团队 5 人。\n\n我们想融 Pre-A 轮，目标 500-800 万美元。\n\n最大的困惑是：投资人总说我们"增长不够快"，但我们不知道怎么加速增长。而且不确定现在的估值应该是多少。' },
+  { ph:1, r:'yc', t:'**好，我听到了三个问题：**\n1. 增长速度\n2. 估值定价\n3. 融资策略\n\n在回答这些之前，我需要先了解你的**单位经济模型**。这是投资人最关心的。\n\n**请回答：**\n- 客单价多少？\n- CAC（获客成本）多少？\n- LTV（客户生命周期价值）多少？\n- Churn rate（流失率）多少？' },
+  { ph:2, r:'founder', t:'客单价：年费 5 万/客户\nCAC：大概 2 万（销售成本 + 市场费用）\nLTV：还没算过，但平均客户留存 18 个月\nChurn rate：月流失率 5%\n\n我们的问题是：获客成本太高，销售周期太长（平均 3 个月）。' },
+  { ph:2, r:'yc', t:'**让我算一下你的单位经济模型：**\n\n```\n客单价：5万/年\nCAC：2万\nLTV = 客单价 × 平均留存月数 = 5万 × 18/12 = 7.5万\nLTV/CAC = 7.5万 / 2万 = 3.75\n```\n\n**你的 LTV/CAC 是 3.75，这是健康的**（一般要求 >3）。\n\n但你的月流失率 5% 太高了。这意味着：\n- 年流失率 = 1 - (1-0.05)^12 = 46%\n- 平均客户生命周期 = 1/0.05 = 20个月\n\n**这是你最大的问题。**不是增长不够快，是**留存不够好**。\n\n投资人看到 5% 的月流失率，会担心你的产品 PMF 还不够强。' },
+  { ph:2, r:'founder', t:'我们也意识到了流失率的问题。主要是因为有些客户买了之后，使用率很低，续费的时候就流失了。\n\n我们现在在做客户成功团队，希望提高使用率。' },
+  { ph:3, r:'yc', t:'**这是正确的方向。但我要挑战你的前提：**\n\n**前提 1：你确定你的产品真的解决了客户的核心问题吗？**\n\n使用率低，通常不是"客户成功"的问题，而是**产品价值**的问题。\n\n你的 15 个客户里，有没有那种"如果你的产品挂了，他们会打电话来骂你"的客户？' },
+  { ph:3, r:'founder', t:'有 3-4 个客户是这样的。他们每天都在用，而且会主动给我们提需求。但其他客户确实使用频率很低。' },
+  { ph:3, r:'yc', t:'**这就是问题所在。**\n\n你有 3-4 个**真正的用户**，和 11-12 个**试用用户**。\n\n**我的建议：**\n1. **停止扩张，专注留存。**在流失率降到 2% 以下之前，不要再花钱获客。\n2. **深度访谈那 3-4 个重度用户。**搞清楚他们为什么离不开你，然后把产品做成那个样子。\n3. **砍掉那些不用的功能。**使用率低的客户，通常是因为产品太复杂。\n\n**关于融资：**\n现在融资，你会拿到很差的条款。因为投资人会说"增长不够快"（其实是留存不够好）。\n\n**我建议你：**\n- 用 3 个月时间，把月流失率降到 2%\n- 把那 3-4 个重度用户的案例做成标杆\n- 然后再融资，估值会高 50%\n\n**你愿意等 3 个月吗？**' },
+  { ph:4, r:'founder', t:'我们账上还有 6 个月现金。如果 3 个月能把留存做好，确实值得等。\n\n但我担心的是：如果 3 个月后还是没做好怎么办？那时候现金只剩 3 个月了，融资会更被动。' },
+  { ph:4, r:'yc', t:'**这是一个合理的担心。**\n\n让我给你两个方案：\n\n**方案 A：现在融资（保守）**\n- 优点：现金安全，有 12-18 个月 runway\n- 缺点：估值低，稀释多，条款差\n- 适合：如果你对产品 PMF 不自信\n\n**方案 B：3 个月后融资（激进）**\n- 优点：估值高 50%，条款好，投资人抢着投\n- 缺点：有风险，如果 3 个月没做好，会很被动\n- 适合：如果你对产品 PMF 有信心\n\n**我的建议：方案 B，但要设置里程碑。**\n\n3 个月后，如果达到这些指标，就融资：\n- 月流失率 < 2%\n- 月收入增长 > 15%\n- 有 5 个以上重度用户\n\n如果没达到，立即启动融资，接受更差的条款。\n\n**你选哪个？**' },
+  { ph:5, r:'founder', t:'我选方案 B。我们对产品有信心，而且 3 个月足够我们验证了。' },
+  { ph:5, r:'yc', t:'FUNDRAISING_PLAN', isFundraisingPlan: true },
+  { ph:6, r:'yc', t:'FUNDRAISING_RISKS', isFundraisingRisks: true },
+  { ph:7, r:'yc', t:'FUNDRAISING_REPORT', isFundraisingReport: true },
+];
+
+// ─── 融资场景数据 ───────────────────────────────────────────────
+const FUNDRAISING_PLAN_DATA = {
+  title: 'Pre-A 融资执行计划',
+  subtitle: 'B2B SaaS · 目标 500-800 万美元',
+  milestones: [
+    {
+      month: '第 1 个月',
+      phase: '留存优化',
+      goal: '月流失率 < 2%',
+      tasks: [
+        '深度访谈 3-4 个重度用户，找到核心价值点',
+        '砍掉使用率 < 10% 的功能，简化产品',
+        '建立客户成功流程：入职培训 + 周报 + 季度回顾',
+        '设置健康度评分系统，提前预警流失风险'
+      ],
+      metrics: ['月流失率 < 2%', '重度用户 NPS > 60', '功能使用率 > 40%']
+    },
+    {
+      month: '第 2 个月',
+      phase: '增长加速',
+      goal: '月收入增长 > 15%',
+      tasks: [
+        '基于重度用户案例，打磨 3 个标杆客户故事',
+        '开启 PLG（产品驱动增长）：免费试用 + 自助注册',
+        '建立合作伙伴渠道：咨询公司 + 系统集成商',
+        '优化定价：年付折扣 + 企业版套餐'
+      ],
+      metrics: ['月收入增长 > 15%', '新增付费客户 ≥ 3', '年付比例 > 30%']
+    },
+    {
+      month: '第 3 个月',
+      phase: '融资准备',
+      goal: '完成融资材料，启动路演',
+      tasks: [
+        '整理数据室：财务模型、客户合同、技术架构',
+        '制作 BP：10 页核心 + 附录',
+        '列出目标投资人名单（20-30 家），按优先级排序',
+        '通过 YC 校友、创始人网络获取温热介绍'
+      ],
+      metrics: ['月流失率 < 2%', '月收入 > 12 万', '有 5+ 标杆客户']
+    }
+  ],
+  bp_structure: [
+    { slide: 1, title: '问题', content: '企业知识管理现状：信息孤岛、效率低下、知识流失' },
+    { slide: 2, title: '解决方案', content: '统一知识平台：搜索 + 协作 + AI 问答' },
+    { slide: 3, title: '市场规模', content: 'TAM 500亿 / SAM 50亿 / SOM 5亿（中国企业知识管理）' },
+    { slide: 4, title: '产品演示', content: '核心功能截图 + 用户使用流程' },
+    { slide: 5, title: '牵引力', content: '15 个付费客户 / 月收入 8 万 / 增长趋势图' },
+    { slide: 6, title: '商业模式', content: 'SaaS 年费 / 客单价 5 万 / LTV/CAC = 3.75' },
+    { slide: 7, title: '竞争分析', content: '对比 Notion / Confluence / 飞书知识库' },
+    { slide: 8, title: '团队', content: '5 人团队 / 技术 + 产品 + 销售背景' },
+    { slide: 9, title: '融资计划', content: '融 600 万美元 / 18 个月 runway / 用于产品 + 销售' },
+    { slide: 10, title: '财务预测', content: '3 年后月收入 500 万 / ARR 6000 万' }
+  ]
+};
+
+const FUNDRAISING_RISKS_DATA = {
+  title: '融资风险评估',
+  risks: [
+    {
+      risk: '3 个月内未达到留存目标',
+      level: '高',
+      probability: '中',
+      impact: '极高',
+      mitigation: [
+        '第 6 周设置中期检查点：如果流失率仍 > 3%，立即启动融资',
+        '同步准备 Plan B：接受更低估值，优先保证 runway',
+        '考虑战略融资：找行业客户做战略投资人，降低对财务投资人依赖'
+      ]
+    },
+    {
+      risk: '投资人认为增长不够快',
+      level: '中',
+      probability: '高',
+      impact: '高',
+      mitigation: [
+        '用 LTV/CAC = 3.75 反驳：增长质量比速度更重要',
+        '展示留存改善趋势：从 5% 降到 2% 是 60% 的改善',
+        '对比行业基准：B2B SaaS 早期月增长 10-15% 是正常的'
+      ]
+    },
+    {
+      risk: '竞争对手（飞书/钉钉）进入市场',
+      level: '中',
+      probability: '高',
+      impact: '中',
+      mitigation: [
+        '聚焦垂直行业（如法律、咨询、金融），大厂不会精耕',
+        '强调定制化和服务：大厂做标准品，你做深度定制',
+        '加速建立客户壁垒：数据迁移成本 + 工作流集成'
+      ]
+    },
+    {
+      risk: '核心团队流失',
+      level: '低',
+      probability: '低',
+      impact: '极高',
+      mitigation: [
+        '融资前完成期权池设计，给核心成员 4 年 vesting',
+        '明确联合创始人股权和角色分工',
+        '建立文化和使命感，不只靠薪资留人'
+      ]
+    }
+  ]
+};
+
+const FUNDRAISING_REPORT_DATA = {
+  title: 'YC Office Hours 融资诊断报告',
+  subtitle: 'B2B SaaS 知识管理平台 · Pre-A 轮融资策略',
+  date: '2026年5月3日',
+  founder: '创始人（B2B SaaS）',
+  scenario: '融资准备与策略',
+
+  executive_summary: {
+    verdict: '⚠️ 现在融资时机不成熟，建议等 3 个月',
+    confidence: '80%',
+    key_insights: [
+      '核心问题：月流失率 5% 太高，年化流失 46%，投资人会质疑 PMF',
+      '单位经济健康：LTV/CAC = 3.75，高于行业基准（>3），这是优势',
+      '正确策略：先花 3 个月把流失率降到 2%，再融资估值高 50%',
+      '风险对冲：账上 6 个月现金，3 个月优化 + 3 个月融资，时间刚好够'
+    ],
+    recommendation: '3 个月留存优化计划 → 达标后启动融资，目标估值 2000-3000 万美元'
+  },
+
+  current_metrics: [
+    { metric: '付费客户数', value: '15 个', status: '待提升' },
+    { metric: '月收入 (MRR)', value: '8 万元', status: '健康' },
+    { metric: '月流失率', value: '5%', status: '⚠️ 过高' },
+    { metric: '年化流失率', value: '46%', status: '⚠️ 危险' },
+    { metric: 'LTV/CAC', value: '3.75', status: '✅ 健康' },
+    { metric: '现金 Runway', value: '6 个月', status: '⚠️ 紧张' }
+  ],
+
+  target_metrics: [
+    { metric: '月流失率', current: '5%', target: '< 2%', deadline: '第 3 个月' },
+    { metric: '月收入增长', current: '未知', target: '> 15%/月', deadline: '第 2 个月' },
+    { metric: '标杆客户数', current: '3-4 个', target: '≥ 5 个', deadline: '第 3 个月' },
+    { metric: 'NPS', current: '未测', target: '> 50', deadline: '第 1 个月' }
+  ],
+
+  investor_targeting: {
+    tier1: ['红杉中国', '高瓴创投', 'GGV 纪源资本', '经纬中国'],
+    tier2: ['真格基金', '险峰长青', '源码资本', '光速中国'],
+    tier3: ['梅花创投', '明势资本', '云启资本', '线性资本'],
+    strategy: '通过 YC 校友网络和现有投资人介绍，优先获取 Tier 1 的温热 intro'
+  },
+
+  valuation_model: {
+    method: 'ARR 倍数法（B2B SaaS 主流）',
+    current_arr: '96 万元（8万×12）',
+    target_arr_3m: '约 140 万元（月增 15%）',
+    market_multiple: '15-25x ARR（早期 B2B SaaS）',
+    pre_money_range: '2100-3500 万元（约 300-500 万美元）',
+    post_money: '融 600 万美元后，估值 900-1100 万美元',
+    dilution: '约 35-40%（Pre-A 正常范围）'
+  },
+
+  execution_roadmap: FUNDRAISING_PLAN_DATA,
+  risk_assessment: FUNDRAISING_RISKS_DATA,
+
+  decision_framework: {
+    go_criteria: [
+      '月流失率 < 2%（核心指标）',
+      '月收入增长连续 2 个月 > 15%',
+      '有 5 个以上重度用户（NPS > 60）',
+      '账上现金 ≥ 3 个月 runway'
+    ],
+    no_go_criteria: [
+      '第 6 周流失率仍 > 3% → 立即启动融资，接受低估值',
+      '现金 < 3 个月 → 立即启动融资，不等了',
+      '核心团队有离职风险 → 先解决团队问题'
+    ],
+    pivot_options: [
+      '如果 C 端留存难做 → 聚焦 1-2 个垂直行业，做深度定制',
+      '如果融资困难 → 考虑战略融资（行业客户投资）',
+      '如果增长停滞 → 考虑并购小竞争对手，快速扩大规模'
+    ]
+  },
+
+  next_actions: {
+    this_week: [
+      '约谈 3-4 个重度用户，做 1 小时深度访谈',
+      '统计每个功能的使用率，找出核心功能',
+      '设计客户健康度评分系统（使用频率 + 功能深度 + 支付状态）',
+      '给 5 个高风险流失客户发邮件，主动介入'
+    ],
+    this_month: [
+      '第 1 周：完成用户访谈，确定核心价值点',
+      '第 2 周：上线客户成功流程，开始监控健康度',
+      '第 3 周：砍掉低使用率功能，简化产品',
+      '第 4 周：测量流失率改善，决定是否继续'
+    ],
+    this_quarter: [
+      '3 个月后达到融资标准 → 启动路演',
+      '准备数据室和 BP（第 3 个月开始）',
+      '通过网络获取 10-15 个投资人 intro',
+      '目标：3 个月内完成 Term Sheet'
+    ]
+  },
+
+  founder_signals: [
+    { signal: 'unit_economics', label: 'LTV/CAC = 3.75，财务健康', strength: '强' },
+    { signal: 'self_aware', label: '清楚知道流失率是核心问题', strength: '强' },
+    { signal: 'cash_discipline', label: '账上有 6 个月现金，不慌', strength: '中' },
+    { signal: 'b2b_focus', label: 'B2B 模式，客单价高', strength: '强' },
+    { signal: 'willing_to_wait', label: '愿意等 3 个月换更好条款', strength: '强' }
+  ],
+
+  yc_verdict: {
+    rating: '⭐⭐⭐⭐',
+    summary: '产品有真实需求，单位经济健康，但流失率是致命伤。现在融资会拿到很差的条款。3 个月专注留存，再融资会是完全不同的故事。',
+    would_invest: '3 个月后是',
+    estimated_valuation: '达标后 Pre-A 估值 300-500 万美元'
+  }
+};
+const ALTERNATIVES_DATA = {
+  title: '三个可选方案',
+  options: [
+    {
+      name: '方案 A · 人工咨询服务',
+      cost: '0 元',
+      time: '1 周启动',
+      risk: '极低',
+      revenue: '2000元/月（20用户×99元）',
+      pros: ['零启动成本', '立即验证需求', '积累用户数据', '建立信任关系'],
+      cons: ['不可扩展', '时间换收入', '天花板明显'],
+      recommended: true
+    },
+    {
+      name: '方案 B · AI 分诊平台',
+      cost: '50-100 万',
+      time: '6-12 个月',
+      risk: '高',
+      revenue: '未知',
+      pros: ['可扩展', '技术壁垒', '想象空间大'],
+      cons: ['投入巨大', '需求未验证', '技术风险高', '法律风险'],
+      recommended: false
+    },
+    {
+      name: '方案 C · B2B 医院工具',
+      cost: '20-30 万',
+      time: '3-6 个月',
+      risk: '中',
+      revenue: '5-10万/年/客户',
+      pros: ['客单价高', '粘性强', '现金流好'],
+      cons: ['销售周期长', '决策链复杂', '定制化重'],
+      recommended: false
+    }
+  ]
+};
+
+const EXECUTION_PLAN = {
+  title: '4 周执行计划',
+  weeks: [
+    {
+      week: 1,
+      phase: '验证阶段',
+      goal: '3 个付费用户',
+      tasks: [
+        '联系李梅及 5 个高频提问用户，一对一沟通付费意愿',
+        '设计服务流程：响应时间、服务范围、免责声明',
+        '开通收款方式（微信支付/支付宝）',
+        '在 1 个微信群发布付费咨询服务公告'
+      ],
+      metrics: ['付费转化率 > 30%', '平均响应时间 < 5 分钟', '用户满意度 > 4/5']
+    },
+    {
+      week: 2,
+      phase: '扩张阶段',
+      goal: '10 个付费用户',
+      tasks: [
+        '在另外 2 个微信群发布服务',
+        '收集前 3 个用户的反馈，优化服务流程',
+        '记录所有问题和回答，建立知识库',
+        '测试不同定价（99元 vs 149元）'
+      ],
+      metrics: ['月收入 > 1000 元', '用户留存率 > 80%', '推荐率 > 50%']
+    },
+    {
+      week: 3,
+      phase: '优化阶段',
+      goal: '20 个付费用户',
+      tasks: [
+        '分析常见问题类型，制作标准回复模板',
+        '优化响应流程，提高效率',
+        '收集用户案例和好评，用于后续推广',
+        '评估是否需要 AI 辅助工具'
+      ],
+      metrics: ['月收入 > 2000 元', '平均响应时间 < 3 分钟', 'NPS > 50']
+    },
+    {
+      week: 4,
+      phase: '决策阶段',
+      goal: '数据分析与下一步决策',
+      tasks: [
+        '分析 4 周数据：付费率、留存率、问题类型分布',
+        '计算单位经济模型：CAC、LTV、服务成本',
+        '决策：继续人工 vs 开发 AI 工具 vs 转向 B2B',
+        '如果验证成功，开始准备融资材料'
+      ],
+      metrics: ['总收入 > 2000 元', '用户数 ≥ 20', '月流失率 < 10%']
+    }
+  ]
+};
+
+const RISKS_DATA = {
+  title: '风险评估与应对',
+  risks: [
+    {
+      risk: 'AI 误判导致医疗事故',
+      level: '高',
+      probability: '中',
+      impact: '极高',
+      mitigation: [
+        '定位为"辅助判断工具"，不做诊断',
+        '所有建议加免责声明',
+        '建议就医的阈值设置保守',
+        '购买职业责任保险'
+      ],
+      cost: '5000-10000 元/年（保险费）'
+    },
+    {
+      risk: '用户付费意愿不足',
+      level: '中',
+      probability: '中',
+      impact: '高',
+      mitigation: [
+        '先做 20 个用户验证，付费率 < 30% 则调整',
+        '提供 7 天免费试用',
+        '按次收费（29元/次）作为备选方案',
+        '强调价值：省 300-800 元就诊费'
+      ],
+      cost: '0 元（调整策略）'
+    },
+    {
+      risk: '人工服务不可扩展',
+      level: '中',
+      probability: '高',
+      impact: '中',
+      mitigation: [
+        '记录常见问题，3 个月后用 AI 辅助',
+        '制作标准回复模板，提高效率',
+        '20 个用户是上限，达到后停止扩张',
+        '用数据训练 AI 模型，逐步替代人工'
+      ],
+      cost: '10-20 万（AI 开发）'
+    },
+    {
+      risk: '竞争对手抄袭',
+      level: '低',
+      probability: '高',
+      impact: '中',
+      mitigation: [
+        '兽医执照是护城河（竞品难复制）',
+        '微信群信任关系需 3-6 个月建立',
+        '快速积累用户数据和案例',
+        '建立品牌和口碑'
+      ],
+      cost: '0 元（时间壁垒）'
+    }
+  ]
+};
+
+const FINAL_REPORT = {
+  title: 'YC Office Hours 完整诊断报告',
+  subtitle: 'PetCare AI 分诊助手 · Pre-Product 阶段',
+  date: '2026年5月3日',
+  founder: '张明（8年兽医经验）',
+  scenario: 'Pre-Product 需求验证',
+
+  executive_summary: {
+    verdict: '✅ 需求真实，值得做',
+    confidence: '85%',
+    key_insights: [
+      '真实需求：用户主动找你，催你回复 → 需求真实',
+      '价值锚点：每次不必要就诊 300-800 元 → 付费意愿强',
+      '核心资产：800 人微信群 + 兽医执照 → 获客成本为零',
+      '最大风险：法律责任 → 定位为辅助工具可规避'
+    ],
+    recommendation: '立即启动方案 A（人工咨询），4 周内验证需求，再决定是否开发产品'
+  },
+
+  problem_analysis: {
+    core_problem: '宠物主人无法判断症状是否需要就医',
+    pain_points: [
+      '不确定性焦虑：不知道是小问题还是大问题',
+      '经济损失：40% 就诊为不必要，浪费 300-800 元/次',
+      '时间成本：每次就诊 2-3 小时',
+      '信息不对称：网上信息不可靠，无法判断'
+    ],
+    market_size: '中国宠物主人 1.2 亿，年均就诊 2.8 次，市场规模约 420 亿元',
+    target_user: '李梅（35岁，上海 HR，老年宠物主人，年花费 5000-8000 元）'
+  },
+
+  solution_design: {
+    positioning: '宠物分诊助手（不是 AI 医生）',
+    value_proposition: '3 分钟内判断"要不要去医院"，省掉不必要就诊',
+    pricing: '99 元/月，无限次问答',
+    distribution: '微信群（800 人，零获客成本）',
+    moat: '兽医执照 + 微信群信任关系 + 领域专业知识'
+  },
+
+  financial_model: {
+    unit_economics: [
+      { metric: '客单价', value: '99 元/月 = 1188 元/年' },
+      { metric: 'CAC', value: '0 元（微信群）' },
+      { metric: 'LTV', value: '1188 元 × 18 个月 = 2138 元' },
+      { metric: 'LTV/CAC', value: '∞（CAC=0）' },
+      { metric: '毛利率', value: '95%（人工成本极低）' }
+    ],
+    revenue_projection: [
+      { month: 1, users: 10, revenue: 990, cost: 0, profit: 990 },
+      { month: 2, users: 20, revenue: 1980, cost: 0, profit: 1980 },
+      { month: 3, users: 20, revenue: 1980, cost: 0, profit: 1980 },
+      { month: 6, users: 20, revenue: 1980, cost: 0, profit: 1980 }
+    ],
+    breakeven: '第 1 个月（零成本）'
+  },
+
+  execution_roadmap: EXECUTION_PLAN,
+
+  risk_assessment: RISKS_DATA,
+
+  decision_framework: {
+    go_criteria: [
+      '第 2 周付费转化率 ≥ 30%',
+      '第 3 周用户留存率 ≥ 80%',
+      '第 4 周月收入 ≥ 2000 元'
+    ],
+    no_go_criteria: [
+      '付费转化率 < 20%',
+      '用户留存率 < 60%',
+      '用户满意度 < 3.5/5'
+    ],
+    pivot_options: [
+      '如果付费意愿低 → 改为按次收费（29元/次）',
+      '如果服务成本高 → 开发 AI 辅助工具',
+      '如果 C 端难做 → 转向 B2B 医院工具'
+    ]
+  },
+
+  next_actions: {
+    this_week: [
+      '联系李梅，问她愿意为"随时问兽医"付多少钱',
+      '如果她说愿意，立即收款，开始服务',
+      '在 1 个微信群发布付费咨询服务公告',
+      '设计服务流程和免责声明'
+    ],
+    this_month: [
+      '第 1 周：3 个付费用户',
+      '第 2 周：10 个付费用户',
+      '第 3 周：20 个付费用户',
+      '第 4 周：数据分析与决策'
+    ],
+    this_quarter: [
+      '如果验证成功 → 开发 AI 辅助工具',
+      '如果验证失败 → Pivot 或放弃',
+      '如果增长强劲 → 准备融资'
+    ]
+  },
+
+  founder_signals: [
+    { signal: 'named_users', label: '有具体用户（李梅等）', strength: '强' },
+    { signal: 'domain_expertise', label: '8 年兽医执照', strength: '强' },
+    { signal: 'fast_update', label: '接受分诊定位', strength: '中' },
+    { signal: 'narrowest_wedge', label: '微信群切入', strength: '强' },
+    { signal: 'paying_customers', label: '用户催你回复', strength: '强' },
+    { signal: 'founder_market_fit', label: '创始人=专家', strength: '强' }
+  ],
+
+  yc_verdict: {
+    rating: '⭐⭐⭐⭐⭐',
+    summary: '这是一个教科书级别的 Pre-Product 项目：真实需求、零成本验证、清晰切入点、强护城河。唯一的问题是扩展性，但这可以在验证需求后再解决。',
+    would_invest: '是',
+    estimated_valuation: '如果 4 周验证成功，Pre-seed 估值 300-500 万美元'
+  }
+};
+
+// React 组件
+function renderText(t) {
+  return t.split('\n').map((line, i, arr) => {
+    const parts = line.split(/\*\*(.*?)\*\*/g);
+    return (
+      <span key={i}>
+        {parts.map((p, j) => j % 2 === 1 ? <strong key={j}>{p}</strong> : p)}
+        {i < arr.length - 1 && <br />}
+      </span>
+    );
+  });
+}
+
+// 场景选择卡片
+function ScenarioCard({ scenario, onSelect }) {
+  return (
+    <div onClick={() => onSelect(scenario.id)}
+      className="scenario-card rounded-2xl p-6 cursor-pointer"
+      style={{background:'#1a1a1a', border:'2px solid #2d2d2d'}}>
+      <div className="text-4xl mb-3">{scenario.icon}</div>
+      <div className="text-lg font-bold text-white mb-2">{scenario.title}</div>
+      <div className="text-sm text-gray-400 mb-3">{scenario.desc}</div>
+      <div className="flex flex-wrap gap-2 mb-3">
+        {scenario.tags.map((tag, i) => (
+          <span key={i} className="text-xs px-2 py-1 rounded-full"
+            style={{background:'#2d2d2d', color:'#f97316'}}>
+            {tag}
+          </span>
+        ))}
+      </div>
+      <div className="text-xs text-gray-500">示例：{scenario.example}</div>
+    </div>
+  );
+}
+
+// 方案对比卡片
+function AlternativesCard() {
+  const [show, setShow] = useState(false);
+  useEffect(() => { setTimeout(() => setShow(true), 300); }, []);
+  if (!show) return null;
+
+  return (
+    <div className="card-in rounded-2xl overflow-hidden mt-2" style={{maxWidth:'720px', border:'2px solid #f97316'}}>
+      <div className="px-5 py-4 text-white" style={{background:'linear-gradient(135deg,#f97316,#ea580c)'}}>
+        <div className="text-xs font-semibold opacity-80 mb-1">方案对比分析</div>
+        <div className="font-black text-lg">{ALTERNATIVES_DATA.title}</div>
+      </div>
+      <div className="p-5 space-y-3" style={{background:'#1e1e1e'}}>
+        {ALTERNATIVES_DATA.options.map((opt, i) => (
+          <div key={i} className="rounded-xl p-4"
+            style={{
+              background: opt.recommended ? '#14532d' : '#2d2d2d',
+              border: opt.recommended ? '2px solid #22c55e' : '1px solid #333'
+            }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-bold text-white">{opt.name}</div>
+              {opt.recommended && (
+                <span className="text-xs px-2 py-1 rounded-full font-semibold"
+                  style={{background:'#22c55e', color:'white'}}>
+                  ✓ 推荐
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
+              <div><span className="text-gray-400">成本：</span><span className="text-white font-semibold">{opt.cost}</span></div>
+              <div><span className="text-gray-400">周期：</span><span className="text-white font-semibold">{opt.time}</span></div>
+              <div><span className="text-gray-400">风险：</span><span className="text-white font-semibold">{opt.risk}</span></div>
+              <div><span className="text-gray-400">收入：</span><span className="text-white font-semibold">{opt.revenue}</span></div>
+            </div>
+            <div className="space-y-1 mb-2">
+              <div className="text-xs font-semibold" style={{color:'#22c55e'}}>优势：</div>
+              {opt.pros.map((pro, j) => (
+                <div key={j} className="text-xs text-gray-300">✓ {pro}</div>
+              ))}
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs font-semibold" style={{color:'#ef4444'}}>劣势：</div>
+              {opt.cons.map((con, j) => (
+                <div key={j} className="text-xs text-gray-300">✗ {con}</div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 执行计划卡片
+function ExecutionCard() {
+  const [show, setShow] = useState(false);
+  const [activeWeek, setActiveWeek] = useState(0);
+  useEffect(() => { setTimeout(() => setShow(true), 300); }, []);
+  if (!show) return null;
+
+  return (
+    <div className="card-in rounded-2xl overflow-hidden mt-2" style={{maxWidth:'720px', border:'2px solid #3b82f6'}}>
+      <div className="px-5 py-4 text-white" style={{background:'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>
+        <div className="text-xs font-semibold opacity-80 mb-1">执行路线图</div>
+        <div className="font-black text-lg">{EXECUTION_PLAN.title}</div>
+      </div>
+      <div className="flex border-b" style={{background:'#1a1a1a', borderColor:'#2d2d2d'}}>
+        {EXECUTION_PLAN.weeks.map((week, i) => (
+          <button key={i} onClick={() => setActiveWeek(i)}
+            className="flex-1 px-4 py-3 text-xs font-semibold transition-all"
+            style={activeWeek === i
+              ? {color:'#3b82f6', borderBottom:'2px solid #3b82f6'}
+              : {color:'#6b7280'}}>
+            第{week.week}周
+          </button>
+        ))}
+      </div>
+      <div className="p-5" style={{background:'#1e1e1e'}}>
+        {EXECUTION_PLAN.weeks.map((week, i) => activeWeek === i && (
+          <div key={i} className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="text-xs px-3 py-1 rounded-full font-bold"
+                style={{background:'#3b82f6', color:'white'}}>
+                {week.phase}
+              </span>
+              <span className="text-sm font-semibold text-white">目标：{week.goal}</span>
+            </div>
+            <div>
+              <div className="text-xs font-bold mb-2" style={{color:'#3b82f6'}}>核心任务</div>
+              <div className="space-y-2">
+                {week.tasks.map((task, j) => (
+                  <div key={j} className="flex items-start gap-2 text-sm text-gray-300">
+                    <span style={{color:'#3b82f6'}}>•</span>
+                    <span>{task}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-bold mb-2" style={{color:'#22c55e'}}>关键指标</div>
+              <div className="space-y-1">
+                {week.metrics.map((metric, j) => (
+                  <div key={j} className="text-xs px-3 py-2 rounded-lg"
+                    style={{background:'#2d2d2d', color:'#22c55e'}}>
+                    ✓ {metric}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 风险评估卡片
+function RisksCard() {
+  const [show, setShow] = useState(false);
+  useEffect(() => { setTimeout(() => setShow(true), 300); }, []);
+  if (!show) return null;
+
+  return (
+    <div className="card-in rounded-2xl overflow-hidden mt-2" style={{maxWidth:'720px', border:'2px solid #ef4444'}}>
+      <div className="px-5 py-4 text-white" style={{background:'linear-gradient(135deg,#ef4444,#dc2626)'}}>
+        <div className="text-xs font-semibold opacity-80 mb-1">风险管理</div>
+        <div className="font-black text-lg">{RISKS_DATA.title}</div>
+      </div>
+      <div className="p-5 space-y-3" style={{background:'#1e1e1e'}}>
+        {RISKS_DATA.risks.map((risk, i) => (
+          <div key={i} className="rounded-xl p-4" style={{background:'#2d2d2d', border:'1px solid #ef4444'}}>
+            <div className="flex items-start gap-3 mb-3">
+              <span className="text-2xl">⚠️</span>
+              <div className="flex-1">
+                <div className="font-bold text-white mb-1">{risk.risk}</div>
+                <div className="flex gap-2 text-xs">
+                  <span className="px-2 py-0.5 rounded" style={{background:'#7f1d1d', color:'#fca5a5'}}>
+                    风险等级：{risk.level}
+                  </span>
+                  <span className="px-2 py-0.5 rounded" style={{background:'#422006', color:'#fbbf24'}}>
+                    概率：{risk.probability}
+                  </span>
+                  <span className="px-2 py-0.5 rounded" style={{background:'#7c2d12', color:'#fb923c'}}>
+                    影响：{risk.impact}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="mb-2">
+              <div className="text-xs font-semibold mb-1" style={{color:'#22c55e'}}>应对策略：</div>
+              <div className="space-y-1">
+                {risk.mitigation.map((m, j) => (
+                  <div key={j} className="text-xs text-gray-300 flex items-start gap-2">
+                    <span style={{color:'#22c55e'}}>✓</span>
+                    <span>{m}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="text-xs text-gray-400">预算：{risk.cost}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 下载融资报告
+function downloadFundraisingReport(report) {
+  const rows = (arr) => arr.map(x => `<li>${x}</li>`).join('');
+  const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>${report.title}</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#e5e7eb;margin:0;padding:24px}
+  .wrap{max-width:900px;margin:0 auto}
+  h1{color:#3b82f6;font-size:2rem;margin-bottom:4px}
+  h2{color:#3b82f6;font-size:1.1rem;margin:28px 0 10px;border-bottom:1px solid #2d2d2d;padding-bottom:6px}
+  h3{color:#60a5fa;font-size:.95rem;margin:16px 0 6px}
+  .meta{color:#6b7280;font-size:.85rem;margin-bottom:24px}
+  .verdict{background:#422006;border:2px solid #fbbf24;border-radius:12px;padding:16px 20px;margin-bottom:20px}
+  .verdict .label{color:#fbbf24;font-weight:700;font-size:1.1rem}
+  .card{background:#1e1e1e;border:1px solid #2d2d2d;border-radius:10px;padding:14px 18px;margin-bottom:12px}
+  .card.blue{border-color:#3b82f6}
+  .card.red{border-color:#ef4444}
+  .card.green{border-color:#22c55e;background:#14532d}
+  .card.yellow{border-color:#fbbf24;background:#422006}
+  ul{margin:6px 0;padding-left:20px;line-height:1.8}
+  li{color:#d1d5db;font-size:.9rem}
+  table{width:100%;border-collapse:collapse;margin:10px 0}
+  th{background:#2d2d2d;color:#9ca3af;font-size:.8rem;padding:8px 12px;text-align:left}
+  td{padding:8px 12px;border-bottom:1px solid #2d2d2d;font-size:.9rem}
+  .tag{display:inline-block;background:#2d2d2d;color:#3b82f6;border:1px solid #3b82f6;border-radius:6px;padding:3px 10px;font-size:.75rem;margin:3px}
+  .footer{margin-top:40px;padding-top:16px;border-top:1px solid #2d2d2d;color:#4b5563;font-size:.8rem;text-align:center}
+  @media print{body{background:#fff;color:#111}.card{border:1px solid #ccc;background:#f9f9f9}h1,h2{color:#2563eb}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>${report.title}</h1>
+  <div class="meta">${report.subtitle} &nbsp;·&nbsp; 日期：${report.date}</div>
+
+  <h2>核心结论</h2>
+  <div class="verdict">
+    <div class="label">${report.executive_summary.verdict}</div>
+    <ul>${rows(report.executive_summary.key_insights)}</ul>
+    <p style="color:#d1d5db;margin:8px 0 0"><strong>推荐行动：</strong>${report.executive_summary.recommendation}</p>
+  </div>
+  <div class="card blue">
+    <strong style="color:#3b82f6">YC 评估</strong>
+    <p style="margin:8px 0">${report.yc_verdict.summary}</p>
+    <span>是否投资：<strong style="color:#fbbf24">${report.yc_verdict.would_invest}</strong></span> &nbsp;&nbsp;
+    <span>目标估值：<strong style="color:#22c55e">${report.yc_verdict.estimated_valuation}</strong></span>
+  </div>
+
+  <h2>当前指标 vs 目标指标</h2>
+  <table>
+    <tr><th>指标</th><th>当前值</th><th>状态</th></tr>
+    ${report.current_metrics.map(m => `<tr><td>${m.metric}</td><td>${m.value}</td><td>${m.status}</td></tr>`).join('')}
+  </table>
+  <h3>3 个月目标</h3>
+  <table>
+    <tr><th>指标</th><th>当前</th><th>目标</th><th>截止</th></tr>
+    ${report.target_metrics.map(m => `<tr><td>${m.metric}</td><td style="color:#f87171">${m.current}</td><td style="color:#4ade80">${m.target}</td><td>${m.deadline}</td></tr>`).join('')}
+  </table>
+
+  <h2>估值模型</h2>
+  <div class="card yellow">
+    <strong style="color:#fbbf24">方法：${report.valuation_model.method}</strong>
+    <table style="margin-top:10px">
+      ${[['当前 ARR', report.valuation_model.current_arr],['3个月后 ARR', report.valuation_model.target_arr_3m],['市场倍数', report.valuation_model.market_multiple],['Pre-money 区间', report.valuation_model.pre_money_range],['融资后估值', report.valuation_model.post_money],['稀释比例', report.valuation_model.dilution]].map(([k,v]) => `<tr><td style="color:#9ca3af">${k}</td><td style="color:#e5e7eb;font-weight:600">${v}</td></tr>`).join('')}
+    </table>
+  </div>
+
+  <h2>投资人策略</h2>
+  <div class="card blue"><p>${report.investor_targeting.strategy}</p>
+    <p><strong>Tier 1：</strong>${report.investor_targeting.tier1.join(' / ')}</p>
+    <p><strong>Tier 2：</strong>${report.investor_targeting.tier2.join(' / ')}</p>
+    <p><strong>Tier 3：</strong>${report.investor_targeting.tier3.join(' / ')}</p>
+  </div>
+
+  <h2>3 个月执行计划</h2>
+  ${report.execution_roadmap.milestones.map(m => `
+    <div class="card blue">
+      <strong style="color:#60a5fa">${m.month} · ${m.phase}</strong> — 目标：${m.goal}
+      <ul>${rows(m.tasks)}</ul>
+      <div>${m.metrics.map(x => `<span class="tag">${x}</span>`).join('')}</div>
+    </div>`).join('')}
+
+  <h2>风险评估</h2>
+  ${report.risk_assessment.risks.map(r => `
+    <div class="card red">
+      <strong style="color:#fca5a5">⚠ ${r.risk}</strong>
+      <span style="font-size:.8rem;color:#9ca3af"> 等级:${r.level} / 概率:${r.probability} / 影响:${r.impact}</span>
+      <ul>${rows(r.mitigation)}</ul>
+    </div>`).join('')}
+
+  <h2>决策框架</h2>
+  <div class="card green"><strong>GO 标准（3个月后融资）：</strong><ul>${rows(report.decision_framework.go_criteria)}</ul></div>
+  <div class="card red"><strong>NO-GO 标准（立即融资）：</strong><ul>${rows(report.decision_framework.no_go_criteria)}</ul></div>
+  <div class="card"><strong>Pivot 选项：</strong><ul>${rows(report.decision_framework.pivot_options)}</ul></div>
+
+  <h2>下一步行动</h2>
+  <div class="card blue"><strong style="color:#60a5fa">本周（立即执行）：</strong><ul>${rows(report.next_actions.this_week)}</ul></div>
+  <div class="card"><strong>本月里程碑：</strong><ul>${rows(report.next_actions.this_month)}</ul></div>
+  <div class="card"><strong>本季度目标：</strong><ul>${rows(report.next_actions.this_quarter)}</ul></div>
+
+  <div class="footer">由 YC Office Hours 专业创业问答平台生成 · ${report.date} · 可直接打印或分享给投资人</div>
+</div>
+</body>
+</html>`;
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `YC-融资诊断报告-${report.date}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// 下载报告为独立 HTML 文件
+function downloadReport(report) {
+  const rows = (arr) => arr.map(x => `<li>${x}</li>`).join('');
+  const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>${report.title}</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#e5e7eb;margin:0;padding:24px}
+  .wrap{max-width:900px;margin:0 auto}
+  h1{color:#f97316;font-size:2rem;margin-bottom:4px}
+  h2{color:#f97316;font-size:1.1rem;margin:28px 0 10px;border-bottom:1px solid #2d2d2d;padding-bottom:6px}
+  h3{color:#60a5fa;font-size:.95rem;margin:16px 0 6px}
+  .meta{color:#6b7280;font-size:.85rem;margin-bottom:24px}
+  .verdict{background:#14532d;border:2px solid #22c55e;border-radius:12px;padding:16px 20px;margin-bottom:20px}
+  .verdict .label{color:#22c55e;font-weight:700;font-size:1.1rem}
+  .card{background:#1e1e1e;border:1px solid #2d2d2d;border-radius:10px;padding:14px 18px;margin-bottom:12px}
+  .card.orange{border-color:#f97316}
+  .card.blue{border-color:#3b82f6}
+  .card.red{border-color:#ef4444}
+  .card.green{border-color:#22c55e;background:#14532d}
+  ul{margin:6px 0;padding-left:20px;line-height:1.8}
+  li{color:#d1d5db;font-size:.9rem}
+  table{width:100%;border-collapse:collapse;margin:10px 0}
+  th{background:#2d2d2d;color:#9ca3af;font-size:.8rem;padding:8px 12px;text-align:left}
+  td{padding:8px 12px;border-bottom:1px solid #2d2d2d;font-size:.9rem}
+  .tag{display:inline-block;background:#2d2d2d;color:#f97316;border:1px solid #f97316;border-radius:6px;padding:3px 10px;font-size:.75rem;margin:3px}
+  .tag.green{color:#22c55e;border-color:#22c55e;background:#14532d}
+  .tag.red{color:#fca5a5;border-color:#ef4444;background:#7f1d1d}
+  .footer{margin-top:40px;padding-top:16px;border-top:1px solid #2d2d2d;color:#4b5563;font-size:.8rem;text-align:center}
+  @media print{body{background:#fff;color:#111}.card{border:1px solid #ccc;background:#f9f9f9}h1,h2{color:#ea580c}.verdict{background:#f0fdf4;border-color:#22c55e}.verdict .label{color:#16a34a}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>${report.title}</h1>
+  <div class="meta">${report.subtitle} &nbsp;·&nbsp; 创始人：${report.founder} &nbsp;·&nbsp; 日期：${report.date} &nbsp;·&nbsp; 场景：${report.scenario}</div>
+
+  <h2>核心结论</h2>
+  <div class="verdict">
+    <div class="label">${report.executive_summary.verdict} &nbsp; 置信度：${report.executive_summary.confidence}</div>
+    <ul>${rows(report.executive_summary.key_insights)}</ul>
+    <p style="color:#d1d5db;margin:8px 0 0"><strong>推荐行动：</strong>${report.executive_summary.recommendation}</p>
+  </div>
+  <div class="card orange">
+    <strong style="color:#f97316">YC 投资意向</strong><br>
+    <p style="margin:8px 0">${report.yc_verdict.summary}</p>
+    <span>是否投资：<strong style="color:#22c55e">${report.yc_verdict.would_invest}</strong></span> &nbsp;&nbsp;
+    <span>估值：<strong style="color:#fbbf24">${report.yc_verdict.estimated_valuation}</strong></span>
+  </div>
+  <div>
+    <h3>创始人信号</h3>
+    ${report.founder_signals.map(s => `<span class="tag ${s.strength==='强'?'green':''}">${s.signal} · ${s.label}</span>`).join('')}
+  </div>
+
+  <h2>问题分析</h2>
+  <div class="card"><strong style="color:#f97316">核心问题：</strong>${report.problem_analysis.core_problem}</div>
+  <div class="card red"><strong style="color:#fca5a5">痛点：</strong><ul>${rows(report.problem_analysis.pain_points)}</ul></div>
+  <div class="card"><strong style="color:#60a5fa">市场规模：</strong>${report.problem_analysis.market_size}</div>
+  <div class="card"><strong style="color:#60a5fa">目标用户：</strong>${report.problem_analysis.target_user}</div>
+
+  <h2>解决方案设计</h2>
+  <table>
+    <tr><th>维度</th><th>内容</th></tr>
+    <tr><td>产品定位</td><td>${report.solution_design.positioning}</td></tr>
+    <tr><td>价值主张</td><td>${report.solution_design.value_proposition}</td></tr>
+    <tr><td>定价策略</td><td>${report.solution_design.pricing}</td></tr>
+    <tr><td>分发渠道</td><td>${report.solution_design.distribution}</td></tr>
+    <tr><td>护城河</td><td>${report.solution_design.moat}</td></tr>
+  </table>
+
+  <h2>财务模型</h2>
+  <h3>单位经济</h3>
+  <table>
+    <tr><th>指标</th><th>数值</th></tr>
+    ${report.financial_model.unit_economics.map(r => `<tr><td>${r.metric}</td><td>${r.value}</td></tr>`).join('')}
+  </table>
+  <h3>收入预测</h3>
+  <table>
+    <tr><th>月份</th><th>用户数</th><th>收入</th><th>成本</th><th>利润</th></tr>
+    ${report.financial_model.revenue_projection.map(r => `<tr><td>第${r.month}月</td><td>${r.users}</td><td style="color:#4ade80">${r.revenue}</td><td style="color:#f87171">${r.cost}</td><td style="color:#fbbf24">${r.profit}</td></tr>`).join('')}
+  </table>
+  <div class="card green"><strong>盈亏平衡点：</strong>${report.financial_model.breakeven}</div>
+
+  <h2>执行路线图</h2>
+  ${report.execution_roadmap.weeks.map(w => `
+    <div class="card blue">
+      <strong style="color:#60a5fa">第${w.week}周 · ${w.phase}</strong> &nbsp; 目标：${w.goal}
+      <ul>${rows(w.tasks)}</ul>
+      <div>${w.metrics.map(m => `<span class="tag green">${m}</span>`).join('')}</div>
+    </div>`).join('')}
+
+  <h2>风险评估</h2>
+  ${report.risk_assessment.risks.map(r => `
+    <div class="card red">
+      <strong style="color:#fca5a5">⚠ ${r.risk}</strong>
+      <span class="tag red">等级:${r.level}</span>
+      <span class="tag">概率:${r.probability}</span>
+      <span class="tag">影响:${r.impact}</span>
+      <ul>${rows(r.mitigation)}</ul>
+      <div style="color:#6b7280;font-size:.8rem">预算：${r.cost}</div>
+    </div>`).join('')}
+
+  <h2>决策框架</h2>
+  <div class="card green"><strong>GO 标准：</strong><ul>${rows(report.decision_framework.go_criteria)}</ul></div>
+  <div class="card red"><strong>NO-GO 标准：</strong><ul>${rows(report.decision_framework.no_go_criteria)}</ul></div>
+  <div class="card"><strong>Pivot 选项：</strong><ul>${rows(report.decision_framework.pivot_options)}</ul></div>
+
+  <h2>下一步行动</h2>
+  <div class="card orange"><strong style="color:#f97316">本周（立即执行）：</strong><ul>${rows(report.next_actions.this_week)}</ul></div>
+  <div class="card blue"><strong style="color:#60a5fa">本月里程碑：</strong><ul>${rows(report.next_actions.this_month)}</ul></div>
+  <div class="card"><strong style="color:#a78bfa">本季度目标：</strong><ul>${rows(report.next_actions.this_quarter)}</ul></div>
+
+  <div class="footer">由 YC Office Hours 专业创业问答平台生成 · ${report.date} · 可直接打印或分享给投资人</div>
+</div>
+</body>
+</html>`;
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `YC-Office-Hours-报告-${report.founder}-${report.date}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// 完整报告卡片
+function FinalReportCard() {
+  const [show, setShow] = useState(false);
+  const [activeTab, setActiveTab] = useState('summary');
+  useEffect(() => { setTimeout(() => setShow(true), 300); }, []);
+  if (!show) return null;
+
+  const report = FINAL_REPORT;
+
+  return (
+    <div className="card-in rounded-2xl overflow-hidden mt-2" style={{maxWidth:'800px', border:'3px solid #f97316'}}>
+      <div className="px-6 py-5 text-white" style={{background:'linear-gradient(135deg,#f97316,#ea580c)'}}>
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <div className="text-xs font-semibold opacity-80 mb-1">YC Office Hours 完整诊断报告</div>
+            <div className="font-black text-2xl">{report.title}</div>
+            <div className="text-sm opacity-90 mt-1">{report.subtitle}</div>
+          </div>
+          <div className="text-4xl">{report.yc_verdict.rating}</div>
+        </div>
+        <div className="flex gap-4 text-xs opacity-90 mt-3">
+          <div>创始人：{report.founder}</div>
+          <div>场景：{report.scenario}</div>
+          <div>日期：{report.date}</div>
+        </div>
+      </div>
+
+      <div className="flex border-b overflow-x-auto" style={{background:'#1a1a1a', borderColor:'#2d2d2d'}}>
+        {[
+          {id:'summary', label:'📋 核心结论', icon:'📋'},
+          {id:'problem', label:'🎯 问题分析', icon:'🎯'},
+          {id:'solution', label:'💡 解决方案', icon:'💡'},
+          {id:'financial', label:'💰 财务模型', icon:'💰'},
+          {id:'execution', label:'🚀 执行计划', icon:'🚀'},
+          {id:'risks', label:'⚠️ 风险评估', icon:'⚠️'},
+          {id:'decision', label:'✅ 决策框架', icon:'✅'},
+          {id:'actions', label:'📌 下一步', icon:'📌'}
+        ].map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            className="px-4 py-3 text-xs font-semibold transition-all whitespace-nowrap"
+            style={activeTab === tab.id
+              ? {color:'#f97316', borderBottom:'2px solid #f97316'}
+              : {color:'#6b7280'}}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="p-6 space-y-4" style={{background:'#1e1e1e', maxHeight:'600px', overflowY:'auto'}}>
+
+        {activeTab === 'summary' && (
+          <>
+            <div className="rounded-xl p-5" style={{background:'#14532d', border:'2px solid #22c55e'}}>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl">✅</span>
+                <div>
+                  <div className="font-bold text-white text-lg">{report.executive_summary.verdict}</div>
+                  <div className="text-sm text-gray-300">置信度：{report.executive_summary.confidence}</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {report.executive_summary.key_insights.map((insight, i) => (
+                  <div key={i} className="text-sm text-gray-200 flex items-start gap-2">
+                    <span style={{color:'#22c55e'}}>▸</span>
+                    <span>{insight}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#f97316'}}>推荐行动</div>
+              <div className="text-sm text-white">{report.executive_summary.recommendation}</div>
+            </div>
+            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#3b82f6'}}>YC 投资意向</div>
+              <div className="text-sm text-white mb-2">{report.yc_verdict.summary}</div>
+              <div className="flex gap-4 text-xs">
+                <div><span className="text-gray-400">是否投资：</span><span className="text-green-400 font-semibold">{report.yc_verdict.would_invest}</span></div>
+                <div><span className="text-gray-400">估值：</span><span className="text-yellow-400 font-semibold">{report.yc_verdict.estimated_valuation}</span></div>
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-bold mb-2" style={{color:'#f97316'}}>创始人信号（6个强信号）</div>
+              <div className="flex flex-wrap gap-2">
+                {report.founder_signals.map((sig, i) => (
+                  <div key={i} className="signal-badge px-3 py-2 rounded-lg text-xs"
+                    style={{
+                      background: sig.strength === '强' ? '#14532d' : '#422006',
+                      border: sig.strength === '强' ? '1px solid #22c55e' : '1px solid #fbbf24',
+                      color: sig.strength === '强' ? '#22c55e' : '#fbbf24',
+                      animationDelay: `${i * 0.1}s`
+                    }}>
+                    <div className="font-semibold">{sig.signal}</div>
+                    <div className="opacity-80">{sig.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'problem' && (
+          <>
+            <div>
+              <div className="text-xs font-bold mb-2" style={{color:'#f97316'}}>核心问题</div>
+              <div className="text-sm text-white mb-3">{report.problem_analysis.core_problem}</div>
+            </div>
+            <div>
+              <div className="text-xs font-bold mb-2" style={{color:'#ef4444'}}>痛点分析</div>
+              <div className="space-y-2">
+                {report.problem_analysis.pain_points.map((pain, i) => (
+                  <div key={i} className="rounded-lg p-3 text-sm text-gray-200"
+                    style={{background:'#2d2d2d'}}>
+                    • {pain}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg p-3" style={{background:'#2d2d2d'}}>
+                <div className="text-xs font-bold mb-1" style={{color:'#3b82f6'}}>市场规模</div>
+                <div className="text-xs text-gray-300">{report.problem_analysis.market_size}</div>
+              </div>
+              <div className="rounded-lg p-3" style={{background:'#2d2d2d'}}>
+                <div className="text-xs font-bold mb-1" style={{color:'#3b82f6'}}>目标用户</div>
+                <div className="text-xs text-gray-300">{report.problem_analysis.target_user}</div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'solution' && (
+          <>
+            <div className="space-y-3">
+              <div className="rounded-lg p-4" style={{background:'#2d2d2d'}}>
+                <div className="text-xs font-bold mb-1" style={{color:'#f97316'}}>产品定位</div>
+                <div className="text-sm text-white">{report.solution_design.positioning}</div>
+              </div>
+              <div className="rounded-lg p-4" style={{background:'#2d2d2d'}}>
+                <div className="text-xs font-bold mb-1" style={{color:'#f97316'}}>价值主张</div>
+                <div className="text-sm text-white">{report.solution_design.value_proposition}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg p-3" style={{background:'#2d2d2d'}}>
+                  <div className="text-xs font-bold mb-1" style={{color:'#22c55e'}}>定价策略</div>
+                  <div className="text-sm text-white">{report.solution_design.pricing}</div>
+                </div>
+                <div className="rounded-lg p-3" style={{background:'#2d2d2d'}}>
+                  <div className="text-xs font-bold mb-1" style={{color:'#22c55e'}}>分发渠道</div>
+                  <div className="text-sm text-white">{report.solution_design.distribution}</div>
+                </div>
+              </div>
+              <div className="rounded-lg p-4" style={{background:'#14532d', border:'1px solid #22c55e'}}>
+                <div className="text-xs font-bold mb-1" style={{color:'#22c55e'}}>护城河</div>
+                <div className="text-sm text-white">{report.solution_design.moat}</div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'financial' && (
+          <>
+            <div>
+              <div className="text-xs font-bold mb-3" style={{color:'#f97316'}}>单位经济模型</div>
+              <div className="space-y-2">
+                {report.financial_model.unit_economics.map((item, i) => (
+                  <div key={i} className="flex justify-between items-center rounded-lg p-3"
+                    style={{background:'#2d2d2d'}}>
+                    <span className="text-sm text-gray-300">{item.metric}</span>
+                    <span className="text-sm font-semibold text-white">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-bold mb-3" style={{color:'#f97316'}}>收入预测</div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr style={{background:'#2d2d2d'}}>
+                      <th className="px-3 py-2 text-left text-gray-400">月份</th>
+                      <th className="px-3 py-2 text-right text-gray-400">用户数</th>
+                      <th className="px-3 py-2 text-right text-gray-400">收入</th>
+                      <th className="px-3 py-2 text-right text-gray-400">成本</th>
+                      <th className="px-3 py-2 text-right text-gray-400">利润</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.financial_model.revenue_projection.map((row, i) => (
+                      <tr key={i} style={{borderBottom:'1px solid #2d2d2d'}}>
+                        <td className="px-3 py-2 text-white">第 {row.month} 月</td>
+                        <td className="px-3 py-2 text-right text-white">{row.users}</td>
+                        <td className="px-3 py-2 text-right text-green-400">{row.revenue}</td>
+                        <td className="px-3 py-2 text-right text-red-400">{row.cost}</td>
+                        <td className="px-3 py-2 text-right text-yellow-400 font-semibold">{row.profit}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="rounded-lg p-3" style={{background:'#14532d', border:'1px solid #22c55e'}}>
+              <div className="text-xs font-bold mb-1" style={{color:'#22c55e'}}>盈亏平衡点</div>
+              <div className="text-sm text-white">{report.financial_model.breakeven}</div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'execution' && (
+          <div className="space-y-4">
+            {report.execution_roadmap.weeks.map((week, i) => (
+              <div key={i} className="rounded-xl p-4" style={{background:'#2d2d2d', border:'1px solid #3b82f6'}}>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-xs px-3 py-1 rounded-full font-bold"
+                    style={{background:'#3b82f6', color:'white'}}>
+                    第{week.week}周
+                  </span>
+                  <span className="text-sm font-semibold text-white">{week.phase}</span>
+                  <span className="text-xs text-gray-400">目标：{week.goal}</span>
+                </div>
+                <div className="space-y-2 mb-3">
+                  {week.tasks.map((task, j) => (
+                    <div key={j} className="text-xs text-gray-300 flex items-start gap-2">
+                      <span style={{color:'#3b82f6'}}>▸</span>
+                      <span>{task}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {week.metrics.map((metric, j) => (
+                    <span key={j} className="text-xs px-2 py-1 rounded"
+                      style={{background:'#14532d', color:'#22c55e'}}>
+                      ✓ {metric}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'risks' && (
+          <div className="space-y-3">
+            {report.risk_assessment.risks.map((risk, i) => (
+              <div key={i} className="rounded-xl p-4" style={{background:'#2d2d2d', border:'1px solid #ef4444'}}>
+                <div className="flex items-start gap-3 mb-2">
+                  <span className="text-xl">⚠️</span>
+                  <div className="flex-1">
+                    <div className="font-bold text-white text-sm mb-1">{risk.risk}</div>
+                    <div className="flex gap-2 text-xs mb-2">
+                      <span className="px-2 py-0.5 rounded" style={{background:'#7f1d1d', color:'#fca5a5'}}>
+                        {risk.level}
+                      </span>
+                      <span className="px-2 py-0.5 rounded" style={{background:'#422006', color:'#fbbf24'}}>
+                        概率:{risk.probability}
+                      </span>
+                      <span className="px-2 py-0.5 rounded" style={{background:'#7c2d12', color:'#fb923c'}}>
+                        影响:{risk.impact}
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      {risk.mitigation.map((m, j) => (
+                        <div key={j} className="text-xs text-gray-300">✓ {m}</div>
+                      ))}
+                    </div>
+                    <div className="text-xs text-gray-400 mt-2">预算：{risk.cost}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'decision' && (
+          <>
+            <div className="rounded-xl p-4" style={{background:'#14532d', border:'1px solid #22c55e'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#22c55e'}}>GO 标准（继续执行）</div>
+              <div className="space-y-1">
+                {report.decision_framework.go_criteria.map((c, i) => (
+                  <div key={i} className="text-sm text-gray-200">✓ {c}</div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl p-4" style={{background:'#7f1d1d', border:'1px solid #ef4444'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#fca5a5'}}>NO-GO 标准（停止或调整）</div>
+              <div className="space-y-1">
+                {report.decision_framework.no_go_criteria.map((c, i) => (
+                  <div key={i} className="text-sm text-gray-200">✗ {c}</div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#fbbf24'}}>Pivot 选项</div>
+              <div className="space-y-1">
+                {report.decision_framework.pivot_options.map((o, i) => (
+                  <div key={i} className="text-sm text-gray-200">→ {o}</div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'actions' && (
+          <>
+            <div className="rounded-xl p-4" style={{background:'#2d2d2d', border:'2px solid #f97316'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#f97316'}}>本周行动（立即执行）</div>
+              <div className="space-y-2">
+                {report.next_actions.this_week.map((action, i) => (
+                  <div key={i} className="flex items-start gap-2 text-sm text-white">
+                    <span style={{color:'#f97316'}}>▸</span>
+                    <span>{action}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#3b82f6'}}>本月里程碑</div>
+              <div className="space-y-2">
+                {report.next_actions.this_month.map((action, i) => (
+                  <div key={i} className="text-sm text-gray-200">• {action}</div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#a78bfa'}}>本季度目标</div>
+              <div className="space-y-2">
+                {report.next_actions.this_quarter.map((action, i) => (
+                  <div key={i} className="text-sm text-gray-200">• {action}</div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+      </div>
+
+      <div className="px-6 py-4 border-t flex items-center justify-between"
+        style={{background:'#1a1a1a', borderColor:'#2d2d2d'}}>
+        <div className="text-xs text-gray-400">
+          💾 报告已生成 · 可导出为 PDF 或分享给投资人
+        </div>
+        <button onClick={() => downloadReport(report)} className="px-4 py-2 rounded-lg text-xs font-semibold"
+          style={{background:'#f97316', color:'white'}}>
+          📥 下载完整报告
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── 融资场景卡片组件 ────────────────────────────────────────────
+
+function FundraisingPlanCard() {
+  const [show, setShow] = useState(false);
+  const [activeMonth, setActiveMonth] = useState(0);
+  useEffect(() => { setTimeout(() => setShow(true), 300); }, []);
+  if (!show) return null;
+  const plan = FUNDRAISING_PLAN_DATA;
+  return (
+    <div className="card-in rounded-2xl overflow-hidden mt-2" style={{maxWidth:'720px', border:'2px solid #3b82f6'}}>
+      <div className="px-5 py-4 text-white" style={{background:'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>
+        <div className="text-xs font-semibold opacity-80 mb-1">融资执行计划</div>
+        <div className="font-black text-lg">{plan.title}</div>
+        <div className="text-xs opacity-80 mt-1">{plan.subtitle}</div>
+      </div>
+      <div className="flex border-b" style={{background:'#1a1a1a', borderColor:'#2d2d2d'}}>
+        {plan.milestones.map((m, i) => (
+          <button key={i} onClick={() => setActiveMonth(i)}
+            className="flex-1 px-4 py-3 text-xs font-semibold transition-all"
+            style={activeMonth === i ? {color:'#3b82f6', borderBottom:'2px solid #3b82f6'} : {color:'#6b7280'}}>
+            {m.month}
+          </button>
+        ))}
+        <button onClick={() => setActiveMonth(3)}
+          className="flex-1 px-4 py-3 text-xs font-semibold transition-all"
+          style={activeMonth === 3 ? {color:'#f97316', borderBottom:'2px solid #f97316'} : {color:'#6b7280'}}>
+          BP 结构
+        </button>
+      </div>
+      <div className="p-5" style={{background:'#1e1e1e'}}>
+        {activeMonth < 3 && (() => { const m = plan.milestones[activeMonth]; return (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="text-xs px-3 py-1 rounded-full font-bold" style={{background:'#3b82f6', color:'white'}}>{m.phase}</span>
+              <span className="text-sm font-semibold text-white">目标：{m.goal}</span>
+            </div>
+            <div>
+              <div className="text-xs font-bold mb-2" style={{color:'#3b82f6'}}>核心任务</div>
+              {m.tasks.map((t, j) => (
+                <div key={j} className="flex items-start gap-2 text-sm text-gray-300 mb-1">
+                  <span style={{color:'#3b82f6'}}>▸</span><span>{t}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {m.metrics.map((metric, j) => (
+                <span key={j} className="text-xs px-2 py-1 rounded" style={{background:'#14532d', color:'#22c55e'}}>✓ {metric}</span>
+              ))}
+            </div>
+          </div>
+        ); })()}
+        {activeMonth === 3 && (
+          <div className="space-y-2">
+            <div className="text-xs font-bold mb-3" style={{color:'#f97316'}}>BP 10 页结构（投资人最爱看的顺序）</div>
+            {plan.bp_structure.map((s, i) => (
+              <div key={i} className="flex items-start gap-3 rounded-lg p-3" style={{background:'#2d2d2d'}}>
+                <span className="text-xs font-bold px-2 py-0.5 rounded flex-shrink-0" style={{background:'#f97316', color:'white'}}>P{s.slide}</span>
+                <div>
+                  <div className="text-sm font-semibold text-white">{s.title}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">{s.content}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FundraisingRisksCard() {
+  const [show, setShow] = useState(false);
+  useEffect(() => { setTimeout(() => setShow(true), 300); }, []);
+  if (!show) return null;
+  return (
+    <div className="card-in rounded-2xl overflow-hidden mt-2" style={{maxWidth:'720px', border:'2px solid #ef4444'}}>
+      <div className="px-5 py-4 text-white" style={{background:'linear-gradient(135deg,#ef4444,#dc2626)'}}>
+        <div className="text-xs font-semibold opacity-80 mb-1">融资风险管理</div>
+        <div className="font-black text-lg">{FUNDRAISING_RISKS_DATA.title}</div>
+      </div>
+      <div className="p-5 space-y-3" style={{background:'#1e1e1e'}}>
+        {FUNDRAISING_RISKS_DATA.risks.map((risk, i) => (
+          <div key={i} className="rounded-xl p-4" style={{background:'#2d2d2d', border:'1px solid #ef4444'}}>
+            <div className="flex items-start gap-3 mb-3">
+              <span className="text-xl">⚠️</span>
+              <div className="flex-1">
+                <div className="font-bold text-white mb-2">{risk.risk}</div>
+                <div className="flex gap-2 text-xs mb-3">
+                  <span className="px-2 py-0.5 rounded" style={{background:'#7f1d1d', color:'#fca5a5'}}>等级：{risk.level}</span>
+                  <span className="px-2 py-0.5 rounded" style={{background:'#422006', color:'#fbbf24'}}>概率：{risk.probability}</span>
+                  <span className="px-2 py-0.5 rounded" style={{background:'#7c2d12', color:'#fb923c'}}>影响：{risk.impact}</span>
+                </div>
+                <div className="text-xs font-semibold mb-1" style={{color:'#22c55e'}}>应对策略：</div>
+                {risk.mitigation.map((m, j) => (
+                  <div key={j} className="text-xs text-gray-300 flex items-start gap-2 mb-1">
+                    <span style={{color:'#22c55e'}}>✓</span><span>{m}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FundraisingReportCard() {
+  const [show, setShow] = useState(false);
+  const [activeTab, setActiveTab] = useState('summary');
+  useEffect(() => { setTimeout(() => setShow(true), 300); }, []);
+  if (!show) return null;
+  const report = FUNDRAISING_REPORT_DATA;
+
+  return (
+    <div className="card-in rounded-2xl overflow-hidden mt-2" style={{maxWidth:'800px', border:'3px solid #3b82f6'}}>
+      <div className="px-6 py-5 text-white" style={{background:'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <div className="text-xs font-semibold opacity-80 mb-1">YC Office Hours 融资诊断报告</div>
+            <div className="font-black text-2xl">{report.title}</div>
+            <div className="text-sm opacity-90 mt-1">{report.subtitle}</div>
+          </div>
+          <div className="text-4xl">{report.yc_verdict.rating}</div>
+        </div>
+        <div className="flex gap-4 text-xs opacity-90 mt-3">
+          <div>场景：{report.scenario}</div>
+          <div>日期：{report.date}</div>
+        </div>
+      </div>
+
+      <div className="flex border-b overflow-x-auto" style={{background:'#1a1a1a', borderColor:'#2d2d2d'}}>
+        {[
+          {id:'summary', label:'📋 核心结论'},
+          {id:'metrics', label:'📊 关键指标'},
+          {id:'valuation', label:'💰 估值模型'},
+          {id:'investors', label:'🎯 投资人策略'},
+          {id:'execution', label:'🚀 执行计划'},
+          {id:'risks', label:'⚠️ 风险评估'},
+          {id:'decision', label:'✅ 决策框架'},
+          {id:'actions', label:'📌 下一步'}
+        ].map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            className="px-4 py-3 text-xs font-semibold transition-all whitespace-nowrap"
+            style={activeTab === tab.id ? {color:'#3b82f6', borderBottom:'2px solid #3b82f6'} : {color:'#6b7280'}}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="p-6 space-y-4" style={{background:'#1e1e1e', maxHeight:'600px', overflowY:'auto'}}>
+
+        {activeTab === 'summary' && (
+          <>
+            <div className="rounded-xl p-5" style={{background:'#422006', border:'2px solid #fbbf24'}}>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl">⚠️</span>
+                <div>
+                  <div className="font-bold text-white text-lg">{report.executive_summary.verdict}</div>
+                  <div className="text-sm text-gray-300">置信度：{report.executive_summary.confidence}</div>
+                </div>
+              </div>
+              {report.executive_summary.key_insights.map((insight, i) => (
+                <div key={i} className="text-sm text-gray-200 flex items-start gap-2 mb-1">
+                  <span style={{color:'#fbbf24'}}>▸</span><span>{insight}</span>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#3b82f6'}}>推荐行动</div>
+              <div className="text-sm text-white">{report.executive_summary.recommendation}</div>
+            </div>
+            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#3b82f6'}}>YC 评估</div>
+              <div className="text-sm text-white mb-2">{report.yc_verdict.summary}</div>
+              <div className="flex gap-4 text-xs">
+                <div><span className="text-gray-400">是否投资：</span><span className="text-yellow-400 font-semibold">{report.yc_verdict.would_invest}</span></div>
+                <div><span className="text-gray-400">目标估值：</span><span className="text-green-400 font-semibold">{report.yc_verdict.estimated_valuation}</span></div>
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-bold mb-2" style={{color:'#3b82f6'}}>创始人信号</div>
+              <div className="flex flex-wrap gap-2">
+                {report.founder_signals.map((sig, i) => (
+                  <div key={i} className="signal-badge px-3 py-2 rounded-lg text-xs"
+                    style={{background: sig.strength==='强' ? '#14532d' : '#422006', border: sig.strength==='强' ? '1px solid #22c55e' : '1px solid #fbbf24', color: sig.strength==='强' ? '#22c55e' : '#fbbf24', animationDelay:`${i*0.1}s`}}>
+                    <div className="font-semibold">{sig.signal}</div>
+                    <div className="opacity-80">{sig.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'metrics' && (
+          <>
+            <div className="text-xs font-bold mb-3" style={{color:'#3b82f6'}}>当前指标</div>
+            <div className="space-y-2 mb-5">
+              {report.current_metrics.map((m, i) => (
+                <div key={i} className="flex justify-between items-center rounded-lg p-3" style={{background:'#2d2d2d'}}>
+                  <span className="text-sm text-gray-300">{m.metric}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-white">{m.value}</span>
+                    <span className="text-xs px-2 py-0.5 rounded"
+                      style={{background: m.status.includes('✅') ? '#14532d' : m.status.includes('⚠️') ? '#7f1d1d' : '#2d2d2d',
+                              color: m.status.includes('✅') ? '#22c55e' : m.status.includes('⚠️') ? '#fca5a5' : '#9ca3af'}}>
+                      {m.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="text-xs font-bold mb-3" style={{color:'#22c55e'}}>3 个月目标指标</div>
+            <table className="w-full text-xs">
+              <thead><tr style={{background:'#2d2d2d'}}>
+                <th className="px-3 py-2 text-left text-gray-400">指标</th>
+                <th className="px-3 py-2 text-right text-gray-400">当前</th>
+                <th className="px-3 py-2 text-right text-gray-400">目标</th>
+                <th className="px-3 py-2 text-right text-gray-400">截止</th>
+              </tr></thead>
+              <tbody>
+                {report.target_metrics.map((m, i) => (
+                  <tr key={i} style={{borderBottom:'1px solid #2d2d2d'}}>
+                    <td className="px-3 py-2 text-white">{m.metric}</td>
+                    <td className="px-3 py-2 text-right text-red-400">{m.current}</td>
+                    <td className="px-3 py-2 text-right text-green-400 font-semibold">{m.target}</td>
+                    <td className="px-3 py-2 text-right text-gray-400">{m.deadline}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {activeTab === 'valuation' && (
+          <div className="space-y-3">
+            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#fbbf24'}}>估值方法：{report.valuation_model.method}</div>
+              <div className="space-y-2">
+                {[
+                  ['当前 ARR', report.valuation_model.current_arr],
+                  ['3 个月后 ARR', report.valuation_model.target_arr_3m],
+                  ['市场估值倍数', report.valuation_model.market_multiple],
+                  ['Pre-money 估值区间', report.valuation_model.pre_money_range],
+                  ['融资后估值', report.valuation_model.post_money],
+                  ['稀释比例', report.valuation_model.dilution],
+                ].map(([k, v], i) => (
+                  <div key={i} className="flex justify-between text-sm">
+                    <span className="text-gray-400">{k}</span>
+                    <span className="text-white font-semibold">{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'investors' && (
+          <div className="space-y-4">
+            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#f97316'}}>策略</div>
+              <div className="text-sm text-gray-200">{report.investor_targeting.strategy}</div>
+            </div>
+            {[
+              {label:'Tier 1 · 顶级机构', list: report.investor_targeting.tier1, color:'#f97316'},
+              {label:'Tier 2 · 主流机构', list: report.investor_targeting.tier2, color:'#3b82f6'},
+              {label:'Tier 3 · 备选机构', list: report.investor_targeting.tier3, color:'#6b7280'},
+            ].map((tier, i) => (
+              <div key={i} className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+                <div className="text-xs font-bold mb-2" style={{color: tier.color}}>{tier.label}</div>
+                <div className="flex flex-wrap gap-2">
+                  {tier.list.map((inv, j) => (
+                    <span key={j} className="text-xs px-3 py-1 rounded-full" style={{background:'#1e1e1e', color:'#e5e7eb', border:'1px solid #333'}}>{inv}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'execution' && (
+          <div className="space-y-4">
+            {report.execution_roadmap.milestones.map((m, i) => (
+              <div key={i} className="rounded-xl p-4" style={{background:'#2d2d2d', border:'1px solid #3b82f6'}}>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-xs px-3 py-1 rounded-full font-bold" style={{background:'#3b82f6', color:'white'}}>{m.month}</span>
+                  <span className="text-sm font-semibold text-white">{m.phase}</span>
+                  <span className="text-xs text-gray-400">目标：{m.goal}</span>
+                </div>
+                {m.tasks.map((t, j) => (
+                  <div key={j} className="text-xs text-gray-300 flex items-start gap-2 mb-1">
+                    <span style={{color:'#3b82f6'}}>▸</span><span>{t}</span>
+                  </div>
+                ))}
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {m.metrics.map((metric, j) => (
+                    <span key={j} className="text-xs px-2 py-1 rounded" style={{background:'#14532d', color:'#22c55e'}}>✓ {metric}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'risks' && (
+          <div className="space-y-3">
+            {report.risk_assessment.risks.map((risk, i) => (
+              <div key={i} className="rounded-xl p-4" style={{background:'#2d2d2d', border:'1px solid #ef4444'}}>
+                <div className="font-bold text-white mb-2">⚠️ {risk.risk}</div>
+                <div className="flex gap-2 text-xs mb-2">
+                  <span className="px-2 py-0.5 rounded" style={{background:'#7f1d1d', color:'#fca5a5'}}>{risk.level}</span>
+                  <span className="px-2 py-0.5 rounded" style={{background:'#422006', color:'#fbbf24'}}>概率:{risk.probability}</span>
+                  <span className="px-2 py-0.5 rounded" style={{background:'#7c2d12', color:'#fb923c'}}>影响:{risk.impact}</span>
+                </div>
+                {risk.mitigation.map((m, j) => (
+                  <div key={j} className="text-xs text-gray-300 flex items-start gap-2 mb-1">
+                    <span style={{color:'#22c55e'}}>✓</span><span>{m}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'decision' && (
+          <>
+            <div className="rounded-xl p-4" style={{background:'#14532d', border:'1px solid #22c55e'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#22c55e'}}>GO 标准（3 个月后融资）</div>
+              {report.decision_framework.go_criteria.map((c, i) => <div key={i} className="text-sm text-gray-200">✓ {c}</div>)}
+            </div>
+            <div className="rounded-xl p-4" style={{background:'#7f1d1d', border:'1px solid #ef4444'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#fca5a5'}}>NO-GO 标准（立即融资）</div>
+              {report.decision_framework.no_go_criteria.map((c, i) => <div key={i} className="text-sm text-gray-200">✗ {c}</div>)}
+            </div>
+            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#fbbf24'}}>Pivot 选项</div>
+              {report.decision_framework.pivot_options.map((o, i) => <div key={i} className="text-sm text-gray-200">→ {o}</div>)}
+            </div>
+          </>
+        )}
+
+        {activeTab === 'actions' && (
+          <>
+            <div className="rounded-xl p-4" style={{background:'#2d2d2d', border:'2px solid #3b82f6'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#3b82f6'}}>本周行动（立即执行）</div>
+              {report.next_actions.this_week.map((a, i) => (
+                <div key={i} className="flex items-start gap-2 text-sm text-white mb-1">
+                  <span style={{color:'#3b82f6'}}>▸</span><span>{a}</span>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#22c55e'}}>本月里程碑</div>
+              {report.next_actions.this_month.map((a, i) => <div key={i} className="text-sm text-gray-200">• {a}</div>)}
+            </div>
+            <div className="rounded-xl p-4" style={{background:'#2d2d2d'}}>
+              <div className="text-xs font-bold mb-2" style={{color:'#a78bfa'}}>本季度目标</div>
+              {report.next_actions.this_quarter.map((a, i) => <div key={i} className="text-sm text-gray-200">• {a}</div>)}
+            </div>
+          </>
+        )}
+
+      </div>
+
+      <div className="px-6 py-4 border-t flex items-center justify-between" style={{background:'#1a1a1a', borderColor:'#2d2d2d'}}>
+        <div className="text-xs text-gray-400">💾 融资诊断报告已生成 · 可分享给投资人</div>
+        <button onClick={() => downloadFundraisingReport(report)}
+          className="px-4 py-2 rounded-lg text-xs font-semibold"
+          style={{background:'#3b82f6', color:'white'}}>
+          📥 下载融资报告
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// 对话气泡组件
+function Bubble({ msg }) {
+  const isYC = msg.r === 'yc';
+  if (msg.isAlternatives) return <AlternativesCard />;
+  if (msg.isExecution) return <ExecutionCard />;
+  if (msg.isRisks) return <RisksCard />;
+  if (msg.isReport) return <FinalReportCard />;
+  if (msg.isFundraisingPlan) return <FundraisingPlanCard />;
+  if (msg.isFundraisingRisks) return <FundraisingRisksCard />;
+  if (msg.isFundraisingReport) return <FundraisingReportCard />;
+
+  return (
+    <div className={`msg-in flex gap-3 ${isYC ? '' : 'flex-row-reverse'}`}>
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-black shadow`}
+        style={{background: isYC ? 'linear-gradient(135deg,#f97316,#ea580c)' : 'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>
+        <span className="text-white">{isYC ? 'YC' : '创'}</span>
+      </div>
+      <div style={{maxWidth:'80%'}}>
+        <div className={`text-xs font-semibold mb-1 ${isYC ? '' : 'text-right'}`}
+          style={{color: isYC ? '#f97316' : '#60a5fa'}}>
+          {isYC ? 'Michael Seibel · YC CEO' : '创始人'}
+        </div>
+        <div className="rounded-2xl px-4 py-3 text-sm leading-relaxed shadow"
+          style={isYC
+            ? {background:'#1e1e1e', border:'1px solid #333', color:'#e5e7eb', borderTopLeftRadius:'4px'}
+            : {background:'#1d4ed8', color:'white', borderTopRightRadius:'4px'}}>
+          {renderText(msg.t)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PhaseBar({ current, phases }) {
+  return (
+    <div className="flex items-center gap-1 overflow-x-auto pb-1">
+      {phases.map((p, i) => (
+        <div key={i} className="flex items-center gap-1 flex-shrink-0">
+          <div className="phase-dot flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
+            style={i <= current ? {background:'#f97316', color:'white'} : {background:'#2d2d2d', color:'#6b7280'}}>
+            <span>{i <= current ? '✓' : i + 1}</span>
+            <span className="hidden sm:inline">{p}</span>
+          </div>
+          {i < phases.length - 1 && <div className="w-3 h-0.5 flex-shrink-0" style={{background: i < current ? '#f97316' : '#333'}} />}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function App() {
+  const [selectedScenario, setSelectedScenario] = useState('pre-product');
+  const [shown, setShown] = useState(0);
+  const [typing, setTyping] = useState(false);
+  const [autoPlay, setAuto] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const chatRef = useRef(null);
+  const timerRef = useRef(null);
+
+  const conversation = selectedScenario === 'pre-product' ? CONV_PRE_PRODUCT : selectedScenario === 'fundraising' ? CONV_FUNDRAISING : [];
+  const currentPhase = shown > 0 ? conversation[shown - 1].ph : 0;
+  const done = shown >= conversation.length;
+
+  const handleScenarioSelect = (scenarioId) => {
+    setSelectedScenario(scenarioId);
+    setShown(0);
+    setTyping(false);
+    setAuto(false);
+    setSidebarOpen(false);
+  };
+
+  const advance = () => {
+    if (done) return;
+    const next = conversation[shown];
+    if (next.r === 'yc') {
+      setTyping(true);
+      const delay = next.isAlternatives || next.isExecution || next.isRisks || next.isReport ? 1000 : Math.min(600 + next.t.length * 7, 2200);
+      timerRef.current = setTimeout(() => { setTyping(false); setShown(s => s + 1); }, delay);
+    } else {
+      setShown(s => s + 1);
+    }
+  };
+
+  useEffect(() => {
+    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+  }, [shown, typing]);
+
+  useEffect(() => {
+    if (!autoPlay || done) return;
+    const delay = typing ? 100 : (shown > 0 && conversation[shown - 1].r === 'founder' ? 1000 : 300);
+    timerRef.current = setTimeout(advance, delay);
+    return () => clearTimeout(timerRef.current);
+  }, [autoPlay, shown, typing, done]);
+
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  return (
+    <div className="flex h-screen" style={{background:'#0a0a0a'}}>
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+          onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Left Sidebar */}
+      <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:relative w-64 h-full flex-shrink-0 flex flex-col z-30 transition-transform duration-300`}
+        style={{background:'#171717',borderRight:'1px solid #2d2d2d'}}>
+        <div className="p-4 border-b" style={{borderColor:'#2d2d2d'}}>
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-black text-xs shadow"
+              style={{background:'linear-gradient(135deg,#f97316,#ea580c)'}}>YC</div>
+            <div>
+              <div className="text-sm font-bold text-white">Office Hours</div>
+              <div className="text-xs" style={{color:'#9ca3af'}}>专业创业问答</div>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3">
+          <div className="space-y-4">
+            {/* 产品与市场 */}
+            <div>
+              <div className="text-xs font-semibold mb-2 px-2" style={{color:'#6b7280'}}>产品与市场</div>
+              <div className="space-y-1">
+                <button onClick={() => handleScenarioSelect('pre-product')}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
+                  style={selectedScenario === 'pre-product'
+                    ? {background:'#f97316', color:'white'}
+                    : {background:'transparent', color:'#9ca3af'}}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🚀</span>
+                    <span className="text-xs">需求验证</span>
+                  </div>
+                </button>
+                <button onClick={() => handleScenarioSelect('growth')}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
+                  style={selectedScenario === 'growth'
+                    ? {background:'#f97316', color:'white'}
+                    : {background:'transparent', color:'#9ca3af'}}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">📈</span>
+                    <span className="text-xs">增长瓶颈</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* 融资 */}
+            <div>
+              <div className="text-xs font-semibold mb-2 px-2" style={{color:'#6b7280'}}>融资</div>
+              <div className="space-y-1">
+                <button onClick={() => handleScenarioSelect('fundraising')}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
+                  style={selectedScenario === 'fundraising'
+                    ? {background:'#f97316', color:'white'}
+                    : {background:'transparent', color:'#9ca3af'}}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">💰</span>
+                    <span className="text-xs">融资准备</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* 团队与战略 */}
+            <div>
+              <div className="text-xs font-semibold mb-2 px-2" style={{color:'#6b7280'}}>团队与战略</div>
+              <div className="space-y-1">
+                <button onClick={() => handleScenarioSelect('team')}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
+                  style={selectedScenario === 'team'
+                    ? {background:'#f97316', color:'white'}
+                    : {background:'transparent', color:'#9ca3af'}}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">👥</span>
+                    <span className="text-xs">团队组织</span>
+                  </div>
+                </button>
+                <button onClick={() => handleScenarioSelect('pivot')}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
+                  style={selectedScenario === 'pivot'
+                    ? {background:'#f97316', color:'white'}
+                    : {background:'transparent', color:'#9ca3af'}}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🔄</span>
+                    <span className="text-xs">战略转型</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* 自定义 */}
+            <div>
+              <div className="text-xs font-semibold mb-2 px-2" style={{color:'#6b7280'}}>自定义</div>
+              <div className="space-y-1">
+                <button onClick={() => handleScenarioSelect('custom')}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
+                  style={selectedScenario === 'custom'
+                    ? {background:'#f97316', color:'white'}
+                    : {background:'transparent', color:'#9ca3af'}}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">💡</span>
+                    <span className="text-xs">自定义问题</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col w-full md:w-auto">
+        {/* Header */}
+        <div className="px-4 py-3 border-b" style={{background:'#1a1a1a',borderColor:'#2d2d2d'}}>
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <button onClick={() => setSidebarOpen(true)}
+                  className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center text-gray-400"
+                  style={{background:'#2d2d2d'}}>☰</button>
+                <div className="text-sm font-bold text-white">YC Office Hours</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setAuto(a => !a)}
+                  className="text-xs px-2 md:px-3 py-1.5 rounded-lg font-semibold transition-all"
+                  style={autoPlay ? {background:'#f97316',color:'white'} : {background:'#2d2d2d',color:'#9ca3af'}}>
+                  {autoPlay ? '⏸' : '▶'}
+                </button>
+                <button onClick={() => { setShown(conversation.length); setTyping(false); setAuto(false); }}
+                  className="text-xs px-2 md:px-3 py-1.5 rounded-lg font-semibold"
+                  style={{background:'#14532d',color:'#4ade80'}}>⚡</button>
+              </div>
+            </div>
+            <PhaseBar current={currentPhase} phases={PHASES} />
+          </div>
+        </div>
+
+        {/* Chat Messages */}
+        <div ref={chatRef} className="chat-scroll flex-1 overflow-y-auto px-4 py-6">
+          <div className="max-w-4xl mx-auto space-y-5">
+            {shown === 0 && (
+              <div className="text-center py-12" style={{color:'#6b7280'}}>
+                <div className="text-4xl mb-3">💬</div>
+                <div className="text-sm font-medium text-gray-400">点击"开始对话"体验完整的 YC Office Hours 流程</div>
+                <div className="text-xs mt-1" style={{color:'#4b5563'}}>
+                  场景：{SCENARIOS.find(s => s.id === selectedScenario)?.example}
+                </div>
+              </div>
+            )}
+            {conversation.slice(0, shown).map((msg, i) => <Bubble key={i} msg={msg} />)}
+            {typing && (
+              <div className="msg-in flex gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-black flex-shrink-0"
+                  style={{background:'linear-gradient(135deg,#f97316,#ea580c)'}}>YC</div>
+                <div className="rounded-2xl px-4 py-3 shadow" style={{background:'#1e1e1e',border:'1px solid #333',borderTopLeftRadius:'4px'}}>
+                  <span className="typing text-xs" style={{color:'#f97316'}} />
+                </div>
+              </div>
+            )}
+            {done && (
+              <div className="text-center py-6">
+                <div className="text-xs mb-3" style={{color:'#4b5563'}}>── Office Hours 结束 · 共 {conversation.length} 轮对话 ──</div>
+                <div className="inline-block rounded-xl p-4" style={{background:'#1a1a1a', border:'2px solid #f97316'}}>
+                  <div className="text-sm font-bold text-white mb-2">🎉 完整诊断报告已生成</div>
+                  <div className="text-xs text-gray-400">向上滚动查看完整报告，或点击"下载完整报告"保存</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 py-3 border-t" style={{background:'#1a1a1a',borderColor:'#2d2d2d'}}>
+          <div className="max-w-4xl mx-auto flex items-center gap-3">
+            {!done ? (
+              <>
+                <button onClick={advance} disabled={typing}
+                  className="flex-1 py-3 rounded-xl font-bold text-sm transition-all"
+                  style={typing ? {background:'#2d2d2d',color:'#4b5563',cursor:'not-allowed'} : {background:'linear-gradient(135deg,#f97316,#ea580c)',color:'white'}}>
+                  {typing ? 'YC 合伙人正在思考...' : shown === 0 ? '🚀 开始对话' : conversation[shown]?.r === 'yc' ? '⬇ 下一条（YC）' : '⬇ 下一条（创始人）'}
+                </button>
+                <div className="text-xs flex-shrink-0" style={{color:'#4b5563'}}>{shown}/{conversation.length}</div>
+              </>
+            ) : (
+              <button onClick={() => { setShown(0); setTyping(false); setAuto(false); }}
+                className="flex-1 py-3 rounded-xl font-bold text-sm"
+                style={{background:'#2d2d2d',color:'#9ca3af'}}>↺ 重新播放</button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
