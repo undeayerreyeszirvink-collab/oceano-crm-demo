@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Beacon · AI应用价值评估</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f7f4; margin: 0; }
+        .msg-in  { animation: msgIn 0.35s ease-out forwards; opacity: 0; }
+        @keyframes msgIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .bar-fill { transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
+        .score-num { animation: countUp 1s ease-out forwards; }
+        .phase-dot { transition: all 0.3s ease; }
+        pre { white-space: pre-wrap; font-family: inherit; margin: 0; }
+        .chat-scroll { scroll-behavior: smooth; }
+        .typing::after { content: '●●●'; animation: typing 1s steps(3) infinite; font-size: 0.6rem; letter-spacing: 2px; }
+        @keyframes typing { 0%,33% { content:'●'; } 34%,66% { content:'●●'; } 67%,100% { content:'●●●'; } }
+        .report-card { animation: cardIn 0.6s ease-out forwards; }
+        @keyframes cardIn { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:scale(1); } }
+        .bold-text strong { font-weight: 700; }
+        .sidebar { width: 260px; background: #202123; color: #fff; }
+        .sidebar-btn { transition: all 0.2s; }
+        .sidebar-btn:hover { background: rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const PHASES = ['开场', '企业画像', '场景聚焦', '方案推荐', '深度评估', '评估报告'];
+
+const CONV = [
+  { ph:0, r:'beacon', t:'您好！我是 Beacon，专注企业AI应用价值评估的顾问，有管理咨询和AI技术双重背景。\n\n今天我们聊大概20-30分钟，没有标准答案，目的是一起找到AI能真正帮到您的地方。结束后我会给您一份评估报告。\n\n先问您：**您公司目前最大的业务头疼问题是什么？**' },
+  { ph:1, r:'company', t:'我们是做汽车零部件的，最头疼的是质检这块。有一条冲压件产线，每天产量8000件，但质检全靠人工目检，漏检率一直控制不下来，客户那边已经投诉好几次了。' },
+  { ph:1, r:'beacon', t:'质检漏检，这在汽车零部件行业很典型。先多了解一下您公司的情况——\n\n公司大概多少人？主要做哪类零部件？' },
+  { ph:1, r:'company', t:'大概500人，主要做冲压件和精密铸件，客户主要是一汽、比亚迪这些整车厂。年营收大概3个亿。' },
+  { ph:1, r:'beacon', t:'整车厂客户，质量要求确实严苛。再问一下技术这边——有没有MES或ERP系统？数据是什么状态？' },
+  { ph:1, r:'company', t:'有MES系统，用了3年了，生产数据基本都在里面。ERP用的SAP，财务和采购都在上面。IT团队5个人，主要维护这些系统。' },
+  { ph:1, r:'beacon', t:'基础设施不错。最后一个问题——之前有没有做过AI或数字化项目？管理层对AI是什么态度？' },
+  { ph:1, r:'company', t:'数字化项目做过，去年上了套BI系统。AI项目还没做过。老板对AI挺感兴趣，上个月专门开会讨论过，但还没有专门的预算和团队。' },
+  { ph:2, r:'beacon', t:'好，画像基本清楚了。我们回到质检这个问题——\n\n漏检率现在大概是什么水平？一次漏检大概带来多大损失？' },
+  { ph:2, r:'company', t:'正常情况漏检率3%-4%，旺季或夜班能到6%以上。上个月被比亚迪退了一批货，200件，直接损失加罚款差不多80万。' },
+  { ph:2, r:'beacon', t:'80万，一次退货。那一年下来，因为质量问题的总损失大概是多少量级？' },
+  { ph:2, r:'company', t:'算下来一年300-400万吧，包括退货、返工、罚款这些。' },
+  { ph:2, r:'beacon', t:'这个数字很清晰。现在的质检流程——每条产线配几个质检员？主要检什么？' },
+  { ph:2, r:'company', t:'每班3个质检员，主要看外观缺陷：划痕、变形、毛刺。一个人一天要看2000-3000件，到后半班眼睛就花了，漏检率明显上升。' },
+  { ph:2, r:'beacon', t:'这个场景非常典型——高频重复、人工疲劳、标准难统一，是AI视觉检测最适合切入的场景之一。\n\n除了质检，还有其他比较急的问题吗？' },
+  { ph:2, r:'company', t:'设备停机也是个问题，但相对来说质检更急，客户那边压力大。' },
+  { ph:2, r:'beacon', t:'好，我们就聚焦质检这个场景，深入评估。' },
+  { ph:3, r:'beacon', t:'针对您的情况，我给您推荐三个方向：\n\n**方案A · 快速落地**\n采购海康威视、旷视等成熟工业视觉AI产品，3个月内可上线，投入50-100万。\n\n**方案B · 深度定制**\n找AI服务商基于您的缺陷数据定制训练，与MES深度集成，投入150-300万，周期6个月。\n\n**方案C · 渐进验证**\n先在一条产线做POC，3个月验证效果再决定是否全面推广，投入30-50万，风险最低。\n\n您倾向于哪个方向？' },
+  { ph:3, r:'company', t:'我倾向于方案C，先试一条产线看看效果。老板那边也比较谨慎，不想一下子投太多。' },
+  { ph:3, r:'beacon', t:'方案C是个很务实的选择，也是我推荐的起点。我们就基于这个方向做深度评估。' },
+  { ph:4, r:'beacon', t:'接下来用AIVA框架做系统评估，从价值、就绪度、风险三个维度来看。\n\n先确认几个数据——质检员的人力成本大概是多少？一个人年薪加社保？' },
+  { ph:4, r:'company', t:'质检员年薪8-10万，加社保差不多12万一个人。每班3个，三班倒9个人，一年大概110万人力成本。' },
+  { ph:4, r:'beacon', t:'MES里有没有历史质检记录？缺陷类型、缺陷图片有没有留存？' },
+  { ph:4, r:'company', t:'质检记录有，但图片之前没有系统留存，大概只有最近半年的，几千张。' },
+  { ph:4, r:'beacon', t:'几千张对初期训练偏少，但做POC够用，后期需要持续积累。\n\n最后一个问题——质检员对引入AI系统，您觉得他们会是什么态度？' },
+  { ph:4, r:'company', t:'这个我有点担心，他们可能觉得AI是来替代他们的。不过我们打算跟他们说是"辅助工具"，让他们做最终确认。' },
+  { ph:4, r:'beacon', t:'"AI辅助+人工确认"的定位能有效降低变革阻力，这个策略是对的。\n\n好，信息已经足够了。我现在给您出评估结果。' },
+  { ph:5, r:'beacon', t:'REPORT', isReport: true },
+];
+
+const REPORT = {
+  value: [
+    { name:'效率提升', score:5, weight:35, note:'检测速度提升5-10倍，质检人员可减少60-80%' },
+    { name:'成本节省', score:4, weight:25, note:'年质量损失300-400万+人力110万，节省20-30%+' },
+    { name:'收入增长', score:2, weight:20, note:'间接影响，减少退货索赔，难以直接归因' },
+    { name:'体验改善', score:3, weight:20, note:'质检员减少重复劳动，客户退货明显减少' },
+  ],
+  readiness: [
+    { name:'数据成熟度', score:3, weight:25, note:'有MES历史记录，图片数据仅几千张，质量尚可' },
+    { name:'技术基础',   score:3, weight:25, note:'有云服务，5人IT团队，无AI经验' },
+    { name:'组织能力',   score:2, weight:25, note:'无AI团队，管理层支持但无专项预算' },
+    { name:'流程标准化', score:4, weight:25, note:'有ISO认证，质检SOP完整，执行一致性高' },
+  ],
+  risk: [
+    { name:'技术复杂度', score:3, weight:25, note:'需定制视觉模型，有成熟框架可用，中等难度' },
+    { name:'变革阻力',   score:3, weight:30, note:'质检员有顾虑，管理层支持，需变革管理' },
+    { name:'数据隐私',   score:5, weight:15, note:'工业图像数据，无个人信息，极低风险' },
+    { name:'供应商依赖', score:3, weight:30, note:'有一定依赖，主流替代方案存在，可控' },
+  ],
+  corrections: [
+    { label:'工业视觉AI市场成熟，有多家成熟SaaS产品', value:'+0.50' },
+    { label:'多模态图像理解技术成熟，实施门槛降低',   value:'+0.30' },
+    { label:'叠加修正（max+min×0.5）',               value:'+0.65' },
+  ],
+  layerScores: { value: 3.75, readiness: 3.00, risk: 3.30 },
+  baseScore: 3.39,
+  correction: 0.65,
+  finalScore: 4.04,
+  rating: '🟢 强烈建议实施',
+  ratingColor: 'green',
+  actions: [
+    '立即启动单产线POC，预算30-50万，周期3个月',
+    '优先补充缺陷图片数据标注，目标积累1万张以上',
+    '制定质检员沟通方案，明确"AI辅助+人工确认"定位',
+    'POC成功后，评估全产线推广（预计ROI回收期8-12个月）',
+  ],
+  roi: {
+    investment: '30–50万', annualSaving: '126–208万', payback: '8–12个月', roiPct: '252–693%',
+    items: [
+      { label:'质量损失节省（20-30%）', value:'60–120万/年', color:'green' },
+      { label:'人力成本节省（60-80%）', value:'66–88万/年', color:'green' },
+      { label:'客户退货减少（间接）',   value:'难以量化',   color:'blue' },
+      { label:'POC投入（一次性）',      value:'30–50万',   color:'red' },
+    ],
+  },
+  timeline: [
+    { week:'第1-4周', title:'POC启动', tasks:['选定单条产线','采购/部署视觉设备','数据标注（目标1万张）'] },
+    { week:'第5-8周', title:'模型训练', tasks:['缺陷类型分类训练','与MES系统对接','质检员培训'] },
+    { week:'第9-12周', title:'上线验证', tasks:['并行运行（AI+人工）','漏检率对比测量','ROI核算'] },
+    { week:'第13周+', title:'全面推广', tasks:['评估全产线推广','供应商选型','规模化部署'] },
+  ],
+};
+
+function renderText(t) {
+  return t.split('\n').map((line, i) => {
+    const parts = line.split(/\*\*(.*?)\*\*/g);
+    return (
+      <span key={i}>
+        {parts.map((p, j) => j % 2 === 1 ? <strong key={j}>{p}</strong> : p)}
+        {i < t.split('\n').length - 1 && <br />}
+      </span>
+    );
+  });
+}
+
+function ScoreBar({ score, color }) {
+  const [w, setW] = useState(0);
+  useEffect(() => { setTimeout(() => setW(score / 5 * 100), 100); }, [score]);
+  const colors = { green:'bg-green-500', blue:'bg-blue-500', orange:'bg-orange-500', purple:'bg-purple-500' };
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+        <div className={`bar-fill h-2 rounded-full ${colors[color]||'bg-orange-500'}`} style={{width:`${w}%`}} />
+      </div>
+      <span className="text-xs font-bold w-6 text-right text-gray-700">{score}</span>
+    </div>
+  );
+}

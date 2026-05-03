@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Prism · AI应用价值评估 DEMO</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f7f4; margin: 0; }
+        .msg-in  { animation: msgIn 0.35s ease-out forwards; opacity: 0; }
+        @keyframes msgIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .bar-fill { transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
+        .score-num { animation: countUp 1s ease-out forwards; }
+        .phase-dot { transition: all 0.3s ease; }
+        pre { white-space: pre-wrap; font-family: inherit; margin: 0; }
+        .chat-scroll { scroll-behavior: smooth; }
+        .typing::after { content: '●●●'; animation: typing 1s steps(3) infinite; font-size: 0.6rem; letter-spacing: 2px; }
+        @keyframes typing { 0%,33% { content:'●'; } 34%,66% { content:'●●'; } 67%,100% { content:'●●●'; } }
+        .report-card { animation: cardIn 0.6s ease-out forwards; }
+        @keyframes cardIn { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:scale(1); } }
+        .bold-text strong { font-weight: 700; }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const PHASES = ['开场', '企业画像', '场景聚焦', '方案推荐', '深度评估', '评估报告'];
+
+const CONV = [
+  { ph:0, r:'prism', t:'您好！我是 Prism，专注企业AI应用价值评估的顾问，有管理咨询和AI技术双重背景。\n\n今天我们聊大概20-30分钟，没有标准答案，目的是一起找到AI能真正帮到您的地方。结束后我会给您一份评估报告。\n\n先问您：**您公司目前最大的业务头疼问题是什么？**' },
+  { ph:1, r:'company', t:'我们是做汽车零部件的，最头疼的是质检这块。有一条冲压件产线，每天产量8000件，但质检全靠人工目检，漏检率一直控制不下来，客户那边已经投诉好几次了。' },
+  { ph:1, r:'prism', t:'质检漏检，这在汽车零部件行业很典型。先多了解一下您公司的情况——\n\n公司大概多少人？主要做哪类零部件？' },
+  { ph:1, r:'company', t:'大概500人，主要做冲压件和精密铸件，客户主要是一汽、比亚迪这些整车厂。年营收大概3个亿。' },
+  { ph:1, r:'prism', t:'整车厂客户，质量要求确实严苛。再问一下技术这边——有没有MES或ERP系统？数据是什么状态？' },
+  { ph:1, r:'company', t:'有MES系统，用了3年了，生产数据基本都在里面。ERP用的SAP，财务和采购都在上面。IT团队5个人，主要维护这些系统。' },
+  { ph:1, r:'prism', t:'基础设施不错。最后一个问题——之前有没有做过AI或数字化项目？管理层对AI是什么态度？' },
+  { ph:1, r:'company', t:'数字化项目做过，去年上了套BI系统。AI项目还没做过。老板对AI挺感兴趣，上个月专门开会讨论过，但还没有专门的预算和团队。' },
+  { ph:2, r:'prism', t:'好，画像基本清楚了。我们回到质检这个问题——\n\n漏检率现在大概是什么水平？一次漏检大概带来多大损失？' },
+  { ph:2, r:'company', t:'正常情况漏检率3%-4%，旺季或夜班能到6%以上。上个月被比亚迪退了一批货，200件，直接损失加罚款差不多80万。' },
+  { ph:2, r:'prism', t:'80万，一次退货。那一年下来，因为质量问题的总损失大概是多少量级？' },
+  { ph:2, r:'company', t:'算下来一年300-400万吧，包括退货、返工、罚款这些。' },
+  { ph:2, r:'prism', t:'这个数字很清晰。现在的质检流程——每条产线配几个质检员？主要检什么？' },
+  { ph:2, r:'company', t:'每班3个质检员，主要看外观缺陷：划痕、变形、毛刺。一个人一天要看2000-3000件，到后半班眼睛就花了，漏检率明显上升。' },
+  { ph:2, r:'prism', t:'这个场景非常典型——高频重复、人工疲劳、标准难统一，是AI视觉检测最适合切入的场景之一。\n\n除了质检，还有其他比较急的问题吗？' },
+  { ph:2, r:'company', t:'设备停机也是个问题，但相对来说质检更急，客户那边压力大。' },
+  { ph:2, r:'prism', t:'好，我们就聚焦质检这个场景，深入评估。' },
+  { ph:3, r:'prism', t:'针对您的情况，我给您推荐三个方向：\n\n**方案A · 快速落地**\n采购海康威视、旷视等成熟工业视觉AI产品，3个月内可上线，投入50-100万。\n\n**方案B · 深度定制**\n找AI服务商基于您的缺陷数据定制训练，与MES深度集成，投入150-300万，周期6个月。\n\n**方案C · 渐进验证**\n先在一条产线做POC，3个月验证效果再决定是否全面推广，投入30-50万，风险最低。\n\n您倾向于哪个方向？' },
+  { ph:3, r:'company', t:'我倾向于方案C，先试一条产线看看效果。老板那边也比较谨慎，不想一下子投太多。' },
+  { ph:3, r:'prism', t:'方案C是个很务实的选择，也是我推荐的起点。我们就基于这个方向做深度评估。' },
+  { ph:4, r:'prism', t:'接下来用AIVA框架做系统评估，从价值、就绪度、风险三个维度来看。\n\n先确认几个数据——质检员的人力成本大概是多少？一个人年薪加社保？' },
+  { ph:4, r:'company', t:'质检员年薪8-10万，加社保差不多12万一个人。每班3个，三班倒9个人，一年大概110万人力成本。' },
+  { ph:4, r:'prism', t:'MES里有没有历史质检记录？缺陷类型、缺陷图片有没有留存？' },
+  { ph:4, r:'company', t:'质检记录有，但图片之前没有系统留存，大概只有最近半年的，几千张。' },
+  { ph:4, r:'prism', t:'几千张对初期训练偏少，但做POC够用，后期需要持续积累。\n\n最后一个问题——质检员对引入AI系统，您觉得他们会是什么态度？' },
+  { ph:4, r:'company', t:'这个我有点担心，他们可能觉得AI是来替代他们的。不过我们打算跟他们说是"辅助工具"，让他们做最终确认。' },
+  { ph:4, r:'prism', t:'"AI辅助+人工确认"的定位能有效降低变革阻力，这个策略是对的。\n\n好，信息已经足够了。我现在给您出评估结果。' },
+  { ph:5, r:'prism', t:'REPORT', isReport: true },
+];
+
+const REPORT = {
+  value: [
+    { name:'效率提升', score:5, weight:35, note:'检测速度提升5-10倍，质检人员可减少60-80%' },
+    { name:'成本节省', score:4, weight:25, note:'年质量损失300-400万+人力110万，节省20-30%+' },
+    { name:'收入增长', score:2, weight:20, note:'间接影响，减少退货索赔，难以直接归因' },
+    { name:'体验改善', score:3, weight:20, note:'质检员减少重复劳动，客户退货明显减少' },
+  ],
+  readiness: [
+    { name:'数据成熟度', score:3, weight:25, note:'有MES历史记录，图片数据仅几千张，质量尚可' },
+    { name:'技术基础',   score:3, weight:25, note:'有云服务，5人IT团队，无AI经验' },
+    { name:'组织能力',   score:2, weight:25, note:'无AI团队，管理层支持但无专项预算' },
+    { name:'流程标准化', score:4, weight:25, note:'有ISO认证，质检SOP完整，执行一致性高' },
+  ],
+  risk: [
+    { name:'技术复杂度', score:3, weight:25, note:'需定制视觉模型，有成熟框架可用，中等难度' },
+    { name:'变革阻力',   score:3, weight:30, note:'质检员有顾虑，管理层支持，需变革管理' },
+    { name:'数据隐私',   score:5, weight:15, note:'工业图像数据，无个人信息，极低风险' },
+    { name:'供应商依赖', score:3, weight:30, note:'有一定依赖，主流替代方案存在，可控' },
+  ],
+  corrections: [
+    { label:'工业视觉AI市场成熟，有多家成熟SaaS产品', value:'+0.50' },
+    { label:'多模态图像理解技术成熟，实施门槛降低',   value:'+0.30' },
+    { label:'叠加修正（max+min×0.5）',               value:'+0.65' },
+  ],
+  layerScores: { value: 3.75, readiness: 3.00, risk: 3.30 },
+  baseScore: 3.39,
+  correction: 0.65,
+  finalScore: 4.04,
+  rating: '🟢 强烈建议实施',
+  ratingColor: 'green',
+  actions: [
+    '立即启动单产线POC，预算30-50万，周期3个月',
+    '优先补充缺陷图片数据标注，目标积累1万张以上',
+    '制定质检员沟通方案，明确"AI辅助+人工确认"定位',
+    'POC成功后，评估全产线推广（预计ROI回收期8-12个月）',
+  ],
+  roi: {
+    investment: '30–50万', annualSaving: '126–208万', payback: '8–12个月', roiPct: '252–693%',
+    items: [
+      { label:'质量损失节省（20-30%）', value:'60–120万/年', color:'green' },
+      { label:'人力成本节省（60-80%）', value:'66–88万/年', color:'green' },
+      { label:'客户退货减少（间接）',   value:'难以量化',   color:'blue' },
+      { label:'POC投入（一次性）',      value:'30–50万',   color:'red' },
+    ],
+  },
+  timeline: [
+    { week:'第1-4周', title:'POC启动', tasks:['选定单条产线','采购/部署视觉设备','数据标注（目标1万张）'] },
+    { week:'第5-8周', title:'模型训练', tasks:['缺陷类型分类训练','与MES系统对接','质检员培训'] },
+    { week:'第9-12周', title:'上线验证', tasks:['并行运行（AI+人工）','漏检率对比测量','ROI核算'] },
+    { week:'第13周+', title:'全面推广', tasks:['评估全产线推广','供应商选型','规模化部署'] },
+  ],
+};
+
+function renderText(t) {
+  return t.split('\n').map((line, i) => {
+    const parts = line.split(/\*\*(.*?)\*\*/g);
+    return (
+      <span key={i}>
+        {parts.map((p, j) => j % 2 === 1 ? <strong key={j}>{p}</strong> : p)}
+        {i < t.split('\n').length - 1 && <br />}
+      </span>
+    );
+  });
+}
+
+function ScoreBar({ score, color }) {
+  const [w, setW] = useState(0);
+  useEffect(() => { setTimeout(() => setW(score / 5 * 100), 100); }, [score]);
+  const colors = { green:'bg-green-500', blue:'bg-blue-500', orange:'bg-orange-500', purple:'bg-purple-500' };
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+        <div className={`bar-fill h-2 rounded-full ${colors[color]||'bg-orange-500'}`} style={{width:`${w}%`}} />
+      </div>
+      <span className="text-xs font-bold w-6 text-right text-gray-700">{score}</span>
+    </div>
+  );
+}
+
+function ReportCard() {
+  const [show, setShow] = useState(false);
+  useEffect(() => { setTimeout(() => setShow(true), 200); }, []);
+  if (!show) return null;
+  return (
+    <div className="report-card bg-white rounded-2xl border-2 border-orange-200 shadow-lg overflow-hidden mt-2" style={{maxWidth:'580px'}}>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-5 py-4 text-white">
+        <div className="text-xs font-semibold opacity-80 mb-1">AIVA · AI应用价值评估报告</div>
+        <div className="font-black text-lg">某精密零部件制造企业</div>
+        <div className="text-xs opacity-80 mt-0.5">评估场景：AI视觉质检系统（单产线POC） · 2026年5月</div>
+      </div>
+
+      <div className="p-5 space-y-5">
+        {/* 综合评分 */}
+        <div className="flex items-center gap-4 bg-green-50 rounded-xl p-4 border-2 border-green-200">
+          <div className="text-center flex-shrink-0">
+            <div className="text-5xl font-black text-green-600">4.04</div>
+            <div className="text-xs text-gray-500 mt-0.5">综合得分 / 5.0</div>
+          </div>
+          <div className="flex-1">
+            <div className="text-base font-black text-green-700 mb-1">🟢 强烈建议实施</div>
+            <div className="text-xs text-gray-600">场景价值高、组织就绪、风险可控，建议3个月内启动POC</div>
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              {[
+                { label:'价值层', score:'3.75', weight:'40%', bg:'#fff7ed', border:'#fed7aa', tc:'#ea580c' },
+                { label:'就绪度层', score:'3.00', weight:'30%', bg:'#eff6ff', border:'#bfdbfe', tc:'#2563eb' },
+                { label:'风险层', score:'3.30', weight:'30%', bg:'#faf5ff', border:'#e9d5ff', tc:'#7c3aed' },
+              ].map((l,i) => (
+                <div key={i} className="rounded-lg p-2 text-center" style={{background:l.bg,border:`1px solid ${l.border}`}}>
+                  <div className="text-base font-black" style={{color:l.tc}}>{l.score}</div>
+                  <div className="text-xs text-gray-500">{l.label}</div>
+                  <div className="text-xs text-gray-400">{l.weight}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 三层评分 */}
+        {[
+          { label:'价值层', color:'orange', dims: REPORT.value,     layerW:'40%', score: REPORT.layerScores.value },
+          { label:'就绪度层', color:'blue', dims: REPORT.readiness, layerW:'30%', score: REPORT.layerScores.readiness },
+          { label:'风险层',  color:'purple', dims: REPORT.risk,     layerW:'30%', score: REPORT.layerScores.risk, reverse:true },
+        ].map((layer, li) => (
+          <div key={li}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-700">{layer.label}</span>
+                <span className="text-xs text-gray-400">（权重{layer.layerW}）</span>
+                {layer.reverse && <span className="text-xs bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full">反向计分</span>}
+              </div>
+              <span className="text-sm font-black text-gray-800">{layer.score}</span>
+            </div>
+            <div className="space-y-2">
+              {layer.dims.map((d, di) => (
+                <div key={di}>
+                  <div className="flex justify-between text-xs text-gray-600 mb-0.5">
+                    <span>{d.name} <span className="text-gray-400">({d.weight}%)</span></span>
+                    <span className="text-gray-400 text-right" style={{maxWidth:'55%'}}>{d.note}</span>
+                  </div>
+                  <ScoreBar score={d.score} color={layer.color} />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* AI趋势修正 */}
+        <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+          <div className="text-xs font-bold text-blue-700 mb-2">⚡ AI趋势修正因子</div>
+          {REPORT.corrections.map((c, i) => (
+            <div key={i} className="flex justify-between text-xs text-gray-700 py-0.5">
+              <span>{c.label}</span><span className="font-bold text-blue-600">{c.value}</span>
+            </div>
+          ))}
+          <div className="border-t border-blue-200 mt-2 pt-2 flex justify-between text-xs font-bold">
+            <span className="text-gray-600">基础分 {REPORT.baseScore} + 修正 {REPORT.correction}</span>
+            <span className="text-green-600">= 最终 {REPORT.finalScore}</span>
+          </div>
+        </div>
+
+        {/* ROI测算 */}
+        <div>
+          <div className="text-xs font-bold text-gray-700 mb-2">💰 ROI测算</div>
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            {[
+              { label:'POC投入', value: REPORT.roi.investment, sub:'一次性', bg:'#fef2f2', border:'#fecaca', tc:'#dc2626' },
+              { label:'年化收益', value: REPORT.roi.annualSaving, sub:'保守估算', bg:'#f0fdf4', border:'#bbf7d0', tc:'#16a34a' },
+              { label:'投资回报率', value: REPORT.roi.roiPct, sub:'第一年', bg:'#fff7ed', border:'#fed7aa', tc:'#ea580c' },
+              { label:'回收周期', value: REPORT.roi.payback, sub:'预计', bg:'#eff6ff', border:'#bfdbfe', tc:'#2563eb' },
+            ].map((m,i) => (
+              <div key={i} className="rounded-xl p-3" style={{background:m.bg,border:`1px solid ${m.border}`}}>
+                <div className="text-xs text-gray-500 mb-0.5">{m.label}</div>
+                <div className="text-base font-black" style={{color:m.tc}}>{m.value}</div>
+                <div className="text-xs text-gray-400">{m.sub}</div>
+              </div>
+            ))}
+          </div>
+          {REPORT.roi.items.map((item, i) => (
+            <div key={i} className="flex justify-between items-center text-xs py-1.5 border-b border-gray-100">
+              <span className="text-gray-600">{item.label}</span>
+              <span className="font-bold" style={{color:item.color==='green'?'#16a34a':item.color==='blue'?'#2563eb':'#dc2626'}}>{item.value}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* 实施路线 */}
+        <div>
+          <div className="text-xs font-bold text-gray-700 mb-2">🗓 实施路线（12周）</div>
+          <div className="space-y-2">
+            {REPORT.timeline.map((t, i) => (
+              <div key={i} className="flex gap-3">
+                <div className="flex-shrink-0 w-14 text-xs font-bold text-orange-600 pt-0.5">{t.week}</div>
+                <div className="flex-1 border-l-2 border-orange-100 pl-3">
+                  <div className="text-xs font-bold text-gray-800 mb-0.5">{t.title}</div>
+                  {t.tasks.map((task, j) => (
+                    <div key={j} className="text-xs text-gray-500 flex gap-1.5">
+                      <span className="text-orange-300 flex-shrink-0">▸</span><span>{task}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 建议行动 */}
+        <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+          <div className="text-xs font-bold text-orange-700 mb-2">📋 建议行动</div>
+          <div className="space-y-1.5">
+            {REPORT.actions.map((a, i) => (
+              <div key={i} className="flex gap-2 text-xs text-gray-700">
+                <span className="text-orange-500 font-bold flex-shrink-0">{i+1}.</span>
+                <span>{a}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Bubble({ msg, isLast }) {
+  const isPrism = msg.r === 'prism';
+  return (
+    <div className={`msg-in flex gap-3 ${isPrism ? '' : 'flex-row-reverse'}`}>
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold shadow-sm ${isPrism ? 'bg-gradient-to-br from-orange-400 to-amber-500 text-white' : 'bg-gradient-to-br from-blue-400 to-blue-600 text-white'}`}>
+        {isPrism ? 'P' : '企'}
+      </div>
+      <div style={{maxWidth:'75%'}}>
+        <div className={`text-xs font-semibold mb-1 ${isPrism ? 'text-orange-600' : 'text-blue-600 text-right'}`}>
+          {isPrism ? 'Prism · AI价值顾问' : '某精密零部件制造企业'}
+        </div>
+        {msg.isReport ? (
+          <ReportCard />
+        ) : (
+          <div className={`rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${isPrism ? 'bg-white border border-orange-100 text-gray-800 rounded-tl-sm' : 'bg-blue-500 text-white rounded-tr-sm'}`}>
+            {renderText(msg.t)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PhaseBar({ current }) {
+  return (
+    <div className="flex items-center gap-1 overflow-x-auto pb-1">
+      {PHASES.map((p, i) => (
+        <div key={i} className="flex items-center gap-1 flex-shrink-0">
+          <div className={`phase-dot flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${i <= current ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-200 text-gray-400'}`}>
+            <span>{i <= current ? '✓' : i+1}</span>
+            <span className="hidden sm:inline">{p}</span>
+          </div>
+          {i < PHASES.length - 1 && <div className={`w-4 h-0.5 flex-shrink-0 ${i < current ? 'bg-orange-400' : 'bg-gray-200'}`} />}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function App() {
+  const [shown, setShown]     = useState(0);
+  const [typing, setTyping]   = useState(false);
+  const [autoPlay, setAuto]   = useState(false);
+  const [skipToEnd, setSkip]  = useState(false);
+  const chatRef = useRef(null);
+  const timerRef = useRef(null);
+
+  const currentPhase = shown > 0 ? CONV[shown - 1].ph : 0;
+  const done = shown >= CONV.length;
+
+  const advance = () => {
+    if (done) return;
+    const next = CONV[shown];
+    if (next.r === 'prism') {
+      setTyping(true);
+      const delay = next.isReport ? 1200 : Math.min(800 + next.t.length * 8, 2500);
+      timerRef.current = setTimeout(() => {
+        setTyping(false);
+        setShown(s => s + 1);
+      }, delay);
+    } else {
+      setShown(s => s + 1);
+    }
+  };
+
+  useEffect(() => {
+    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+  }, [shown, typing]);
+
+  useEffect(() => {
+    if (!autoPlay || done) return;
+    const delay = typing ? 100 : (shown > 0 && CONV[shown-1].r === 'company' ? 1200 : 400);
+    timerRef.current = setTimeout(advance, delay);
+    return () => clearTimeout(timerRef.current);
+  }, [autoPlay, shown, typing, done]);
+
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  return (
+    <div className="min-h-screen flex flex-col" style={{background:'#f8f7f4'}}>
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm px-4 py-3">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-black text-sm shadow">P</div>
+              <div>
+                <div className="text-sm font-black text-gray-900">Prism · AI应用价值评估</div>
+                <div className="text-xs text-orange-500">制造业场景 DEMO · 汽车零部件企业</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setAuto(a => !a)}
+                className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${autoPlay ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                {autoPlay ? '⏸ 暂停' : '▶ 自动播放'}
+              </button>
+              <button onClick={() => { setShown(CONV.length); setTyping(false); setAuto(false); }}
+                className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-green-100 text-green-700 hover:bg-green-200 transition-all">
+                ⚡ 直接看结论
+              </button>
+            </div>
+          </div>
+          <PhaseBar current={currentPhase} />
+        </div>
+      </div>
+
+      {/* Chat */}
+      <div ref={chatRef} className="chat-scroll flex-1 overflow-y-auto px-4 py-6" style={{maxHeight:'calc(100vh - 140px)'}}>
+        <div className="max-w-2xl mx-auto space-y-5">
+          {shown === 0 && (
+            <div className="text-center py-12 text-gray-400">
+              <div className="text-4xl mb-3">🤝</div>
+              <div className="text-sm font-medium">点击"开始对话"体验完整的AI价值评估访谈流程</div>
+              <div className="text-xs mt-1">模拟场景：某汽车零部件制造企业 × AI视觉质检</div>
+            </div>
+          )}
+          {CONV.slice(0, shown).map((msg, i) => <Bubble key={i} msg={msg} isLast={i === shown - 1} />)}
+          {typing && (
+            <div className="msg-in flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">P</div>
+              <div className="bg-white border border-orange-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                <span className="typing text-orange-400 text-xs" />
+              </div>
+            </div>
+          )}
+          {done && (
+            <div className="text-center py-4 text-xs text-gray-400">
+              ── 评估完成 · 共 {CONV.length} 轮对话 ──
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 py-3 shadow-lg">
+        <div className="max-w-2xl mx-auto flex items-center gap-3">
+          {!done ? (
+            <>
+              <button onClick={advance} disabled={typing}
+                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all shadow-sm ${typing ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:shadow-md'}`}>
+                {typing ? '顾问正在思考...' : shown === 0 ? '🚀 开始对话' : CONV[shown]?.r === 'prism' ? '⬇ 下一条（顾问）' : '⬇ 下一条（企业）'}
+              </button>
+              <div className="text-xs text-gray-400 flex-shrink-0">{shown}/{CONV.length}</div>
+            </>
+          ) : (
+            <button onClick={() => { setShown(0); setTyping(false); setAuto(false); }}
+              className="flex-1 py-3 rounded-xl font-bold text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all">
+              ↺ 重新播放
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

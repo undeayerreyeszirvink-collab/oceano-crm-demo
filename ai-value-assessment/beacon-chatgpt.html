@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beacon · AI应用价值评估</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; }
+        .msg-in { animation: msgIn 0.35s ease-out forwards; opacity: 0; }
+        @keyframes msgIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .bar-fill { transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
+        .typing::after { content: '●●●'; animation: typing 1s steps(3) infinite; font-size: 0.6rem; letter-spacing: 2px; }
+        @keyframes typing { 0%,33% { content:'●'; } 34%,66% { content:'●●'; } 67%,100% { content:'●●●'; } }
+        .report-card { animation: cardIn 0.6s ease-out forwards; }
+        @keyframes cardIn { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:scale(1); } }
+        .sidebar-btn { transition: all 0.2s; cursor: pointer; }
+        .sidebar-btn:hover { background: rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const PHASES = ['开场', '企业画像', '场景聚焦', '方案推荐', '深度评估', '评估报告'];
+
+const CONV = [
+  { ph:0, r:'beacon', t:'您好！我是 Beacon，专注企业AI应用价值评估的顾问，有管理咨询和AI技术双重背景。\n\n今天我们聊大概20-30分钟，没有标准答案，目的是一起找到AI能真正帮到您的地方。结束后我会给您一份评估报告。\n\n先问您：**您公司目前最大的业务头疼问题是什么？**' },
+  { ph:1, r:'company', t:'我们是做汽车零部件的，最头疼的是质检这块。有一条冲压件产线，每天产量8000件，但质检全靠人工目检，漏检率一直控制不下来，客户那边已经投诉好几次了。' },
+  { ph:1, r:'beacon', t:'质检漏检，这在汽车零部件行业很典型。先多了解一下您公司的情况——\n\n公司大概多少人？主要做哪类零部件？' },
+  { ph:1, r:'company', t:'大概500人，主要做冲压件和精密铸件，客户主要是一汽、比亚迪这些整车厂。年营收大概3个亿。' },
+  { ph:1, r:'beacon', t:'整车厂客户，质量要求确实严苛。再问一下技术这边——有没有MES或ERP系统？数据是什么状态？' },
+  { ph:1, r:'company', t:'有MES系统，用了3年了，生产数据基本都在里面。ERP用的SAP，财务和采购都在上面。IT团队5个人，主要维护这些系统。' },
+  { ph:1, r:'beacon', t:'基础设施不错。最后一个问题——之前有没有做过AI或数字化项目？管理层对AI是什么态度？' },
+  { ph:1, r:'company', t:'数字化项目做过，去年上了套BI系统。AI项目还没做过。老板对AI挺感兴趣，上个月专门开会讨论过，但还没有专门的预算和团队。' },
+  { ph:2, r:'beacon', t:'好，画像基本清楚了。我们回到质检这个问题——\n\n漏检率现在大概是什么水平？一次漏检大概带来多大损失？' },
+  { ph:2, r:'company', t:'正常情况漏检率3%-4%，旺季或夜班能到6%以上。上个月被比亚迪退了一批货，200件，直接损失加罚款差不多80万。' },
+  { ph:2, r:'beacon', t:'80万，一次退货。那一年下来，因为质量问题的总损失大概是多少量级？' },
+  { ph:2, r:'company', t:'算下来一年300-400万吧，包括退货、返工、罚款这些。' },
