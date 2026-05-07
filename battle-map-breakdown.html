@@ -439,6 +439,11 @@ function getComputedColor(src) {
 }
 
 function filterSource(src) {
+  // Toggle: 如果点击的是当前激活的筛选，则取消筛选
+  if (activeFilter === src && src !== 'all') {
+    src = 'all';
+  }
+
   activeFilter = src;
   activeSection = null; // 清除区块筛选
   renderGrid(src);
@@ -460,6 +465,21 @@ function filterSource(src) {
 let activeSection = null;
 
 function filterBySection(section) {
+  // Toggle: 如果点击的是当前激活的区块，则取消筛选
+  if (activeSection === section) {
+    activeSection = null;
+    activeFilter = 'all';
+    renderGrid('all');
+    // 重置图例和统计高亮
+    Object.keys(SRC_CONFIG).forEach(s => {
+      const el = document.getElementById('leg-' + s);
+      if (el) el.style.opacity = '1';
+      const statEl = document.getElementById('stat-' + s);
+      if (statEl) statEl.style.opacity = '1';
+    });
+    return;
+  }
+
   activeSection = section;
   activeFilter = 'all';
   renderGridBySection(section);
@@ -467,11 +487,28 @@ function filterBySection(section) {
   Object.keys(SRC_CONFIG).forEach(s => {
     const el = document.getElementById('leg-' + s);
     if (el) el.style.opacity = '1';
+    const statEl = document.getElementById('stat-' + s);
+    if (statEl) statEl.style.opacity = '1';
   });
 }
 
 // 按区块+数据源双重筛选
 function filterSectionAndSource(section, src) {
+  // Toggle: 如果点击的是当前激活的组合，则取消筛选
+  if (activeSection === section && activeFilter === src) {
+    activeSection = null;
+    activeFilter = 'all';
+    renderGrid('all');
+    // 重置所有高亮
+    Object.keys(SRC_CONFIG).forEach(s => {
+      const el = document.getElementById('leg-' + s);
+      if (el) el.style.opacity = '1';
+      const statEl = document.getElementById('stat-' + s);
+      if (statEl) statEl.style.opacity = '1';
+    });
+    return;
+  }
+
   activeSection = section;
   activeFilter = src;
   renderGridBySectionAndSource(section, src);
@@ -480,6 +517,9 @@ function filterSectionAndSource(section, src) {
     const el = document.getElementById('leg-' + s);
     if (!el) return;
     el.style.opacity = (s === src) ? '1' : '0.3';
+    const statEl = document.getElementById('stat-' + s);
+    if (!statEl) return;
+    statEl.style.opacity = (s === src) ? '1' : '0.7';
   });
 }
 
