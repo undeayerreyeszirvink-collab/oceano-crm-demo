@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>华南作战地图 · 速录工作台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body { background:#0b0f1a; font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+@keyframes pulse2 { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes slideIn { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
+.fade-up { animation:fadeUp .3s ease-out forwards }
+.slide-in { animation:slideIn .25s ease-out forwards }
+.blink { animation:pulse2 2s infinite }
+
+::-webkit-scrollbar { width:4px }
+::-webkit-scrollbar-thumb { background:#1e2d3d; border-radius:2px }
+
+.dealer-card { transition:all .15s; border:1px solid transparent; cursor:pointer; }
+.dealer-card:hover { background:rgba(255,255,255,.03); border-color:rgba(99,102,241,.2) }
+.dealer-card.active { background:rgba(99,102,241,.08); border-color:rgba(99,102,241,.5) }
+
+.grade-badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; letter-spacing:.03em }
+.grade-Aplus { background:rgba(245,158,11,.15); color:#fbbf24; border:1px solid rgba(245,158,11,.3) }
+.grade-A     { background:rgba(16,185,129,.12); color:#34d399; border:1px solid rgba(16,185,129,.25) }
+.grade-B     { background:rgba(59,130,246,.12); color:#60a5fa; border:1px solid rgba(59,130,246,.25) }
+.grade-C     { background:rgba(100,116,139,.15); color:#94a3b8; border:1px solid rgba(100,116,139,.25) }
+.grade-none  { background:rgba(239,68,68,.1); color:#f87171; border:1px solid rgba(239,68,68,.2) }
+
+.gap-bar { height:4px; border-radius:2px; background:#1e2d3d; overflow:hidden }
+.gap-fill { height:100%; border-radius:2px; transition:width .6s cubic-bezier(.4,0,.2,1) }
+
+.priority-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0 }
+.p-high { background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,.5) }
+.p-mid  { background:#f59e0b }
+.p-low  { background:#10b981 }
+
+input,textarea { background:#0f1c2e; border:1px solid #1e2d3d; color:#e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; outline:none; width:100%; transition:border .15s }
+input:focus,textarea:focus { border-color:#6366f1 }
+input::placeholder { color:#334155 }
+
+.action-tag { font-size:10px; padding:2px 8px; border-radius:6px; font-weight:600 }
+.tag-retail  { background:rgba(99,102,241,.15); color:#a5b4fc; border:1px solid rgba(99,102,241,.2) }
+.tag-home    { background:rgba(16,185,129,.12); color:#6ee7b7; border:1px solid rgba(16,185,129,.2) }
+.tag-project { background:rgba(245,158,11,.12); color:#fcd34d; border:1px solid rgba(245,158,11,.2) }
+.tag-dist    { background:rgba(139,92,246,.12); color:#c4b5fd; border:1px solid rgba(139,92,246,.2) }
+
+.stat-card { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:14px 16px }
+
+.parse-row { animation:fadeUp .2s ease-out }
+</style>
+</head>
+<body class="text-slate-200 min-h-screen">
+
+<!-- 顶栏 -->
+<div style="background:#070c14;border-bottom:1px solid #111d2b" class="px-5 py-3 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-xs">🗺</div>
+    <div>
+      <div class="text-sm font-bold">华南作战地图 · 速录工作台</div>
+      <div class="text-xs text-slate-500">2026年经销商战略录入 — 只需确认3件事，AI补全其余分析</div>
+    </div>
+  </div>
+  <div class="flex items-center gap-2">
+    <button onclick="showQuickEntry()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg transition-colors font-semibold">+ 一行速录</button>
+    <span id="save-badge" class="text-xs text-slate-600 hidden">✓ 已保存</span>
+  </div>
+</div>
+
+<!-- 快速统计条 -->
+<div class="px-5 py-3 grid grid-cols-4 gap-3 border-b border-slate-900" style="background:#080d18">
+  <div class="stat-card">
+    <div class="text-xs text-slate-500 mb-1">已录入经销商</div>
+    <div class="text-2xl font-bold text-white" id="stat-count">20</div>
+  </div>
+  <div class="stat-card">
+    <div class="text-xs text-slate-500 mb-1">26年目标总和</div>
+    <div class="text-2xl font-bold text-indigo-300" id="stat-target">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="text-xs text-slate-500 mb-1">25年基数总和</div>
+    <div class="text-2xl font-bold text-slate-300" id="stat-base">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="text-xs text-slate-500 mb-1">整体增幅目标</div>
+    <div class="text-2xl font-bold text-emerald-400" id="stat-growth">—</div>
+  </div>
+</div>
+
+<!-- 一行速录弹层 -->
+<div id="quick-entry-panel" class="hidden fixed inset-0 z-50 bg-black/60 flex items-start justify-center pt-24">
+  <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-xl shadow-2xl fade-up">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <div class="font-bold text-sm">一行速录</div>
+        <div class="text-xs text-slate-500 mt-0.5">格式：城市 | 经销商姓名 | 等级 | 25年业绩(万) | 26年目标(万) | 主攻渠道 | 卡点（可选）</div>
+      </div>
+      <button onclick="hideQuickEntry()" class="text-slate-500 hover:text-slate-300 text-lg">×</button>
+    </div>
+    <textarea id="quick-input" rows="4" placeholder="示例：
+深圳 | 徐增勇 | B | 1313 | 2000 | 整装 | 零售基础薄弱
+广州 | 李冬 | C | 683 | 1200 | 零售 | 竞品压力大
+汕头 | 蚁克华 | A | 1179 | 1200 | 整装工程 |" class="mb-3 text-sm" style="line-height:1.7"></textarea>
+    <div id="parse-preview" class="hidden mb-3 space-y-2 max-h-48 overflow-y-auto"></div>
+    <div class="flex gap-2">
+      <button onclick="parseQuickEntry()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold py-2 rounded-lg transition-colors">解析预览</button>
+      <button onclick="confirmQuickEntry()" id="confirm-parse-btn" class="hidden flex-1 bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold py-2 rounded-lg transition-colors">✓ 确认录入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 主体 -->
+<div class="flex h-screen" style="height:calc(100vh - 112px)">
+
+  <!-- 左：经销商列表 -->
+  <div class="w-72 border-r border-slate-900 flex flex-col flex-shrink-0" style="background:#080d18">
+    <div class="px-3 py-2 border-b border-slate-900 flex items-center gap-2">
+      <input type="text" id="search-input" placeholder="搜索经销商 / 城市 / 销区经理" class="text-xs" style="padding:6px 10px" oninput="filterDealers()">
+    </div>
+    <!-- 筛选标签 -->
+    <div class="px-3 py-2 flex gap-1.5 border-b border-slate-900 flex-wrap">
+      <button onclick="setFilter('all')" id="f-all" class="text-xs px-2.5 py-1 rounded-full bg-indigo-600 text-white transition-all">全部</button>
+      <button onclick="setFilter('high')" id="f-high" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 hover:bg-slate-700 transition-all">⚡ 高优</button>
+      <button onclick="setFilter('A+')" id="f-A+" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 hover:bg-slate-700 transition-all">A+</button>
+      <button onclick="setFilter('A')" id="f-A" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 hover:bg-slate-700 transition-all">A</button>
+      <button onclick="setFilter('C')" id="f-C" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 hover:bg-slate-700 transition-all">C类</button>
+    </div>
+    <div id="dealer-list" class="flex-1 overflow-y-auto px-2 py-2 space-y-1">
+      <!-- rendered by JS -->
+    </div>
+  </div>
+
+  <!-- 中：详情面板 -->
+  <div class="flex-1 overflow-y-auto p-5" id="detail-panel">
+    <div class="flex items-center justify-center h-full text-center">
+      <div>
+        <div class="text-4xl mb-3">🗺</div>
+        <div class="text-slate-500 text-sm">从左侧选择一位经销商</div>
+        <div class="text-slate-600 text-xs mt-1">或点击右上角「一行速录」批量导入</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右：作战全局 -->
+  <div class="w-64 border-l border-slate-900 flex flex-col flex-shrink-0 overflow-y-auto" style="background:#080d18">
+    <div class="px-4 py-3 border-b border-slate-900">
+      <div class="text-xs font-semibold text-slate-400">作战全局预警</div>
+    </div>
+
+    <!-- 优先级列表 -->
+    <div class="px-3 py-3">
+      <div class="text-xs text-slate-600 mb-2 font-semibold uppercase">重点关注（目标缺口最大）</div>
+      <div id="priority-list" class="space-y-1.5">
+        <!-- rendered by JS -->
+      </div>
+    </div>
+
+    <div class="px-3 py-3 border-t border-slate-900">
+      <div class="text-xs text-slate-600 mb-2 font-semibold uppercase">按销区经理</div>
+      <div id="manager-summary" class="space-y-1.5">
+        <!-- rendered by JS -->
+      </div>
+    </div>
+
+    <div class="px-3 py-3 border-t border-slate-900">
+      <div class="text-xs text-slate-600 mb-2 font-semibold uppercase">等级分布</div>
+      <div id="grade-dist" class="space-y-1.5">
+        <!-- rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════
+// 数据（从华南2026年经销商作战地图.xls提取）
+// ══════════════════════════════════════
+let DEALERS = [
+  { id:1,  city:'深圳', dealer:'徐增勇', grade:'B',    manager:'欧基挺', perf25:1313, target26:2000, retail26:700,  home26:700,  eng26:240, focus:['整装','零售'], pain:'零售基础薄弱，整装渠道需新开拓', phone:'13602660972' },
+  { id:2,  city:'福州', dealer:'林伟',   grade:'A',    manager:'陈乃捷', perf25:1600, target26:1800, retail26:600,  home26:800,  eng26:136, focus:['整装','零售'], pain:'核心商圈店面老化，需升级改造', phone:'13799373085' },
+  { id:3,  city:'泉州', dealer:'詹学哲', grade:'A',    manager:'田宇',   perf25:708,  target26:1500, retail26:500,  home26:400,  eng26:100, focus:['整装','工程'], pain:'整装公司合作数量不足，需扩展', phone:'15305025767' },
+  { id:4,  city:'佛山', dealer:'刘嘉敏', grade:'A',    manager:'邓国全', perf25:1800, target26:2600, retail26:800,  home26:200,  eng26:400, focus:['零售','工程'], pain:'工程渠道项目储备不足', phone:'13929975433' },
+  { id:5,  city:'广州', dealer:'李冬',   grade:'C',    manager:'欧基挺', perf25:683,  target26:1200, retail26:450,  home26:200,  eng26:90,  focus:['零售'],       pain:'门店位置偏，竞品挤压严重', phone:'15915805848' },
+  { id:6,  city:'汕头', dealer:'蚁克华', grade:'A',    manager:'凌辉',   perf25:1179, target26:1200, retail26:500,  home26:255,  eng26:170, focus:['零售','整装'], pain:'市场天花板低，需向高端品升级', phone:'13809672549' },
+  { id:7,  city:'东莞', dealer:'刘奇伟', grade:'C',    manager:'欧基挺', perf25:564,  target26:1000, retail26:350,  home26:300,  eng26:80,  focus:['整装'],       pain:'整装公司签约率低，团队不稳定', phone:'13929285567' },
+  { id:8,  city:'珠海', dealer:'罗卓奎', grade:'B',    manager:'邓国全', perf25:746,  target26:1000, retail26:400,  home26:150,  eng26:100, focus:['零售','工程'], pain:'工程渠道刚起步，项目资源少', phone:'13570682232' },
+  { id:9,  city:'惠州', dealer:'吴惠灿', grade:'B',    manager:'程忠凯', perf25:903,  target26:1000, retail26:400,  home26:150,  eng26:200, focus:['工程'],       pain:'工程在跟进项目落地转化慢', phone:'15916387930' },
+  { id:10, city:'湛江', dealer:'张凌梅', grade:'B',    manager:'谭见',   perf25:960,  target26:1000, retail26:400,  home26:100,  eng26:170, focus:['零售'],       pain:'分销体系不完善，县级市场空白多', phone:'13828201299' },
+  { id:11, city:'廉江', dealer:'郭俊锋', grade:'A+',   manager:'谭见',   perf25:1286, target26:850,  retail26:300,  home26:140,  eng26:260, focus:['工程','分销'], pain:'目标有所收缩，工程类项目是重点', phone:'13124949672' },
+  { id:12, city:'海口', dealer:'薛磊磊', grade:'未达C', manager:'谭见',  perf25:655,  target26:800,  retail26:250,  home26:150,  eng26:250, focus:['整装'],       pain:'导购能力弱，整装转化率低', phone:'13976197092' },
+  { id:13, city:'中山', dealer:'刘杰',   grade:'C',    manager:'梁子豪', perf25:270,  target26:600,  retail26:200,  home26:82,   eng26:120, focus:['整装','分销'], pain:'团队人员少，缺设计师', phone:'13924982086' },
+  { id:14, city:'厦门', dealer:'詹学哲', grade:'C',    manager:'田宇',   perf25:152,  target26:600,  retail26:200,  home26:100,  eng26:100, focus:['整装'],       pain:'新市场，整装公司资源待开发', phone:'15305025767' },
+  { id:15, city:'宁德', dealer:'阮克通', grade:'未达C', manager:'陈乃捷', perf25:557,  target26:500,  retail26:180,  home26:50,   eng26:80,  focus:['零售'],       pain:'市场容量有限，需下沉县级', phone:'13959408879' },
+  { id:16, city:'韶关', dealer:'潘新群', grade:'B',    manager:'程忠凯', perf25:280,  target26:400,  retail26:160,  home26:80,   eng26:60,  focus:['零售'],       pain:'门店面积小，影响高端产品陈列', phone:'13509860739' },
+  { id:17, city:'茂名', dealer:'吴伟玲', grade:'A',    manager:'梁子豪', perf25:260,  target26:400,  retail26:160,  home26:80,   eng26:80,  focus:['整装','零售'], pain:'整装公司渗透率不高', phone:'13542311824' },
+  { id:18, city:'肇庆', dealer:'区柱荣', grade:'C',    manager:'邓国全', perf25:220,  target26:400,  retail26:150,  home26:80,   eng26:50,  focus:['零售'],       pain:'竞品冠珠、东鹏占据主要市场份额', phone:'13392268477' },
+  { id:19, city:'莆田', dealer:'许美金', grade:'C',    manager:'黄思定', perf25:190,  target26:400,  retail26:160,  home26:100,  eng26:50,  focus:['整装'],       pain:'莆田整装公司规模小，提货额低', phone:'13799685612' },
+  { id:20, city:'江门', dealer:'许清泓', grade:'C',    manager:'梁子豪', perf25:180,  target26:300,  retail26:100,  home26:70,   eng26:50,  focus:['分销'],       pain:'分销点少，覆盖不足', phone:'13929035808' },
+];
+
+let activeId = null;
+let currentFilter = 'all';
+let searchStr = '';
+let pendingParsed = [];
+
+// ══════════════════════════════════════
+// 初始化
+// ══════════════════════════════════════
+window.onload = () => {
+  updateStats();
+  renderDealerList();
+  renderPriorityList();
+  renderManagerSummary();
+  renderGradeDist();
+};
+
+// ══════════════════════════════════════
+// 统计
+// ══════════════════════════════════════
+function updateStats() {
+  const total26 = DEALERS.reduce((s,d) => s + (d.target26||0), 0);
+  const total25 = DEALERS.reduce((s,d) => s + (d.perf25||0), 0);
+  const growth = total25 > 0 ? Math.round((total26 - total25) / total25 * 100) : 0;
+  document.getElementById('stat-count').textContent = DEALERS.length;
+  document.getElementById('stat-target').textContent = (total26/10000).toFixed(1) + '亿';
+  document.getElementById('stat-base').textContent = (total25/10000).toFixed(1) + '亿';
+  document.getElementById('stat-growth').textContent = '+' + growth + '%';
+}
+
+// ══════════════════════════════════════
+// 经销商列表
+// ══════════════════════════════════════
+function gradeClass(g) {
+  if (g === 'A+') return 'grade-Aplus';
+  if (g === 'A')  return 'grade-A';
+  if (g === 'B')  return 'grade-B';
+  if (g === 'C')  return 'grade-C';
+  return 'grade-none';
+}
+
+function priorityLevel(d) {
+  const gap = d.perf25 > 0 ? (d.target26 - d.perf25) / d.perf25 : 0;
+  if ((d.grade === 'C' || d.grade === '未达C') && gap > 0.5) return 'high';
+  if (gap > 0.3) return 'mid';
+  return 'low';
+}
+
+function filterDealers() {
+  searchStr = document.getElementById('search-input').value.toLowerCase();
+  renderDealerList();
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  ['all','high','A+','A','C'].forEach(id => {
+    const btn = document.getElementById('f-' + id);
+    if (!btn) return;
+    btn.className = f === id
+      ? 'text-xs px-2.5 py-1 rounded-full bg-indigo-600 text-white transition-all'
+      : 'text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 hover:bg-slate-700 transition-all';
+  });
+  renderDealerList();
+}
+
+function renderDealerList() {
+  const list = document.getElementById('dealer-list');
+  const visible = DEALERS.filter(d => {
+    const matchSearch = !searchStr ||
+      d.dealer.includes(searchStr) || d.city.includes(searchStr) || d.manager.includes(searchStr);
+    const matchFilter =
+      currentFilter === 'all' ? true :
+      currentFilter === 'high' ? priorityLevel(d) === 'high' :
+      currentFilter === 'C' ? (d.grade === 'C' || d.grade === '未达C') :
+      d.grade === currentFilter;
+    return matchSearch && matchFilter;
+  });
+
+  list.innerHTML = visible.map(d => {
+    const gap = d.perf25 > 0 ? Math.round((d.target26 - d.perf25) / d.perf25 * 100) : 0;
+    const pLevel = priorityLevel(d);
+    const dotClass = pLevel === 'high' ? 'p-high' : pLevel === 'mid' ? 'p-mid' : 'p-low';
+    const gapText = d.perf25 > 0
+      ? (gap >= 0 ? '+' + gap + '%' : gap + '%')
+      : '新增';
+    const gapColor = gap > 50 ? 'text-red-400' : gap > 20 ? 'text-amber-400' : 'text-emerald-400';
+    return `
+      <div class="dealer-card rounded-xl px-3 py-2.5 ${activeId === d.id ? 'active' : ''}" onclick="selectDealer(${d.id})">
+        <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center gap-2">
+            <div class="priority-dot ${dotClass}"></div>
+            <span class="text-sm font-semibold text-slate-200">${d.city}</span>
+            <span class="grade-badge ${gradeClass(d.grade)}">${d.grade}</span>
+          </div>
+          <span class="text-xs ${gapColor} font-bold">${gapText}</span>
+        </div>
+        <div class="text-xs text-slate-500 flex justify-between">
+          <span>${d.dealer} · ${d.manager}</span>
+          <span class="text-slate-600">${d.target26}万</span>
+        </div>
+      </div>
+    `;
+  }).join('') || '<div class="text-xs text-slate-600 text-center py-6">无匹配结果</div>';
+}
+
+// ══════════════════════════════════════
+// 详情面板
+// ══════════════════════════════════════
+function selectDealer(id) {
+  activeId = id;
+  renderDealerList();
+  const d = DEALERS.find(x => x.id === id);
+  if (!d) return;
+  renderDetail(d);
+}
+
+function renderDetail(d) {
+  const gap = d.perf25 > 0 ? Math.round((d.target26 - d.perf25) / d.perf25 * 100) : 0;
+  const gapAmt = d.target26 - d.perf25;
+  const pLevel = priorityLevel(d);
+
+  const aiStrategy = genStrategy(d);
+  const aiActions = genActions(d);
+  const aiResources = genResources(d);
+
+  const focusTags = d.focus.map(f => {
+    const cls = f==='零售' ? 'tag-retail' : f==='整装' ? 'tag-home' : f==='工程' ? 'tag-project' : 'tag-dist';
+    return `<span class="action-tag ${cls}">${f}</span>`;
+  }).join('');
+
+  const barWidth = Math.min(100, Math.max(0, d.perf25 / d.target26 * 100));
+
+  document.getElementById('detail-panel').innerHTML = `
+    <div class="slide-in max-w-2xl">
+
+      <!-- 头部 -->
+      <div class="flex items-start justify-between mb-5">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <h2 class="text-xl font-bold">${d.city} · ${d.dealer}</h2>
+            <span class="grade-badge ${gradeClass(d.grade)}">${d.grade}</span>
+            ${pLevel === 'high' ? '<span class="text-xs text-red-400 font-bold blink">⚡ 高优关注</span>' : ''}
+          </div>
+          <div class="text-xs text-slate-500">销区经理：${d.manager} &nbsp;·&nbsp; ${d.phone}</div>
+        </div>
+        <button onclick="editDealer(${d.id})" class="text-xs text-slate-500 hover:text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors">✏ 修改</button>
+      </div>
+
+      <!-- 数字核心：三件事 -->
+      <div class="grid grid-cols-3 gap-3 mb-5">
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06)" class="rounded-xl p-4">
+          <div class="text-xs text-slate-500 mb-1">25年基数</div>
+          <div class="text-2xl font-bold text-slate-300">${d.perf25 || '—'}<span class="text-sm font-normal text-slate-500">万</span></div>
+        </div>
+        <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.2)" class="rounded-xl p-4">
+          <div class="text-xs text-slate-400 mb-1">26年目标</div>
+          <div class="text-2xl font-bold text-indigo-300">${d.target26}<span class="text-sm font-normal text-slate-500">万</span></div>
+        </div>
+        <div style="background:${gap > 50 ? 'rgba(239,68,68,.06)' : gap > 20 ? 'rgba(245,158,11,.06)' : 'rgba(16,185,129,.06)'};border:1px solid ${gap > 50 ? 'rgba(239,68,68,.2)' : gap > 20 ? 'rgba(245,158,11,.2)' : 'rgba(16,185,129,.2)'}" class="rounded-xl p-4">
+          <div class="text-xs text-slate-400 mb-1">增长缺口</div>
+          <div class="text-2xl font-bold ${gap > 50 ? 'text-red-400' : gap > 20 ? 'text-amber-400' : 'text-emerald-400'}">${d.perf25 > 0 ? '+'+gapAmt : '新增'}<span class="text-sm font-normal text-slate-500">万</span></div>
+          <div class="text-xs text-slate-500 mt-0.5">${d.perf25 > 0 ? (gap >= 0 ? '+'+gap+'%' : gap+'%') : ''}</div>
+        </div>
+      </div>
+
+      <!-- 目标拆解 -->
+      <div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06)" class="rounded-xl p-4 mb-4">
+        <div class="text-xs font-semibold text-slate-400 mb-3">26年目标拆解</div>
+        <div class="space-y-2.5">
+          ${[['零售（店面）', d.retail26, 'rgba(99,102,241,.5)'], ['整装渠道', d.home26, 'rgba(16,185,129,.5)'], ['工程渠道', d.eng26, 'rgba(245,158,11,.5)']].map(([label, val, color]) => {
+            const pct = Math.round(val / d.target26 * 100);
+            return `
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-slate-400">${label}</span>
+                  <span class="text-slate-300 font-semibold">${val}万 <span class="text-slate-600">${pct}%</span></span>
+                </div>
+                <div class="gap-bar"><div class="gap-fill" style="width:${pct}%;background:${color}"></div></div>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- 三件事确认区 -->
+      <div class="grid grid-cols-3 gap-3 mb-5">
+        <!-- 件事1：目标 -->
+        <div style="background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.06)" class="rounded-xl p-3">
+          <div class="text-xs text-indigo-400 font-semibold mb-2">① 目标数字确认</div>
+          <div class="text-xs text-slate-400 space-y-1">
+            <div class="flex justify-between"><span>总目标</span><span class="text-slate-200 font-bold">${d.target26}万</span></div>
+            <div class="flex justify-between"><span>基数</span><span class="text-slate-300">${d.perf25||'待补'}万</span></div>
+            <div class="flex justify-between"><span>增幅</span><span class="${gap>50?'text-red-400':gap>20?'text-amber-400':'text-emerald-400'} font-semibold">${d.perf25>0?(gap>=0?'+'+gap+'%':gap+'%'):'新增'}</span></div>
+          </div>
+          <button onclick="confirmItem(${d.id},'target')" class="mt-2 w-full text-xs text-indigo-400 border border-indigo-800/50 rounded-lg py-1 hover:bg-indigo-950/50 transition-colors">✓ 数字无误</button>
+        </div>
+        <!-- 件事2：主攻渠道 -->
+        <div style="background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.06)" class="rounded-xl p-3">
+          <div class="text-xs text-emerald-400 font-semibold mb-2">② 主攻渠道确认</div>
+          <div class="flex flex-wrap gap-1 mb-2">${focusTags}</div>
+          <div class="text-xs text-slate-500">其余渠道维持现状</div>
+          <button onclick="confirmItem(${d.id},'focus')" class="mt-2 w-full text-xs text-emerald-400 border border-emerald-800/50 rounded-lg py-1 hover:bg-emerald-950/50 transition-colors">✓ 方向正确</button>
+        </div>
+        <!-- 件事3：卡点 -->
+        <div style="background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.06)" class="rounded-xl p-3">
+          <div class="text-xs text-amber-400 font-semibold mb-2">③ 主要卡点确认</div>
+          <div class="text-xs text-slate-400 leading-relaxed">${d.pain}</div>
+          <button onclick="confirmItem(${d.id},'pain')" class="mt-2 w-full text-xs text-amber-400 border border-amber-800/50 rounded-lg py-1 hover:bg-amber-950/50 transition-colors">✓ 已知悉</button>
+        </div>
+      </div>
+
+      <!-- AI分析 -->
+      <div style="background:rgba(99,102,241,.04);border:1px solid rgba(99,102,241,.15)" class="rounded-xl p-4 mb-4">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="text-xs font-bold text-indigo-300">⚡ AI作战策略建议</div>
+          <span class="text-xs text-slate-600">基于等级 · 缺口 · 渠道自动生成</span>
+        </div>
+        <div class="text-sm text-slate-300 leading-relaxed mb-3">${aiStrategy}</div>
+        <div class="space-y-1.5">
+          ${aiActions.map((a,i) => `
+            <div class="flex items-start gap-2 text-xs text-slate-400">
+              <span class="text-indigo-500 flex-shrink-0 font-bold mt-0.5">${i+1}.</span>
+              <span>${a}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- 资源需求 -->
+      <div style="background:rgba(245,158,11,.04);border:1px solid rgba(245,158,11,.12)" class="rounded-xl p-4">
+        <div class="text-xs font-bold text-amber-300 mb-2">🗂 建议申请的资源支持</div>
+        <div class="flex flex-wrap gap-2">
+          ${aiResources.map(r => `<span class="text-xs bg-amber-950/40 border border-amber-800/30 text-amber-300 rounded-lg px-3 py-1">${r}</span>`).join('')}
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════
+// AI策略生成（规则引擎）
+// ══════════════════════════════════════
+function genStrategy(d) {
+  const gap = d.perf25 > 0 ? (d.target26 - d.perf25) / d.perf25 : 0;
+  const gapAmt = d.target26 - (d.perf25 || 0);
+
+  if (d.grade === 'A+') return `廉江郭俊锋是华南标杆经销商，目标适度收缩后仍是区域高地。重点在于工程类项目的系统化运营，将成功经验复制输出给周边B/C类经销商。`;
+  if (d.grade === 'A') {
+    if (gap > 0.4) return `${d.city}${d.dealer}基础扎实，本年目标增幅较大（+${Math.round(gap*100)}%），需重点突破${d.focus[0]}渠道，缺口${gapAmt}万建议分季度拆解里程碑，避免下半年压力集中。`;
+    return `${d.city}${d.dealer}是区域A类标杆，26年目标合理。建议聚焦${d.focus.join('/')}渠道提质增效，防止对手追赶，重点在于高端品占比提升。`;
+  }
+  if (d.grade === 'B') {
+    return `${d.city}${d.dealer}处于成长阶段，缺口${gapAmt}万需要重点投入。${d.focus[0]}是主攻方向，建议一季度完成渠道基础建设，二季度快速放量。卡点"${d.pain}"需在开年作战会上明确落实方案。`;
+  }
+  if (d.grade === 'C') {
+    if (gap > 0.5) return `⚠ ${d.city}${d.dealer}目标增幅达${Math.round(gap*100)}%，对C类经销商而言极具挑战。需评估是否具备团队、门店、渠道三项基础。若三项中有两项不达标，建议重新讨论目标或考虑换商方案。`;
+    return `${d.city}${d.dealer}当前C类，年内有望晋升B类。关键看${d.focus[0]}渠道的突破效果。建议品牌方给予专属整装公司对接资源支持，降低经销商自开渠道难度。`;
+  }
+  return `${d.city}${d.dealer}目前未达C类评级，属于重点观察对象。26年是关键考察年，若${d.focus[0]}渠道无明显起色，需在Q3评估是否继续持有该市场份额。`;
+}
+
+function genActions(d) {
+  const actions = [];
+  const gap = d.perf25 > 0 ? (d.target26 - d.perf25) / d.perf25 : 1;
+
+  if (d.focus.includes('整装')) actions.push('1月底完成整装公司签约名单确认，目标新签≥2家，并制定季度提货计划');
+  if (d.focus.includes('工程')) actions.push('梳理在跟进工程项目清单，重点项目报公司备案，协调样板间支持');
+  if (d.focus.includes('零售')) actions.push('门店陈列升级，高端品专区面积提升至20%以上，导购完成高端品培训');
+  if (d.focus.includes('分销')) actions.push('县级分销网点拓展，目标季度新增分销商≥1个');
+  if (gap > 0.4) actions.push('季度里程碑拆解：Q1完成25%目标，Q2达到50%，超前完成防止年底冲量依赖');
+  if (d.grade === 'C' || d.grade === '未达C') actions.push('月度跟进机制建立，销区经理每月驻店不少于2天，问题当月解决');
+  actions.push(`卡点专项：制定"${d.pain}"解决方案，Q1末向区域汇报进展`);
+  return actions.slice(0, 4);
+}
+
+function genResources(d) {
+  const res = [];
+  if (d.focus.includes('整装')) res.push('整装样板间补贴');
+  if (d.focus.includes('工程')) res.push('工程项目BD支持');
+  if (d.focus.includes('零售')) res.push('高端品陈列道具');
+  if (d.grade === 'C' || d.grade === '未达C') res.push('销售培训资源');
+  const gap = d.perf25 > 0 ? (d.target26 - d.perf25) / d.perf25 : 1;
+  if (gap > 0.5) res.push('市场费用倾斜支持');
+  res.push('门店改造补贴申请');
+  return res.slice(0, 4);
+}
+
+// ══════════════════════════════════════
+// 右侧全局面板
+// ══════════════════════════════════════
+function renderPriorityList() {
+  const sorted = [...DEALERS]
+    .filter(d => d.perf25 > 0)
+    .sort((a, b) => {
+      const ga = (a.target26 - a.perf25) / a.perf25;
+      const gb = (b.target26 - b.perf25) / b.perf25;
+      return gb - ga;
+    })
+    .slice(0, 7);
+
+  document.getElementById('priority-list').innerHTML = sorted.map(d => {
+    const gap = Math.round((d.target26 - d.perf25) / d.perf25 * 100);
+    const dotClass = gap > 50 ? 'p-high' : gap > 25 ? 'p-mid' : 'p-low';
+    return `
+      <div class="flex items-center justify-between text-xs cursor-pointer hover:text-slate-200 transition-colors" onclick="selectDealer(${d.id})">
+        <div class="flex items-center gap-1.5">
+          <div class="priority-dot ${dotClass}"></div>
+          <span class="text-slate-400">${d.city}·${d.dealer}</span>
+        </div>
+        <span class="${gap>50?'text-red-400':gap>25?'text-amber-400':'text-emerald-400'} font-bold">+${gap}%</span>
+      </div>`;
+  }).join('');
+}
+
+function renderManagerSummary() {
+  const byMgr = {};
+  DEALERS.forEach(d => {
+    if (!byMgr[d.manager]) byMgr[d.manager] = { target:0, dealers:0 };
+    byMgr[d.manager].target += d.target26;
+    byMgr[d.manager].dealers++;
+  });
+  const sorted = Object.entries(byMgr).sort((a,b) => b[1].target - a[1].target);
+  document.getElementById('manager-summary').innerHTML = sorted.map(([mgr, data]) => `
+    <div class="flex items-center justify-between text-xs">
+      <span class="text-slate-500">${mgr} <span class="text-slate-700">${data.dealers}家</span></span>
+      <span class="text-slate-400 font-semibold">${data.target}万</span>
+    </div>
+  `).join('');
+}
+
+function renderGradeDist() {
+  const dist = { 'A+':0, 'A':0, 'B':0, 'C':0, '未达C':0 };
+  DEALERS.forEach(d => { if (dist[d.grade] !== undefined) dist[d.grade]++; });
+  document.getElementById('grade-dist').innerHTML = Object.entries(dist).map(([g, n]) => `
+    <div class="flex items-center justify-between text-xs">
+      <span class="grade-badge ${gradeClass(g)}">${g}</span>
+      <div class="flex-1 mx-2 gap-bar"><div class="gap-fill" style="width:${n/DEALERS.length*100}%;background:rgba(99,102,241,.4)"></div></div>
+      <span class="text-slate-500 w-4 text-right">${n}</span>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════
+// 快速录入
+// ══════════════════════════════════════
+function showQuickEntry() {
+  document.getElementById('quick-entry-panel').classList.remove('hidden');
+  document.getElementById('quick-input').focus();
+}
+function hideQuickEntry() {
+  document.getElementById('quick-entry-panel').classList.add('hidden');
+  pendingParsed = [];
+  document.getElementById('parse-preview').classList.add('hidden');
+  document.getElementById('confirm-parse-btn').classList.add('hidden');
+  document.getElementById('quick-input').value = '';
+}
+
+function parseQuickEntry() {
+  const raw = document.getElementById('quick-input').value;
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+  pendingParsed = lines.map((line, i) => {
+    const parts = line.split('|').map(s => s.trim());
+    const city = parts[0] || '未知城市';
+    const dealer = parts[1] || '未知经销商';
+    const grade = parts[2] || 'C';
+    const perf25 = parseFloat(parts[3]) || 0;
+    const target26 = parseFloat(parts[4]) || 0;
+    const focusRaw = parts[5] || '零售';
+    const pain = parts[6] || '待补充';
+    const focus = focusRaw.split(/[,，、]/).map(f => f.trim()).filter(Boolean);
+    const gap = perf25 > 0 ? Math.round((target26 - perf25) / perf25 * 100) : 0;
+    return { id: Date.now() + i, city, dealer, grade, manager:'待分配', perf25, target26, retail26: Math.round(target26*0.4), home26: Math.round(target26*0.35), eng26: Math.round(target26*0.25), focus, pain, phone:'—', _gap: gap };
+  }).filter(d => d.target26 > 0);
+
+  const preview = document.getElementById('parse-preview');
+  if (pendingParsed.length === 0) {
+    preview.innerHTML = '<div class="text-xs text-red-400 px-1">解析失败，请检查格式</div>';
+    preview.classList.remove('hidden');
+    return;
+  }
+  preview.innerHTML = pendingParsed.map(d => `
+    <div class="parse-row flex items-center justify-between bg-slate-800/50 rounded-lg px-3 py-2">
+      <div class="flex items-center gap-2">
+        <span class="grade-badge ${gradeClass(d.grade)}">${d.grade}</span>
+        <span class="text-sm font-semibold">${d.city} · ${d.dealer}</span>
+      </div>
+      <div class="text-xs text-slate-400">
+        <span class="text-slate-500 mr-2">${d.perf25||'?'}万→</span>
+        <span class="text-indigo-300 font-bold">${d.target26}万</span>
+        ${d.perf25>0 ? `<span class="${d._gap>50?'text-red-400':'text-amber-400'} ml-1">+${d._gap}%</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+  preview.classList.remove('hidden');
+  document.getElementById('confirm-parse-btn').classList.remove('hidden');
+}
+
+function confirmQuickEntry() {
+  DEALERS.push(...pendingParsed);
+  updateStats();
+  renderDealerList();
+  renderPriorityList();
+  renderManagerSummary();
+  renderGradeDist();
+  hideQuickEntry();
+  // auto-select first new
+  if (pendingParsed.length > 0) selectDealer(pendingParsed[0].id);
+}
+
+// ══════════════════════════════════════
+// 编辑
+// ══════════════════════════════════════
+function confirmItem(id, type) {
+  const btn = event.target;
+  btn.textContent = '✓ 已确认';
+  btn.style.background = 'rgba(16,185,129,.15)';
+  btn.style.color = '#6ee7b7';
+  btn.style.borderColor = 'rgba(16,185,129,.3)';
+  btn.disabled = true;
+}
+
+function editDealer(id) {
+  const d = DEALERS.find(x => x.id === id);
+  if (!d) return;
+  const newTarget = prompt(`修改 ${d.city}·${d.dealer} 的26年目标（当前：${d.target26}万）：`);
+  if (newTarget && !isNaN(parseFloat(newTarget))) {
+    d.target26 = parseFloat(newTarget);
+    d.retail26 = Math.round(d.target26 * 0.4);
+    d.home26 = Math.round(d.target26 * 0.35);
+    d.eng26 = Math.round(d.target26 * 0.25);
+    updateStats();
+    renderDealerList();
+    renderPriorityList();
+    renderDetail(d);
+  }
+}
+</script>
+</body>
+</html>
