@@ -659,7 +659,7 @@ function renderSectionSummary() {
       const chipId = `chip-${sec.replace(/\s+/g, '-')}-${s}`;
       return `<span id="${chipId}" class="text-xs px-2 py-0.5 rounded-full mr-1 font-semibold cursor-pointer hover:opacity-80 transition-opacity"
                      style="background:rgba(255,255,255,.05);color:${getComputedColor(s)}"
-                     onclick="toggleFieldList('${sec}', '${s}')"
+                     onclick="toggleFieldList('${sec}', '${s}', event)"
                      title="点击查看${sec}中的${cfg.label}">${cfg.label} ${srcBreak[s]}列</span>`;
     }).join('');
 
@@ -681,7 +681,12 @@ function renderSectionSummary() {
 // 切换字段列表显示
 let activeFieldList = null;
 
-function toggleFieldList(section, src) {
+function toggleFieldList(section, src, event) {
+  // 阻止事件冒泡，避免触发全局点击
+  if (event) {
+    event.stopPropagation();
+  }
+
   const fieldListId = `fields-${section.replace(/\s+/g, '-')}`;
   const fieldListEl = document.getElementById(fieldListId);
 
@@ -709,12 +714,12 @@ function toggleFieldList(section, src) {
 
   // 生成字段列表
   const fieldListHTML = `
-    <div class="field-list-panel">
+    <div class="field-list-panel" onclick="event.stopPropagation()">
       <div class="text-xs text-slate-500 mb-2 font-semibold">
         ${section} · ${SRC_CONFIG[src].label} (${fields.length}列)
       </div>
       ${fields.map(col => `
-        <div class="field-item" onclick="showDetail(COLS[${col.c}])" title="点击查看详情">
+        <div class="field-item" onclick="showDetail(COLS[${col.c}]); event.stopPropagation();" title="点击查看详情">
           <span class="field-item-num">[${col.c}]</span>
           <span class="field-item-name">${col.name}</span>
         </div>
@@ -729,6 +734,29 @@ function toggleFieldList(section, src) {
   // 同时应用筛选
   filterSectionAndSource(section, src);
 }
+
+// 全局点击事件：点击空白处关闭字段列表
+document.addEventListener('click', function(event) {
+  if (activeFieldList) {
+    const fieldListEl = document.getElementById(activeFieldList);
+    if (fieldListEl) {
+      fieldListEl.classList.add('hidden');
+      fieldListEl.innerHTML = '';
+      activeFieldList = null;
+      // 恢复显示全部
+      activeFilter = 'all';
+      activeSection = null;
+      renderGrid('all');
+      // 重置所有高亮
+      Object.keys(SRC_CONFIG).forEach(s => {
+        const el = document.getElementById('leg-' + s);
+        if (el) el.style.opacity = '1';
+        const statEl = document.getElementById('stat-' + s);
+        if (statEl) statEl.style.opacity = '1';
+      });
+    }
+  }
+});
 
 // ══════════════════════════════════════
 // Init
