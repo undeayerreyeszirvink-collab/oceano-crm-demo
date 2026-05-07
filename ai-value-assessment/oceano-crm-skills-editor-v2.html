@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>欧神诺CRM · Skills编排器 v2.0</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body { background:#0b0f1a; font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif; color:#e2e8f0 }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.5} }
+@keyframes flowDash { to { stroke-dashoffset: -20; } }
+.fade-in { animation: fadeIn .25s ease-out }
+.pulse { animation: pulse 2s infinite }
+::-webkit-scrollbar { width:6px;height:6px }
+::-webkit-scrollbar-thumb { background:#1e293b;border-radius:3px }
+::-webkit-scrollbar-thumb:hover { background:#334155 }
+
+/* Layer colors */
+.layer-L1 { background:rgba(59,130,246,.12); color:#60a5fa; border:1px solid rgba(59,130,246,.3) }
+.layer-L2 { background:rgba(168,85,247,.12); color:#c084fc; border:1px solid rgba(168,85,247,.3) }
+.layer-L3 { background:rgba(245,158,11,.12); color:#fbbf24; border:1px solid rgba(245,158,11,.3) }
+
+/* Skill category colors (atomic) */
+.cat-入口 { --c:#60a5fa; --bg:rgba(59,130,246,.08); --bd:rgba(59,130,246,.3) }
+.cat-业务 { --c:#f87171; --bg:rgba(239,68,68,.08); --bd:rgba(239,68,68,.3) }
+.cat-控制 { --c:#fbbf24; --bg:rgba(245,158,11,.08); --bd:rgba(245,158,11,.3) }
+.cat-查询 { --c:#22d3ee; --bg:rgba(6,182,212,.08); --bd:rgba(6,182,212,.3) }
+.cat-输出 { --c:#86efac; --bg:rgba(34,197,94,.08); --bd:rgba(34,197,94,.3) }
+
+.skill-chip {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 10px; border-radius:8px; font-size:11px; font-weight:600;
+  background:var(--bg,#1e293b); color:var(--c,#94a3b8);
+  border:1px solid var(--bd,#334155);
+  cursor:grab; user-select:none; transition:all .15s;
+}
+.skill-chip:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.3) }
+.skill-chip:active { cursor:grabbing }
+.skill-chip .badge { font-size:9px; padding:1px 5px; border-radius:4px; background:rgba(255,255,255,.1) }
+
+/* Nav tab */
+.nav-tab {
+  padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600;
+  background:transparent; color:#64748b; cursor:pointer; transition:all .15s;
+  border:1px solid transparent;
+}
+.nav-tab:hover { color:#cbd5e1; background:rgba(99,102,241,.08) }
+.nav-tab.active { background:rgba(99,102,241,.15); color:#a5b4fc; border-color:rgba(99,102,241,.4) }
+
+/* Flow canvas */
+.flow-node {
+  position:absolute; padding:10px 14px; border-radius:10px;
+  background:#111827; border:2px solid var(--bd,#334155);
+  color:#e2e8f0; font-size:12px; font-weight:600;
+  min-width:140px; text-align:center; cursor:move; user-select:none;
+  transition:box-shadow .15s;
+  box-shadow:0 2px 8px rgba(0,0,0,.4);
+}
+.flow-node:hover { box-shadow:0 4px 16px rgba(99,102,241,.3) }
+.flow-node .node-cat { font-size:9px; opacity:.6; margin-top:2px }
+.flow-node.selected { border-color:#6366f1 !important; box-shadow:0 0 0 3px rgba(99,102,241,.25) }
+
+/* Agent card */
+.agent-card {
+  background:linear-gradient(135deg,#111827,#0f172a);
+  border:1px solid #1e293b; border-radius:14px; padding:18px;
+  transition:all .2s; cursor:pointer;
+}
+.agent-card:hover { border-color:#6366f1; transform:translateY(-2px); box-shadow:0 8px 24px rgba(99,102,241,.2) }
+
+/* Closed loop ring */
+.loop-node {
+  padding:12px 18px; border-radius:12px;
+  background:#111827; border:2px solid var(--bd);
+  text-align:center; min-width:110px;
+  box-shadow:0 4px 12px rgba(0,0,0,.3);
+}
+
+/* Form controls */
+input,textarea,select {
+  background:#0f172a; border:1px solid #1e293b; color:#e2e8f0;
+  padding:7px 11px; border-radius:7px; font-size:13px;
+  outline:none; transition:border .15s; width:100%;
+}
+input:focus,textarea:focus,select:focus { border-color:#6366f1 }
+
+/* Palette */
+.palette-group {
+  background:rgba(255,255,255,.02); border:1px solid #1e293b;
+  border-radius:10px; padding:12px; margin-bottom:10px;
+}
+.palette-group h4 {
+  font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em;
+  color:#64748b; margin-bottom:8px; display:flex; align-items:center; gap:6px;
+}
+
+.kbd {
+  font-family:ui-monospace,monospace; font-size:10px;
+  padding:1px 5px; border-radius:3px; background:#1e293b;
+  color:#818cf8; border:1px solid #334155;
+}
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- Top Nav -->
+<nav class="bg-slate-950 border-b border-slate-800 px-5 py-3 flex items-center justify-between sticky top-0 z-40">
+  <div class="flex items-center gap-3">
+    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm">⚙️</div>
+    <div>
+      <div class="text-sm font-bold">欧神诺CRM · Skills编排器 <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-900/50 text-indigo-300 ml-1">v2.0</span></div>
+      <div class="text-xs text-slate-500">Skill → Flow → Agent · 分层编排架构</div>
+    </div>
+  </div>
+  <div class="flex items-center gap-1">
+    <button class="nav-tab active" data-view="skills" onclick="setView('skills')">🧩 Skill库</button>
+    <button class="nav-tab" data-view="flows" onclick="setView('flows')">🔀 Flow编排</button>
+    <button class="nav-tab" data-view="agents" onclick="setView('agents')">🤖 Agent组装</button>
+    <button class="nav-tab" data-view="loop" onclick="setView('loop')">♻️ 核心闭环</button>
+  </div>
+  <div class="flex items-center gap-2 text-xs text-slate-500">
+    <span id="save-ok" class="text-emerald-400 hidden">✓ 已保存</span>
+    <span>工程报备场景</span>
+  </div>
+</nav>
+
+<main id="main-view" class="p-5"></main>
+
+<!-- Skill Inspector Modal -->
+<div id="skill-modal" class="hidden fixed inset-0 bg-black/60 z-50 items-center justify-center p-4" onclick="if(event.target.id==='skill-modal')closeModal()">
+  <div id="skill-modal-body" class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto fade-in"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════
+// DATA MODEL — based on Skill → Flow → Agent mapping
+// ══════════════════════════════════════════════════════════════════════
+
+const CATEGORIES = {
+  '入口': { icon:'🎙️', name:'数据入口类', desc:'多模态输入转结构化数据', color:'#60a5fa' },
+  '业务': { icon:'🏗️', name:'核心业务类', desc:'企业专属业务逻辑', color:'#f87171' },
+  '控制': { icon:'🎯', name:'过程控制类', desc:'状态流转与风险提醒', color:'#fbbf24' },
+  '查询': { icon:'🔍', name:'数据与查询类', desc:'搜索、标签、统计', color:'#22d3ee' },
+  '输出': { icon:'📄', name:'输出类', desc:'文档生成与界面渲染', color:'#86efac' }
+};
+
+// 原子 Skills — 不再是"业务线"，而是按能力类型归类的单点能力
+const SKILLS = [
+  // 数据入口类（L1多通用）
+  { id:'VOICE_TO_STRUCT', name:'语音转结构', category:'入口', layer:'L1',
+    io:{ in:'语音流/MP3', out:'JSON{客户,项目,金额,时间}' },
+    desc:'将销售口述的项目信息转为结构化数据',
+    example:'输入："万科龙华三期，3栋800平米大堂"\n输出：{客户:"万科",项目:"龙华三期",面积:800,位置:"大堂"}' },
+  { id:'OCR_PARSE', name:'文档OCR识别', category:'入口', layer:'L1',
+    io:{ in:'PDF/图片', out:'JSON{字段提取}' },
+    desc:'识别报备单、名片、合同等纸质/电子文档',
+    example:'输入：报备单扫描件\n输出：{项目名,面积,预算,设计师,工期}' },
+  { id:'BEHAVIOR_CAPTURE', name:'沟通行为采集', category:'入口', layer:'L1',
+    io:{ in:'企微/通话记录', out:'事件流' },
+    desc:'自动采集销售与客户的沟通事件',
+    example:'客户A昨天19:03拨打销售B，通话12分钟，话题关键词"报价"' },
+
+  // 核心业务类（L3企业私有）
+  { id:'PROJECT_DEDUP', name:'项目查重', category:'业务', layer:'L3',
+    io:{ in:'新项目字段', out:'{重复?,冲突项目ID,相似度}' },
+    desc:'基于欧神诺项目库判重，防撞单',
+    example:'新报备"万科龙华三期"→ 发现张三已于3日前报备，相似度92%' },
+  { id:'ENTITY_CREATE', name:'项目/客户建档', category:'业务', layer:'L3',
+    io:{ in:'结构化字段', out:'实体ID' },
+    desc:'在 CRM 中创建项目或客户档案',
+    example:'写入 CRM.project: id=P20260508001, 状态=待审核' },
+  { id:'RELATION_BIND', name:'责任人绑定', category:'业务', layer:'L3',
+    io:{ in:'项目ID+销售ID', out:'绑定关系' },
+    desc:'绑定客户-项目-销售-渠道四方关系',
+    example:'项目P001 ← 销售张三(主责) + 渠道李四(分成30%)' },
+  { id:'QUOTE_CALC', name:'报价计算', category:'业务', layer:'L3',
+    io:{ in:'客户等级+产品+数量', out:'报价单草稿' },
+    desc:'按企业折扣政策生成报价',
+    example:'A类盟主 × 岩板1000㎡ × 9折 → ¥287,100（符合权限）' },
+  { id:'APPROVAL', name:'审批流', category:'业务', layer:'L3',
+    io:{ in:'审批对象', out:'通过/驳回+备注' },
+    desc:'折扣/特价/冲突的人工审批',
+    example:'折扣7.5折超权限 → 待大区总监审批（SLA 2小时）' },
+
+  // 过程控制类（L2半通用）
+  { id:'STATUS_TRACK', name:'状态跟踪', category:'控制', layer:'L2',
+    io:{ in:'项目事件', out:'当前状态' },
+    desc:'项目在生命周期中的阶段流转',
+    example:'报备 → 锁定 → 报价 → 审批 → 成交 → 复盘' },
+  { id:'FOLLOWUP', name:'跟进提醒', category:'控制', layer:'L2',
+    io:{ in:'跟进规则', out:'企微提醒' },
+    desc:'按SLA推送跟进任务',
+    example:'项目P001 已3天无动作 → 推送销售张三' },
+  { id:'ALERT', name:'风险/冲突提醒', category:'控制', layer:'L2',
+    io:{ in:'异常事件', out:'告警+动作建议' },
+    desc:'识别撞单、飞单、失联等风险',
+    example:'检测到2名销售同时跟进万科龙华 → 立即通知双方主管' },
+  { id:'RULE_ENGINE', name:'规则引擎', category:'控制', layer:'L3',
+    io:{ in:'事件+规则库', out:'判定结果' },
+    desc:'归属、提成、公海释放等规则',
+    example:'48h无跟进 + 客户状态=冷 → 判定：自动转公海' },
+
+  // 数据与查询类（L1多通用）
+  { id:'SEARCH', name:'项目/客户搜索', category:'查询', layer:'L1',
+    io:{ in:'查询语句', out:'匹配列表' },
+    desc:'语义化搜索项目、客户、历史报价',
+    example:'"去年华南的岩板大单" → 返回8个匹配项目' },
+  { id:'TAGGING', name:'智能标签', category:'查询', layer:'L2',
+    io:{ in:'项目元数据', out:'标签集合' },
+    desc:'自动打标签：高潜、僵尸、竞品压力等',
+    example:'项目P001 自动标记：[高潜][竞品: 东鹏][Q3重点]' },
+  { id:'DATA_AGG', name:'统计汇总', category:'查询', layer:'L1',
+    io:{ in:'查询条件', out:'聚合数据' },
+    desc:'按维度聚合：大区/产品/渠道/时间',
+    example:'华南区1-5月 报备数=127，转化=38，转化率30%' },
+
+  // 输出类（L1高度通用）
+  { id:'DOCUMENT_GEN', name:'文档生成', category:'输出', layer:'L1',
+    io:{ in:'数据+模板', out:'PDF/Word' },
+    desc:'生成报备单、报价单、周报',
+    example:'报价单模板 + 项目数据 → PDF文件' },
+  { id:'VIEW_RENDER', name:'列表/看板渲染', category:'输出', layer:'L1',
+    io:{ in:'数据集', out:'可视化界面' },
+    desc:'实时看板、漏斗、地图',
+    example:'华南报备漏斗：报备127 → 锁定98 → 报价76 → 成交38' }
+];
+
+// Flows — 工程报备的 6 个核心流程
+const FLOWS = [
+  { id:'F1', name:'项目报备', trigger:'销售语音/文档上传', sla:'2分钟',
+    steps:['VOICE_TO_STRUCT','OCR_PARSE','PROJECT_DEDUP','ENTITY_CREATE','RELATION_BIND'],
+    desc:'从非结构化输入到项目落库，自动查重、建档、绑定责任人' },
+  { id:'F2', name:'冲突校验与确权', trigger:'项目创建后', sla:'5分钟',
+    steps:['PROJECT_DEDUP','RULE_ENGINE','ALERT','STATUS_TRACK'],
+    desc:'二次校验防撞单，归属判定，状态锁定' },
+  { id:'F3', name:'报价与审批', trigger:'客户询价/销售发起', sla:'30分钟',
+    steps:['SEARCH','QUOTE_CALC','APPROVAL','DOCUMENT_GEN'],
+    desc:'参考历史成交价，生成报价，超权限走审批' },
+  { id:'F4', name:'跟进与推进', trigger:'日常/定时', sla:'实时',
+    steps:['BEHAVIOR_CAPTURE','FOLLOWUP','STATUS_TRACK'],
+    desc:'自动记录沟通，到期提醒，阶段推进' },
+  { id:'F5', name:'公海与释放', trigger:'定时扫描', sla:'每小时',
+    steps:['RULE_ENGINE','STATUS_TRACK','ALERT'],
+    desc:'48h无动作判定，自动释放公海' },
+  { id:'F6', name:'成交与复盘', trigger:'项目成交', sla:'T+1',
+    steps:['DATA_AGG','TAGGING','VIEW_RENDER'],
+    desc:'成交数据聚合，标签沉淀，看板刷新' }
+];
+
+// Agents — 由 Skill + Flow 组装
+const AGENTS = [
+  { id:'A1', name:'报备助理', icon:'📥', color:'#60a5fa',
+    purpose:'销售说一句话，自动完成报备+查重+建档',
+    skills:['VOICE_TO_STRUCT','OCR_PARSE','PROJECT_DEDUP','ENTITY_CREATE'],
+    flows:['F1'],
+    example:'销售："万科龙华三期约800㎡岩板"→ 项目已创建 P20260508001，无冲突' },
+  { id:'A2', name:'报价助理', icon:'💰', color:'#86efac',
+    purpose:'一句话生成合规报价单',
+    skills:['SEARCH','QUOTE_CALC','APPROVAL','DOCUMENT_GEN'],
+    flows:['F3'],
+    example:'"给万科出个报价，岩板800㎡ 8.8折" → 报价单PDF生成，折扣合规' },
+  { id:'A3', name:'销售跟进', icon:'📞', color:'#fbbf24',
+    purpose:'自动记录沟通、到期提醒、状态推进',
+    skills:['BEHAVIOR_CAPTURE','FOLLOWUP','STATUS_TRACK'],
+    flows:['F4'],
+    example:'销售与客户通话12分钟 → 自动记入跟进日志，下次提醒+3天' },
+  { id:'A4', name:'风控', icon:'🛡️', color:'#f87171',
+    purpose:'防撞单、防飞单、防失联',
+    skills:['PROJECT_DEDUP','RULE_ENGINE','ALERT'],
+    flows:['F2'],
+    example:'检测到销售A、B同时跟进同项目 → 推送双方主管 + 锁定优先权' },
+  { id:'A5', name:'公海调度', icon:'🌊', color:'#22d3ee',
+    purpose:'僵尸客户自动释放与再分配',
+    skills:['RULE_ENGINE','STATUS_TRACK','ALERT'],
+    flows:['F5'],
+    example:'客户X 48h无跟进 → 自动转公海，推送销售团队抢单' },
+  { id:'A6', name:'管理看板', icon:'📊', color:'#c084fc',
+    purpose:'实时经营视图：漏斗、大区、产品',
+    skills:['DATA_AGG','TAGGING','VIEW_RENDER'],
+    flows:['F6'],
+    example:'大区总监看板：本月报备127/成交38，转化率30%，TOP3项目高亮' }
+];
+
+// 核心闭环：8个阶段
+const LOOP_STAGES = [
+  { id:'报备', icon:'📥', agent:'A1', category:'入口' },
+  { id:'查重', icon:'🔍', agent:'A4', category:'业务' },
+  { id:'锁定', icon:'🔒', agent:'A4', category:'控制' },
+  { id:'报价', icon:'💰', agent:'A2', category:'业务' },
+  { id:'审批', icon:'✅', agent:'A2', category:'业务' },
+  { id:'跟进', icon:'📞', agent:'A3', category:'控制' },
+  { id:'成交', icon:'🎉', agent:'A6', category:'输出' },
+  { id:'复盘', icon:'🔄', agent:'A6', category:'查询' }
+];
+
+// ══════════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════════
+let currentView = 'skills';
+let currentFlow = FLOWS[0];
+let currentAgent = null;
+
+// ══════════════════════════════════════════════════════════════════════
+// VIEW SWITCHING
+// ══════════════════════════════════════════════════════════════════════
+function setView(v) {
+  currentView = v;
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
+  const m = document.getElementById('main-view');
+  if (v === 'skills') renderSkillsView(m);
+  else if (v === 'flows') renderFlowsView(m);
+  else if (v === 'agents') renderAgentsView(m);
+  else if (v === 'loop') renderLoopView(m);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// VIEW 1: SKILL 库 — 按类别归类的原子 Skill
+// ══════════════════════════════════════════════════════════════════════
+function renderSkillsView(container) {
+  const byCategory = {};
+  SKILLS.forEach(s => {
+    if (!byCategory[s.category]) byCategory[s.category] = [];
+    byCategory[s.category].push(s);
+  });
+
+  container.innerHTML = `
+    <div class="fade-in max-w-7xl mx-auto">
+      <!-- Hero -->
+      <div class="mb-6 flex items-start justify-between">
+        <div>
+          <h1 class="text-2xl font-bold mb-1">🧩 原子 Skill 库</h1>
+          <p class="text-sm text-slate-400">单点能力，按类型归类。L1 跨行业通用 · L2 跨企业复用 · L3 企业专属</p>
+        </div>
+        <div class="flex gap-3 text-xs">
+          <div class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2">
+            <div class="text-slate-500">原子 Skill</div>
+            <div class="text-xl font-bold text-indigo-300">${SKILLS.length}</div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2">
+            <div class="text-slate-500">L1 通用 / L2 半通用 / L3 专属</div>
+            <div class="text-xl font-bold">
+              <span class="text-blue-400">${SKILLS.filter(s=>s.layer==='L1').length}</span>
+              <span class="text-slate-600 mx-1">·</span>
+              <span class="text-purple-400">${SKILLS.filter(s=>s.layer==='L2').length}</span>
+              <span class="text-slate-600 mx-1">·</span>
+              <span class="text-amber-400">${SKILLS.filter(s=>s.layer==='L3').length}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分层说明 -->
+      <div class="mb-6 grid grid-cols-3 gap-3">
+        <div class="bg-slate-900 border-l-2 border-blue-500 rounded-lg p-3 text-xs">
+          <div class="text-blue-400 font-bold mb-1">L1 · 基础原子层</div>
+          <div class="text-slate-400">换个行业还能用。例如 OCR、语音转写、搜索</div>
+        </div>
+        <div class="bg-slate-900 border-l-2 border-purple-500 rounded-lg p-3 text-xs">
+          <div class="text-purple-400 font-bold mb-1">L2 · 行业能力层</div>
+          <div class="text-slate-400">建材行业共通的规则。例如跟进提醒、标签体系</div>
+        </div>
+        <div class="bg-slate-900 border-l-2 border-amber-500 rounded-lg p-3 text-xs">
+          <div class="text-amber-400 font-bold mb-1">L3 · 企业专属层</div>
+          <div class="text-slate-400">只有欧神诺这样干。例如判重规则、折扣权限</div>
+        </div>
+      </div>
+
+      <!-- Skill 分类展示 -->
+      <div class="space-y-4">
+        ${Object.entries(CATEGORIES).map(([cat, info]) => {
+          const skills = byCategory[cat] || [];
+          return `
+            <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-5">
+              <div class="flex items-center gap-3 mb-4">
+                <span class="text-2xl">${info.icon}</span>
+                <div class="flex-1">
+                  <div class="text-sm font-bold" style="color:${info.color}">${info.name}</div>
+                  <div class="text-xs text-slate-500">${info.desc} · ${skills.length} 个 Skill</div>
+                </div>
+                <div class="text-xs text-slate-600">向右拖拽 → Flow 编排器</div>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                ${skills.map(s => `
+                  <div class="cat-${s.category} skill-chip" onclick="showSkillDetail('${s.id}')">
+                    <span class="badge layer-${s.layer}" style="font-size:9px">${s.layer}</span>
+                    <span>${s.name}</span>
+                    <span class="text-slate-500">·</span>
+                    <code class="text-xs opacity-60">${s.id}</code>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      <!-- 使用提示 -->
+      <div class="mt-6 bg-indigo-950/30 border border-indigo-900/50 rounded-xl p-4 text-sm text-slate-300">
+        💡 <strong>理解 Skill 层级的关键</strong>：Skill 是<strong class="text-indigo-300">原子能力</strong>（单点、可复用），
+        Flow 是<strong class="text-indigo-300">能力编排</strong>（多个 Skill 串联成流程），
+        Agent 是<strong class="text-indigo-300">业务封装</strong>（Skill + Flow 打包成"AI 员工"）。
+        <div class="text-xs text-slate-500 mt-2">点击任一 Skill 查看详情 · 切到 <kbd class="kbd">Flow编排</kbd> 查看流程 · 切到 <kbd class="kbd">Agent组装</kbd> 查看AI员工</div>
+      </div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// VIEW 2: FLOW 编排器
+// ══════════════════════════════════════════════════════════════════════
+function renderFlowsView(container) {
+  container.innerHTML = `
+    <div class="fade-in max-w-7xl mx-auto">
+      <div class="mb-5">
+        <h1 class="text-2xl font-bold mb-1">🔀 Flow 编排</h1>
+        <p class="text-sm text-slate-400">将原子 Skill 串联成业务流程。每个 Flow 对应报备场景中的一个核心环节</p>
+      </div>
+
+      <!-- Flow 列表 -->
+      <div class="flex gap-2 mb-4 flex-wrap">
+        ${FLOWS.map(f => `
+          <button onclick="selectFlow('${f.id}')"
+            class="nav-tab ${currentFlow.id === f.id ? 'active' : ''}"
+            id="flow-btn-${f.id}">
+            <span class="font-bold">${f.id}</span>
+            <span class="ml-1">${f.name}</span>
+          </button>
+        `).join('')}
+      </div>
+
+      <div class="grid grid-cols-12 gap-4">
+        <!-- 左：Flow 信息 -->
+        <div class="col-span-3">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+            <div class="text-xs text-slate-500 mb-1">流程ID</div>
+            <div class="text-lg font-bold mb-3">${currentFlow.id} · ${currentFlow.name}</div>
+            <div class="space-y-3 text-sm">
+              <div>
+                <div class="text-xs text-slate-500 mb-1">触发时机</div>
+                <div class="text-slate-300">${currentFlow.trigger}</div>
+              </div>
+              <div>
+                <div class="text-xs text-slate-500 mb-1">SLA</div>
+                <div class="text-indigo-300 font-semibold">${currentFlow.sla}</div>
+              </div>
+              <div>
+                <div class="text-xs text-slate-500 mb-1">用途</div>
+                <div class="text-slate-300 text-xs leading-relaxed">${currentFlow.desc}</div>
+              </div>
+              <div>
+                <div class="text-xs text-slate-500 mb-1">Skill 数量</div>
+                <div class="text-2xl font-bold text-emerald-400">${currentFlow.steps.length}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 使用此 Flow 的 Agent -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 mt-3">
+            <div class="text-xs text-slate-500 mb-2 font-semibold uppercase">使用此 Flow 的 Agent</div>
+            ${AGENTS.filter(a => a.flows.includes(currentFlow.id)).map(a => `
+              <div class="flex items-center gap-2 py-1.5 text-sm">
+                <span class="text-lg">${a.icon}</span>
+                <span class="text-slate-300">${a.name}</span>
+              </div>
+            `).join('') || '<div class="text-xs text-slate-600">暂无</div>'}
+          </div>
+        </div>
+
+        <!-- 中：Flow 画布 -->
+        <div class="col-span-9">
+          <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-6 min-h-[500px]">
+            <div class="text-xs text-slate-500 mb-4 font-semibold uppercase tracking-wider">
+              📐 Skill 执行链 · 左至右依序调用
+            </div>
+            <div class="flex items-start gap-3 flex-wrap">
+              ${currentFlow.steps.map((sid, i) => {
+                const s = SKILLS.find(x => x.id === sid);
+                if (!s) return '';
+                const isLast = i === currentFlow.steps.length - 1;
+                return `
+                  <div class="flex items-center">
+                    <div class="cat-${s.category}" style="width:160px">
+                      <div class="bg-slate-900 border-2 rounded-xl p-3" style="border-color:var(--bd);">
+                        <div class="flex items-center gap-2 mb-2">
+                          <span class="text-xs px-1.5 py-0.5 rounded layer-${s.layer}">${s.layer}</span>
+                          <span class="text-xs text-slate-600">Step ${i+1}</span>
+                        </div>
+                        <div class="text-sm font-bold mb-1" style="color:var(--c)">${s.name}</div>
+                        <code class="text-xs text-slate-500 block mb-2">${s.id}</code>
+                        <div class="text-xs text-slate-400 mb-2 leading-relaxed">${s.desc}</div>
+                        <div class="border-t border-slate-800 pt-2 space-y-1">
+                          <div class="text-xs"><span class="text-slate-600">in:</span> <span class="text-slate-400">${s.io.in}</span></div>
+                          <div class="text-xs"><span class="text-slate-600">out:</span> <span class="text-slate-400">${s.io.out}</span></div>
+                        </div>
+                      </div>
+                    </div>
+                    ${!isLast ? `
+                      <div class="flex items-center px-1">
+                        <svg width="24" height="40" viewBox="0 0 24 40">
+                          <line x1="0" y1="20" x2="20" y2="20" stroke="#6366f1" stroke-width="2" stroke-dasharray="4 2" style="animation:flowDash 1.5s linear infinite"/>
+                          <polygon points="20,15 24,20 20,25" fill="#6366f1"/>
+                        </svg>
+                      </div>
+                    ` : ''}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- 示例执行 -->
+            <div class="mt-6 bg-slate-950/50 border border-slate-800 rounded-lg p-4">
+              <div class="text-xs text-indigo-300 font-semibold mb-3">▶ 示例执行轨迹</div>
+              ${currentFlow.steps.map((sid, i) => {
+                const s = SKILLS.find(x => x.id === sid);
+                return `
+                  <div class="flex gap-3 py-1.5 text-xs">
+                    <span class="text-slate-600 w-6">${i+1}.</span>
+                    <span class="text-slate-500 w-40 font-mono">${s.id}</span>
+                    <span class="text-slate-400 flex-1">${s.example.split('\n')[0]}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function selectFlow(id) {
+  currentFlow = FLOWS.find(f => f.id === id);
+  renderFlowsView(document.getElementById('main-view'));
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// VIEW 3: AGENT 组装
+// ══════════════════════════════════════════════════════════════════════
+function renderAgentsView(container) {
+  container.innerHTML = `
+    <div class="fade-in max-w-7xl mx-auto">
+      <div class="mb-5 flex items-start justify-between">
+        <div>
+          <h1 class="text-2xl font-bold mb-1">🤖 Agent 组装</h1>
+          <p class="text-sm text-slate-400">AI员工 = 原子Skill集合 + 业务Flow + 触发命令。点击卡片查看组装详情</p>
+        </div>
+        <div class="text-xs text-slate-500">
+          <span class="text-indigo-300 font-bold text-lg">${AGENTS.length}</span> 个 Agent
+        </div>
+      </div>
+
+      <!-- Agent 公式 -->
+      <div class="mb-5 bg-gradient-to-r from-indigo-950/40 to-purple-950/40 border border-indigo-900/50 rounded-xl p-4">
+        <div class="text-xs font-mono text-slate-400 text-center">
+          <span class="text-indigo-300 font-bold">Agent</span>
+          <span class="text-slate-500 mx-2">=</span>
+          <span class="text-blue-300">原子 Skill 集合</span>
+          <span class="text-slate-500 mx-2">+</span>
+          <span class="text-emerald-300">业务 Flow 编排</span>
+          <span class="text-slate-500 mx-2">+</span>
+          <span class="text-amber-300">触发命令 / 上下文</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        ${AGENTS.map(a => {
+          const skillNames = a.skills.map(sid => SKILLS.find(s => s.id === sid));
+          const flowNames = a.flows.map(fid => FLOWS.find(f => f.id === fid));
+          return `
+            <div class="agent-card" onclick="showAgentDetail('${a.id}')">
+              <div class="flex items-start justify-between mb-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style="background:${a.color}20;border:1px solid ${a.color}40">
+                    ${a.icon}
+                  </div>
+                  <div>
+                    <div class="text-base font-bold">${a.name} Agent</div>
+                    <div class="text-xs text-slate-500">${a.id}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="text-sm text-slate-400 mb-4 leading-relaxed">${a.purpose}</div>
+
+              <!-- Skills -->
+              <div class="mb-3">
+                <div class="text-xs text-slate-600 font-semibold uppercase mb-2">装载的 Skills</div>
+                <div class="flex flex-wrap gap-1.5">
+                  ${skillNames.map(s => `
+                    <span class="cat-${s.category} skill-chip" style="cursor:default;font-size:10px;padding:3px 8px">
+                      <span>${s.name}</span>
+                    </span>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Flows -->
+              <div class="mb-3">
+                <div class="text-xs text-slate-600 font-semibold uppercase mb-2">编排的 Flow</div>
+                <div class="flex flex-wrap gap-1.5">
+                  ${flowNames.map(f => `
+                    <span class="text-xs px-2 py-1 rounded-md bg-indigo-950/40 text-indigo-300 border border-indigo-900/50">
+                      ${f.id} · ${f.name}
+                    </span>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Example -->
+              <div class="bg-slate-950/50 border border-slate-800 rounded-lg p-3 text-xs text-slate-400 leading-relaxed">
+                <span class="text-emerald-400">▶ 示例</span>: ${a.example}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function showAgentDetail(id) {
+  const a = AGENTS.find(x => x.id === id);
+  if (!a) return;
+  const skills = a.skills.map(sid => SKILLS.find(s => s.id === sid));
+  const flows = a.flows.map(fid => FLOWS.find(f => f.id === fid));
+
+  const body = document.getElementById('skill-modal-body');
+  body.innerHTML = `
+    <div class="flex items-start justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl" style="background:${a.color}20;border:1px solid ${a.color}40">
+          ${a.icon}
+        </div>
+        <div>
+          <div class="text-xl font-bold">${a.name} Agent</div>
+          <div class="text-xs text-slate-500">${a.id} · ${a.purpose}</div>
+        </div>
+      </div>
+      <button onclick="closeModal()" class="text-slate-500 hover:text-slate-300 text-2xl leading-none">×</button>
+    </div>
+
+    <!-- 组装公式 -->
+    <div class="bg-slate-950 border border-slate-800 rounded-lg p-4 mb-4">
+      <div class="text-xs text-slate-500 font-semibold uppercase mb-2">组装公式</div>
+      <div class="font-mono text-sm text-slate-300 leading-relaxed">
+        <span class="text-amber-300">${a.name} Agent</span> =
+        ${skills.map(s => `<span class="text-blue-300">${s.id}</span>`).join(' + ')}
+        <br><span class="text-slate-500 ml-20">+ FLOW(${flows.map(f => f.id).join(', ')})</span>
+      </div>
+    </div>
+
+    <!-- Skills 详情 -->
+    <div class="mb-4">
+      <div class="text-xs text-slate-500 font-semibold uppercase mb-2">🧩 Skills 明细</div>
+      <div class="space-y-2">
+        ${skills.map(s => `
+          <div class="cat-${s.category} flex items-start gap-3 p-3 rounded-lg border" style="background:var(--bg);border-color:var(--bd)">
+            <span class="text-xs px-1.5 py-0.5 rounded layer-${s.layer} mt-0.5">${s.layer}</span>
+            <div class="flex-1">
+              <div class="text-sm font-bold" style="color:var(--c)">${s.name}</div>
+              <code class="text-xs text-slate-500">${s.id}</code>
+              <div class="text-xs text-slate-400 mt-1">${s.desc}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- Flow 详情 -->
+    <div>
+      <div class="text-xs text-slate-500 font-semibold uppercase mb-2">🔀 Flow 编排</div>
+      ${flows.map(f => `
+        <div class="bg-slate-950 border border-slate-800 rounded-lg p-3">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-sm font-bold text-indigo-300">${f.id} · ${f.name}</div>
+            <div class="text-xs text-slate-500">SLA: ${f.sla}</div>
+          </div>
+          <div class="text-xs text-slate-400 mb-3">${f.desc}</div>
+          <div class="flex items-center gap-2 flex-wrap">
+            ${f.steps.map((sid, i) => {
+              const s = SKILLS.find(x => x.id === sid);
+              return `
+                <div class="cat-${s.category}" style="display:flex;align-items:center;gap:4px">
+                  <span class="skill-chip" style="cursor:default;font-size:10px">
+                    ${s.name}
+                  </span>
+                  ${i < f.steps.length - 1 ? '<span class="text-slate-600">→</span>' : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  document.getElementById('skill-modal').classList.remove('hidden');
+  document.getElementById('skill-modal').classList.add('flex');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// VIEW 4: 核心闭环
+// ══════════════════════════════════════════════════════════════════════
+function renderLoopView(container) {
+  container.innerHTML = `
+    <div class="fade-in max-w-6xl mx-auto">
+      <div class="mb-5">
+        <h1 class="text-2xl font-bold mb-1">♻️ 核心闭环</h1>
+        <p class="text-sm text-slate-400">工程报备全生命周期 · 8 个阶段 · 6 个 Agent 协同</p>
+      </div>
+
+      <!-- 闭环图 -->
+      <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 mb-5">
+        <div class="relative" style="height:480px">
+          <svg class="absolute inset-0 w-full h-full" viewBox="0 0 800 480" preserveAspectRatio="xMidYMid meet">
+            <!-- 环形连线 -->
+            <defs>
+              <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L9,3 z" fill="#6366f1"/>
+              </marker>
+              <linearGradient id="loopGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#6366f1" stop-opacity=".8"/>
+                <stop offset="100%" stop-color="#a855f7" stop-opacity=".8"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Loop arrows between positions -->
+            ${LOOP_STAGES.map((_, i) => {
+              const n = LOOP_STAGES.length;
+              const a1 = (i / n) * 2 * Math.PI - Math.PI / 2;
+              const a2 = ((i+1) / n) * 2 * Math.PI - Math.PI / 2;
+              const cx = 400, cy = 240, r = 180;
+              const x1 = cx + Math.cos(a1) * r, y1 = cy + Math.sin(a1) * r;
+              const x2 = cx + Math.cos(a2) * r, y2 = cy + Math.sin(a2) * r;
+              return `<path d="M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}"
+                fill="none" stroke="url(#loopGrad)" stroke-width="2"
+                stroke-dasharray="6 4" marker-end="url(#arrow)"
+                style="animation:flowDash 2s linear infinite"/>`;
+            }).join('')}
+
+            <!-- 中心文字 -->
+            <text x="400" y="235" text-anchor="middle" fill="#cbd5e1" font-size="14" font-weight="700">工程报备</text>
+            <text x="400" y="255" text-anchor="middle" fill="#64748b" font-size="11">核心闭环</text>
+          </svg>
+
+          <!-- 节点 -->
+          ${LOOP_STAGES.map((stage, i) => {
+            const n = LOOP_STAGES.length;
+            const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+            const cx = 50, cy = 50, r = 37.5;
+            const x = cx + Math.cos(angle) * r;
+            const y = cy + Math.sin(angle) * r;
+            const agent = AGENTS.find(a => a.id === stage.agent);
+            return `
+              <div class="loop-node cat-${stage.category}"
+                style="position:absolute;left:${x}%;top:${y}%;transform:translate(-50%,-50%)">
+                <div class="text-2xl mb-1">${stage.icon}</div>
+                <div class="text-sm font-bold" style="color:var(--c)">${stage.id}</div>
+                <div class="text-xs text-slate-500 mt-1">${agent ? agent.icon + ' ' + agent.name : ''}</div>
+                <div class="text-xs text-slate-600 mt-0.5">Step ${i+1}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- 阶段明细 -->
+      <div class="grid grid-cols-4 gap-3">
+        ${LOOP_STAGES.map((stage, i) => {
+          const agent = AGENTS.find(a => a.id === stage.agent);
+          return `
+            <div class="cat-${stage.category} bg-slate-900 border rounded-xl p-4" style="border-color:var(--bd)">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-slate-500">Step ${i+1}</span>
+                <span class="text-2xl">${stage.icon}</span>
+              </div>
+              <div class="text-sm font-bold mb-1" style="color:var(--c)">${stage.id}</div>
+              <div class="text-xs text-slate-500 mb-2">由 ${agent ? agent.icon + ' ' + agent.name : '—'} 执行</div>
+              <button onclick="showAgentDetail('${agent?.id}')" class="text-xs text-indigo-400 hover:text-indigo-300">
+                查看 Agent →
+              </button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      <!-- 全局统计 -->
+      <div class="mt-6 grid grid-cols-4 gap-3">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <div class="text-xs text-slate-500 mb-1">原子 Skill</div>
+          <div class="text-3xl font-bold text-blue-400">${SKILLS.length}</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <div class="text-xs text-slate-500 mb-1">业务 Flow</div>
+          <div class="text-3xl font-bold text-emerald-400">${FLOWS.length}</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <div class="text-xs text-slate-500 mb-1">AI Agent</div>
+          <div class="text-3xl font-bold text-purple-400">${AGENTS.length}</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <div class="text-xs text-slate-500 mb-1">闭环阶段</div>
+          <div class="text-3xl font-bold text-amber-400">${LOOP_STAGES.length}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// Skill Detail Modal
+// ══════════════════════════════════════════════════════════════════════
+function showSkillDetail(id) {
+  const s = SKILLS.find(x => x.id === id);
+  if (!s) return;
+  const cat = CATEGORIES[s.category];
+  const usedInFlows = FLOWS.filter(f => f.steps.includes(id));
+  const usedInAgents = AGENTS.filter(a => a.skills.includes(id));
+
+  const body = document.getElementById('skill-modal-body');
+  body.innerHTML = `
+    <div class="flex items-start justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style="background:${cat.color}20;border:1px solid ${cat.color}40">
+          ${cat.icon}
+        </div>
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-xs px-1.5 py-0.5 rounded layer-${s.layer}">${s.layer}</span>
+            <span class="text-xs text-slate-500">${cat.name}</span>
+          </div>
+          <div class="text-lg font-bold">${s.name}</div>
+          <code class="text-xs text-slate-500">${s.id}</code>
+        </div>
+      </div>
+      <button onclick="closeModal()" class="text-slate-500 hover:text-slate-300 text-2xl leading-none">×</button>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <div class="text-xs text-slate-500 font-semibold uppercase mb-1">用途</div>
+        <div class="text-sm text-slate-300">${s.desc}</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-slate-950 border border-slate-800 rounded-lg p-3">
+          <div class="text-xs text-slate-500 mb-1">▶ 输入</div>
+          <div class="text-sm text-slate-300 font-mono">${s.io.in}</div>
+        </div>
+        <div class="bg-slate-950 border border-slate-800 rounded-lg p-3">
+          <div class="text-xs text-slate-500 mb-1">▶ 输出</div>
+          <div class="text-sm text-slate-300 font-mono">${s.io.out}</div>
+        </div>
+      </div>
+
+      <div class="bg-indigo-950/30 border border-indigo-900/40 rounded-lg p-3">
+        <div class="text-xs text-indigo-300 font-semibold mb-1">💡 示例</div>
+        <div class="text-xs text-slate-300 whitespace-pre-line font-mono leading-relaxed">${s.example}</div>
+      </div>
+
+      ${usedInFlows.length > 0 ? `
+        <div>
+          <div class="text-xs text-slate-500 font-semibold uppercase mb-2">被 Flow 引用 (${usedInFlows.length})</div>
+          <div class="flex flex-wrap gap-2">
+            ${usedInFlows.map(f => `
+              <span class="text-xs px-2 py-1 rounded-md bg-emerald-950/40 text-emerald-300 border border-emerald-900/50">
+                ${f.id} · ${f.name}
+              </span>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+
+      ${usedInAgents.length > 0 ? `
+        <div>
+          <div class="text-xs text-slate-500 font-semibold uppercase mb-2">被 Agent 装载 (${usedInAgents.length})</div>
+          <div class="flex flex-wrap gap-2">
+            ${usedInAgents.map(a => `
+              <span class="text-xs px-2 py-1 rounded-md bg-purple-950/40 text-purple-300 border border-purple-900/50 cursor-pointer"
+                onclick="showAgentDetail('${a.id}')">
+                ${a.icon} ${a.name}
+              </span>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+  document.getElementById('skill-modal').classList.remove('hidden');
+  document.getElementById('skill-modal').classList.add('flex');
+}
+
+function closeModal() {
+  document.getElementById('skill-modal').classList.add('hidden');
+  document.getElementById('skill-modal').classList.remove('flex');
+}
+
+// Init
+setView('skills');
+</script>
+</body>
+</html>
