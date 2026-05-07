@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>欧神诺营销智能体</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes recording {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* 下单按钮动画 */
+        @keyframes orderPulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.7);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 8px rgba(147, 51, 234, 0);
+            }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .order-highlight {
+            animation: orderPulse 2s ease-in-out infinite;
+            background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .order-highlight::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite;
+        }
+
+        .order-icon {
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        .slide-in { animation: slideIn 0.4s ease-out; }
+        .recording-pulse { animation: recording 1s ease-in-out infinite; }
+
+        .typing-indicator span {
+            animation: pulse 1.4s infinite;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        /* 主布局 */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .main-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* 左侧 SKILL 面板 */
+        .skill-sidebar {
+            background: #f7f7f8;
+            border-right: 1px solid #e5e5e5;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .skill-sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .skill-sidebar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        .skill-badge {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .skill-badge:hover {
+            transform: translateX(4px);
+            background-color: rgba(0,0,0,0.05);
+        }
+
+        /* 右侧聊天区域 */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            overflow: hidden;
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .chat-container::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+
+        .chat-bubble {
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        /* 语音按钮 */
+        .voice-btn {
+            transition: all 0.3s ease;
+        }
+        .voice-btn:active {
+            transform: scale(0.95);
+        }
+        .voice-btn.recording {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* 遮罩层 */
+        .overlay {
+            transition: opacity 0.3s ease;
+        }
+        .overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* 桌面端布局 */
+        @media (min-width: 769px) {
+            .skill-sidebar {
+                width: 280px;
+                flex-shrink: 0;
+            }
+
+            .mobile-header {
+                display: none;
+            }
+
+            .mobile-menu-btn {
+                display: none;
+            }
+
+            .overlay {
+                display: none;
+            }
+
+            .skill-close-btn {
+                display: none;
+            }
+        }
+
+        /* 移动端布局 */
+        @media (max-width: 768px) {
+            .skill-sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 85%;
+                max-width: 320px;
+                height: 100vh;
+                z-index: 50;
+                transform: translateX(-100%);
+                box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+            }
+
+            .skill-sidebar.open {
+                transform: translateX(0);
+            }
+
+            .chat-bubble {
+                max-width: 85%;
+            }
+
+            .chat-container {
+                height: calc(100vh - 180px) !important;
+            }
+
+            #chat-input {
+                font-size: 16px;
+            }
+
+            .order-confirmation .grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .quick-btn {
+                font-size: 0.7rem;
+                padding: 0.375rem 0.625rem;
+            }
+        }
+
+        /* 触摸设备优化 */
+        @media (hover: none) {
+            button {
+                min-height: 44px;
+            }
+
+            .skill-badge:active {
+                transform: scale(0.98);
+            }
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900">
+    <!-- 遮罩层 (移动端) -->
+    <div id="overlay" class="overlay hidden fixed inset-0 bg-black bg-opacity-50 z-40" onclick="toggleSidebar()"></div>
+
+    <div class="main-container">
+        <!-- 左侧 SKILL 面板 -->
+        <aside id="skill-sidebar" class="skill-sidebar">
+            <!-- 移动端头部 -->
+            <div class="mobile-header sticky top-0 bg-gray-50 border-b border-gray-200 p-4 flex items-center justify-between z-10">
+                <h2 class="text-lg font-semibold text-gray-800">🎯 营销能力</h2>
+                <button onclick="toggleSidebar()" class="skill-close-btn text-gray-500 hover:text-gray-700 p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- SKILL 内容 -->
+            <div class="p-4 space-y-4">
+                <!-- 标题 (桌面端) -->
+                <div class="hidden md:block mb-4">
+                    <h2 class="text-sm font-bold text-gray-700 mb-1">🎯 营销 SKILL 能力</h2>
+                    <p class="text-xs text-gray-500">点击快速调用</p>
+                </div>
+
+                <!-- 经销商管理 -->
+                <div>
+                    <h3 class="text-xs font-bold text-gray-600 mb-2 flex items-center">
+                        <span class="mr-1">👥</span> 经销商管理
+                    </h3>
+                    <div class="space-y-1.5">
+                        <div class="skill-badge bg-white rounded-lg p-2.5 border border-gray-200" onclick="useSkill('帮我创建新客户档案')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-800">客户建档</span>
+                                <span class="text-xs text-gray-500">CREATE</span>
+                            </div>
+                        </div>
+                        <div class="skill-badge bg-white rounded-lg p-2.5 border border-gray-200" onclick="useSkill('查看客户360视图')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-800">客户360</span>
+                                <span class="text-xs text-gray-500">VIEW</span>
+                            </div>
+                        </div>
+                        <div class="skill-badge bg-white rounded-lg p-2.5 border border-gray-200" onclick="useSkill('生成客户画像')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-800">客户画像</span>
+                                <span class="text-xs text-gray-500">PROFILE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 拜访管理 -->
+                <div>
+                    <h3 class="text-xs font-bold text-gray-600 mb-2 flex items-center">
+                        <span class="mr-1">🎯</span> 拜访管理
+                    </h3>
+                    <div class="space-y-1.5">
+                        <div class="skill-badge bg-green-50 rounded-lg p-2.5 border border-green-200" onclick="useSkill('记录拜访')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-green-900">语音记录</span>
+                                <span class="text-xs text-green-600">🔥</span>
+                            </div>
+                        </div>
+                        <div class="skill-badge bg-white rounded-lg p-2.5 border border-gray-200" onclick="useSkill('拍照识别门店')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-800">拍照识别</span>
+                                <span class="text-xs text-gray-500">IMAGE</span>
+                            </div>
+                        </div>
+                        <div class="skill-badge bg-green-50 rounded-lg p-2.5 border border-green-200" onclick="useSkill('设置跟进提醒')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-green-900">跟进提醒</span>
+                                <span class="text-xs text-green-600">🔥</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 报价下单 -->
+                <div>
+                    <h3 class="text-xs font-bold text-gray-600 mb-2 flex items-center">
+                        <span class="mr-1">💰</span> 报价下单
+                    </h3>
+                    <div class="space-y-1.5">
+                        <!-- 突出的智能报价按钮 -->
+                        <div class="order-highlight skill-badge text-white rounded-lg p-3 border-2 border-purple-400 shadow-lg relative z-10" onclick="useSkill('帮【佛山欧神诺云商科技有限公司 销售组织】【岑俊逸 客户】购买【经销零售 业务类型】【不排产 供应方式】【A+CZH10290180XL 商品】【1片 数量】')">
+                            <div class="flex items-center justify-between relative z-10">
+                                <div class="flex items-center space-x-2">
+                                    <span class="order-icon text-xl">🚀</span>
+                                    <span class="text-sm font-bold">智能下单</span>
+                                </div>
+                                <span class="text-xs bg-white bg-opacity-30 px-2 py-0.5 rounded-full">快速</span>
+                            </div>
+                            <p class="text-xs mt-1 opacity-90 relative z-10">语音/文字一键下单</p>
+                        </div>
+
+                        <div class="skill-badge bg-white rounded-lg p-2.5 border border-gray-200" onclick="useSkill('识别SKU编码')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-800">SKU识别</span>
+                                <span class="text-xs text-gray-500">MATCH</span>
+                            </div>
+                        </div>
+                        <div class="skill-badge bg-white rounded-lg p-2.5 border border-gray-200" onclick="useSkill('折扣控制')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-800">折扣控制</span>
+                                <span class="text-xs text-gray-500">DISCOUNT</span>
+                            </div>
+                        </div>
+                        <div class="skill-badge bg-purple-50 rounded-lg p-2.5 border border-purple-200" onclick="useSkill('审批流程')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-purple-900">报价审批</span>
+                                <span class="text-xs text-purple-600">🔥</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 合同管理 -->
+                <div>
+                    <h3 class="text-xs font-bold text-gray-600 mb-2 flex items-center">
+                        <span class="mr-1">📄</span> 合同管理
+                    </h3>
+                    <div class="space-y-1.5">
+                        <div class="skill-badge bg-white rounded-lg p-2.5 border border-gray-200" onclick="useSkill('OCR识别合同')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-800">合同解析</span>
+                                <span class="text-xs text-gray-500">OCR</span>
+                            </div>
+                        </div>
+                        <div class="skill-badge bg-white rounded-lg p-2.5 border border-gray-200" onclick="useSkill('识别合同风险')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-800">风险识别</span>
+                                <span class="text-xs text-gray-500">RISK</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 售后服务 -->
+                <div>
+                    <h3 class="text-xs font-bold text-gray-600 mb-2 flex items-center">
+                        <span class="mr-1">🛠️</span> 售后服务
+                    </h3>
+                    <div class="space-y-1.5">
+                        <div class="skill-badge bg-white rounded-lg p-2.5 border border-gray-200" onclick="useSkill('创建售后工单')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-800">工单创建</span>
+                                <span class="text-xs text-gray-500">TICKET</span>
+                            </div>
+                        </div>
+                        <div class="skill-badge bg-white rounded-lg p-2.5 border border-gray-200" onclick="useSkill('质量问题识别')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-800">质量识别</span>
+                                <span class="text-xs text-gray-500">IMAGE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BI分析 -->
+                <div>
+                    <h3 class="text-xs font-bold text-gray-600 mb-2 flex items-center">
+                        <span class="mr-1">📈</span> BI 分析
+                    </h3>
+                    <div class="space-y-1.5">
+                        <div class="skill-badge bg-indigo-50 rounded-lg p-2.5 border border-indigo-200" onclick="useSkill('查看异常预警')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-indigo-900">异常预警</span>
+                                <span class="text-xs text-indigo-600">🔥</span>
+                            </div>
+                        </div>
+                        <div class="skill-badge bg-white rounded-lg p-2.5 border border-gray-200" onclick="useSkill('漏斗分析')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-800">漏斗分析</span>
+                                <span class="text-xs text-gray-500">FUNNEL</span>
+                            </div>
+                        </div>
+                        <div class="skill-badge bg-white rounded-lg p-2.5 border border-gray-200" onclick="useSkill('查看华南区经销商情况')">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-800">数据聚合</span>
+                                <span class="text-xs text-gray-500">DATA</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 说明 -->
+                <div class="bg-gray-100 rounded-lg p-3 text-xs text-gray-600 mt-4">
+                    <p class="font-semibold mb-1">💡 SKILL 分类</p>
+                    <p class="mb-1"><strong>输入:</strong> VOICE, IMAGE, DOCUMENT</p>
+                    <p class="mb-1"><strong>处理:</strong> RULE, MODEL, SEARCH</p>
+                    <p><strong>输出:</strong> ALERT, VIEW, ACTION</p>
+                    <p class="mt-2 text-gray-500">🔥 = 高优先级核心能力</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 右侧聊天区域 -->
+        <main class="chat-area">
+            <!-- 顶部导航 -->
+            <nav class="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <button onclick="toggleSidebar()" class="mobile-menu-btn text-gray-600 hover:text-gray-900 p-2 -ml-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white text-lg font-bold">欧</span>
+                    </div>
+                    <h1 class="text-lg font-semibold text-gray-800">欧神诺营销智能体</h1>
+                </div>
+                <button onclick="clearChat()" class="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                    清空
+                </button>
+            </nav>
+
+            <!-- 对话容器 -->
+            <div class="chat-container flex-1 overflow-y-auto px-4 py-6" id="chat-container">
+                <!-- 消息将在这里显示 -->
+            </div>
+
+            <!-- 输入区 -->
+            <div class="border-t border-gray-200 px-4 py-4 bg-white">
+                <div class="max-w-3xl mx-auto">
+                    <div class="flex items-end space-x-2 bg-white border border-gray-300 rounded-2xl shadow-sm p-2">
+                        <textarea
+                            id="chat-input"
+                            placeholder="输入消息或按住语音按钮说话..."
+                            class="flex-1 bg-transparent border-0 resize-none focus:outline-none text-gray-900 px-2 py-2 max-h-32"
+                            rows="1"
+                            onkeydown="handleKeyDown(event)"
+                            oninput="autoResize(this)"
+                        ></textarea>
+
+                        <!-- 语音按钮 -->
+                        <button
+                            id="voice-btn"
+                            class="voice-btn w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full transition flex-shrink-0"
+                            onmousedown="startRecording()"
+                            onmouseup="stopRecording()"
+                            onmouseleave="stopRecording()"
+                            ontouchstart="startRecording()"
+                            ontouchend="stopRecording()"
+                            title="按住说话"
+                        >
+                            <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z"/>
+                            </svg>
+                        </button>
+
+                        <!-- 发送按钮 -->
+                        <button
+                            onclick="sendMessage()"
+                            class="w-10 h-10 flex items-center justify-center bg-blue-500 hover:bg-blue-600 rounded-full transition flex-shrink-0"
+                            title="发送"
+                        >
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- 快捷操作 -->
+                    <div class="mt-3 flex flex-wrap gap-2 justify-center">
+                        <button onclick="quickQuery('查看华南区经销商情况')" class="quick-btn px-3 py-1.5 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-full text-xs text-gray-700 transition">
+                            📊 华南区
+                        </button>
+                        <!-- 突出的下单按钮 -->
+                        <button onclick="quickQuery('帮【佛山欧神诺云商科技有限公司 销售组织】【岑俊逸 客户】购买【经销零售 业务类型】【不排产 供应方式】【A+CZH10290180XL 商品】【1片 数量】')" class="quick-btn px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-full text-xs font-bold transition shadow-md hover:shadow-lg transform hover:scale-105">
+                            <span class="inline-block mr-1">🚀</span> 快速下单
+                        </button>
+                        <button onclick="quickQuery('查看异常预警')" class="quick-btn px-3 py-1.5 bg-amber-100 hover:bg-amber-200 active:bg-amber-300 rounded-full text-xs text-amber-700 transition">
+                            ⚠️ 预警
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 语音录制提示 -->
+    <div id="recording-indicator" class="hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-80 text-white px-8 py-6 rounded-2xl shadow-2xl z-50">
+        <div class="flex flex-col items-center space-y-4">
+            <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center recording-pulse">
+                <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z"/>
+                </svg>
+            </div>
+            <p class="text-lg font-medium">正在录音...</p>
+            <p class="text-sm text-gray-300">松开发送</p>
+        </div>
+    </div>
+
+    <script>
+        let isRecording = false;
+        let recognition = null;
+        let orderState = {
+            salesOrg: null,
+            customer: null,
+            customerDiscount: 0,
+            businessType: null,
+            supplyMethod: null,
+            productCode: null,
+            quantity: null,
+            useDiscount: false
+        };
+
+        // 切换侧边栏
+        function toggleSidebar() {
+            const sidebar = document.getElementById('skill-sidebar');
+            const overlay = document.getElementById('overlay');
+            const isOpen = sidebar.classList.contains('open');
+
+            if (isOpen) {
+                sidebar.classList.remove('open');
+                overlay.classList.add('hidden');
+                document.body.style.overflow = '';
+            } else {
+                sidebar.classList.add('open');
+                overlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        // 使用 SKILL
+        function useSkill(query) {
+            // 移动端关闭侧边栏
+            if (window.innerWidth <= 768) {
+                toggleSidebar();
+            }
+            document.getElementById('chat-input').value = query;
+            sendMessage();
+        }
+
+        // 初始化语音识别
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.lang = 'zh-CN';
+                recognition.continuous = false;
+                recognition.interimResults = false;
+
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('chat-input').value = transcript;
+                    sendMessage();
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('语音识别错误:', event.error);
+                    hideRecordingIndicator();
+                };
+
+                recognition.onend = function() {
+                    isRecording = false;
+                    hideRecordingIndicator();
+                };
+            }
+        }
+
+        // 开始录音
+        function startRecording() {
+            if (!recognition) {
+                alert('您的浏览器不支持语音识别功能，请使用 Chrome 或 Edge 浏览器');
+                return;
+            }
+
+            if (!isRecording) {
+                isRecording = true;
+                document.getElementById('voice-btn').classList.add('recording');
+                document.getElementById('recording-indicator').classList.remove('hidden');
+
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.error('启动语音识别失败:', e);
+                }
+            }
+        }
+
+        // 停止录音
+        function stopRecording() {
+            if (isRecording && recognition) {
+                isRecording = false;
+                document.getElementById('voice-btn').classList.remove('recording');
+                hideRecordingIndicator();
+                recognition.stop();
+            }
+        }
+
+        // 隐藏录音指示器
+        function hideRecordingIndicator() {
+            document.getElementById('recording-indicator').classList.add('hidden');
+            document.getElementById('voice-btn').classList.remove('recording');
+        }
+
+        // 自动调整输入框高度
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 128) + 'px';
+        }
+
+        // 处理键盘事件
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // 初始化聊天
+        function initChat() {
+            addMessage('agent', '你好！我是欧神诺营销智能体 👋\n\n我可以帮你：\n\n• 📊 查询经销商数据和分析\n• 📦 对话下单（语音/文字）\n• ⚠️ 异常预警和建议\n• 📋 客户管理和画像\n• 🎯 拜访记录和跟进\n\n左侧是所有可用的营销能力，点击即可快速调用。\n\n请问有什么可以帮你的？');
+        }
+
+        // 清空对话
+        function clearChat() {
+            if (confirm('确定要清空对话记录吗？')) {
+                document.getElementById('chat-container').innerHTML = '';
+                initChat();
+            }
+        }
+
+        // 添加消息
+        function addMessage(sender, text) {
+            const container = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+
+            if (sender === 'user') {
+                messageDiv.className = 'flex justify-end mb-4 slide-in';
+                messageDiv.innerHTML = `
+                    <div class="chat-bubble bg-blue-500 text-white px-4 py-3 rounded-2xl">
+                        <div style="white-space: pre-wrap;">${escapeHtml(text)}</div>
+                    </div>
+                `;
+            } else {
+                messageDiv.className = 'flex justify-start mb-4 slide-in';
+                messageDiv.innerHTML = `
+                    <div class="flex items-start space-x-3 max-w-[80%]">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-white text-sm font-bold">欧</span>
+                        </div>
+                        <div class="chat-bubble bg-gray-100 text-gray-900 px-4 py-3 rounded-2xl">
+                            <div style="white-space: pre-wrap;">${escapeHtml(text)}</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // HTML 转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 显示输入中指示器
+        function showTyping() {
+            const container = document.getElementById('chat-container');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typing-indicator';
+            typingDiv.className = 'flex justify-start mb-4';
+            typingDiv.innerHTML = `
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                        <span class="text-white text-sm font-bold">欧</span>
+                    </div>
+                    <div class="bg-gray-100 px-4 py-3 rounded-2xl">
+                        <div class="typing-indicator flex space-x-1">
+                            <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                            <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                            <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(typingDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 移除输入中指示器
+        function hideTyping() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+        }
+
+        // 发送消息
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addMessage('user', message);
+            input.value = '';
+            input.style.height = 'auto';
+
+            showTyping();
+            setTimeout(() => {
+                hideTyping();
+                handleQuery(message);
+            }, 1000);
+        }
+
+        // 快速查询
+        function quickQuery(query) {
+            document.getElementById('chat-input').value = query;
+            sendMessage();
+        }
+
+        // 处理查询
+        function handleQuery(query) {
+            // 订单处理
+            if (query.includes('帮') && (query.includes('购买') || query.includes('下单'))) {
+                parseOrderRequest(query);
+            } else if (orderState.customer && query.match(/是|使用|用折扣/)) {
+                orderState.useDiscount = true;
+                generateOrderConfirmation();
+            } else if (orderState.customer && query.match(/否|不用|不使用/)) {
+                orderState.useDiscount = false;
+                generateOrderConfirmation();
+            }
+            // 客户管理
+            else if (query.match(/客户|经销商.*画像|360/)) {
+                addMessage('agent', '📊 客户360视图\n\n正在为您生成客户全景画像...\n\n包含：\n• 基本信息和信用评级\n• 销售趋势和库存状况\n• 拜访记录和跟进计划\n• 订单历史和回款情况\n• 客户标签和分类\n\n请问要查看哪位客户的详细信息？');
+            }
+            // 拜访管理
+            else if (query.match(/拜访|记录|跟进/)) {
+                addMessage('agent', '📝 拜访管理\n\n我可以帮你：\n\n• 🎤 语音记录拜访内容（自动结构化）\n• 📸 拍照识别门店陈列\n• 📍 记录拜访轨迹\n• ⏰ 设置跟进提醒\n• 📊 统计工作量\n\n请直接语音描述拜访情况，我会自动整理成结构化记录。');
+            }
+            // 报价相关
+            else if (query.match(/报价|SKU|折扣/)) {
+                addMessage('agent', '💰 智能报价\n\n我可以帮你：\n\n• 🔍 识别 SKU 编码\n• 🧮 自动计算报价\n• 💳 应用折扣规则\n• 📋 生成报价单\n• 📊 对比历史报价\n\n请告诉我产品编码和数量，我来帮你计算。');
+            }
+            // 合同管理
+            else if (query.match(/合同|条款|风险|OCR/)) {
+                addMessage('agent', '📄 合同管理\n\n我可以帮你：\n\n• 📷 OCR 识别合同内容\n• 🔍 提取关键条款\n• ⚠️ 识别风险点\n• 💰 合同比价分析\n• 📅 履约跟踪提醒\n\n请上传合同图片或告诉我合同编号。');
+            }
+            // 售后管理
+            else if (query.match(/售后|工单|投诉|质量/)) {
+                addMessage('agent', '🛠️ 售后管理\n\n我可以帮你：\n\n• 📝 创建售后工单\n• 🎯 智能分派工单\n• 📸 图片识别质量问题\n• 😊 客诉情感分析\n• ⚖️ 责任判定\n• 🔄 回访提醒\n\n请描述售后问题，我会帮你创建工单。');
+            }
+            // BI 分析
+            else if (query.match(/分析|BI|数据|指标|漏斗|转化/)) {
+                addMessage('agent', '📈 经营分析\n\n我可以提供：\n\n• 📊 销售数据聚合\n• 🎯 关键指标计算\n• 🔄 漏斗转化分析\n• 👥 客户分群分析\n• 📡 渠道效果分析\n• ⚠️ 异常预警\n\n请告诉我你想分析什么维度的数据？');
+            }
+            // 华南区情况
+            else if (query.includes('华南区') || query.includes('情况')) {
+                addMessage('agent', '📊 华南区经销商概况\n\n本月整体表现：\n• 销售额：¥1,280万\n• 同比：+12%\n• 环比：-3%\n• 活跃经销商：47家\n\n⚠️ 需要关注：\n• 佛山张总：连续2月销量下滑18%\n• 深圳李总：库存周转89天\n• 东莞王总：回款逾期45万\n\n要查看具体经销商详情吗？');
+            }
+            // 异常预警
+            else if (query.includes('异常') || query.includes('预警')) {
+                addMessage('agent', '⚠️ 异常预警中心\n\n当前有 8 个预警：\n\n🔴 高优先级（3个）：\n• 佛山张总 - 销量下滑18%\n• 珠海刘总 - 连续3月未进货\n• 中山陈总 - 回款逾期60天\n\n🟡 中优先级（5个）：\n• 深圳李总 - 库存积压\n• 东莞王总 - 回款逾期30天\n• 惠州赵总 - 销量下滑10%\n• 江门周总 - 库存周转慢\n• 肇庆吴总 - 30天未联系\n\n需要查看详细分析和建议行动吗？');
+            }
+            // 默认回复
+            else {
+                addMessage('agent', '我可以帮你处理以下业务：\n\n📦 **经销商管理** - 客户建档、画像、分类、信用评估\n🎯 **拜访管理** - 语音记录、拍照识别、轨迹跟踪\n💰 **报价下单** - 智能报价、折扣控制、快速下单\n📄 **合同管理** - OCR识别、风险分析、履约跟踪\n🛠️ **售后服务** - 工单管理、质量识别、客诉分析\n📈 **经营分析** - 数据聚合、漏斗分析、异常预警\n\n💡 左侧面板展示了所有可用的营销能力，点击即可快速调用。\n\n请告诉我你想做什么？');
+            }
+        }
+
+        // 解析订单请求
+        function parseOrderRequest(query) {
+            const patterns = {
+                salesOrg: /【([^】]+)\s*销售组织】/,
+                customer: /】\s*【([^】]+)\s*客户】/,
+                businessType: /【([^】]+)\s*业务类型】/,
+                supplyMethod: /【([^】]+)\s*供应方式】/,
+                productCode: /【([A-Z0-9+]+)[^】]*】/,
+                quantity: /【(\d+)\s*片/
+            };
+
+            orderState.salesOrg = query.match(patterns.salesOrg)?.[1] || '佛山欧神诺云商科技有限公司';
+            orderState.customer = query.match(patterns.customer)?.[1] || '岑俊逸';
+            orderState.businessType = query.match(patterns.businessType)?.[1] || '经销零售';
+            orderState.supplyMethod = query.match(patterns.supplyMethod)?.[1] || '不排产';
+            orderState.productCode = query.match(patterns.productCode)?.[1] || 'A+CZH10290180XL';
+            orderState.quantity = parseInt(query.match(patterns.quantity)?.[1] || '1');
+
+            orderState.customerDiscount = Math.random() > 0.5 ? 3600 : 0;
+
+            if (orderState.customerDiscount > 0) {
+                addMessage('agent', `✅ 已识别订单信息\n\n📦 销售组织：${orderState.salesOrg}\n👤 客户：${orderState.customer}\n📋 业务类型：${orderState.businessType}\n🚚 供应方式：${orderState.supplyMethod}\n📦 商品编码：${orderState.productCode}\n🔢 数量：${orderState.quantity}片\n\n💰 检测到【${orderState.customer}】常规折扣余额：¥${orderState.customerDiscount.toFixed(2)}\n\n开单是否使用折扣？（请回复"是"或"否"）`);
+            } else {
+                addMessage('agent', `✅ 已识别订单信息\n\n📦 销售组织：${orderState.salesOrg}\n👤 客户：${orderState.customer}\n📋 业务类型：${orderState.businessType}\n🚚 供应方式：${orderState.supplyMethod}\n📦 商品编码：${orderState.productCode}\n🔢 数量：${orderState.quantity}片\n\n💰 【${orderState.customer}】常规折扣余额：¥0.00\n默认不使用折扣\n\n正在生成订单确认单...`);
+                setTimeout(() => generateOrderConfirmation(), 800);
+            }
+        }
+
+        // 生成订单确认单
+        function generateOrderConfirmation() {
+            const orderDate = new Date().toISOString().split('T')[0];
+            const orderNo = 'JC' + Date.now().toString().slice(-10);
+            const unitPrice = 15.00;
+            const totalAmount = (unitPrice * orderState.quantity).toFixed(2);
+            const discountAmount = orderState.useDiscount ? (orderState.customerDiscount > totalAmount ? totalAmount * 0.1 : 0).toFixed(2) : '0.00';
+            const finalAmount = (parseFloat(totalAmount) - parseFloat(discountAmount)).toFixed(2);
+
+            const confirmationHTML = `
+                <div class="order-confirmation bg-white border-2 border-gray-200 rounded-2xl p-4 mt-2 shadow-sm" style="max-width: 100%;">
+                    <div class="text-center mb-3 pb-3 border-b border-gray-200">
+                        <h3 class="text-base font-bold text-gray-800">📋 订单确认单</h3>
+                    </div>
+
+                    <div class="space-y-2 text-sm">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-gray-50 p-2 rounded-lg">
+                                <span class="text-gray-500 text-xs">销售组织</span>
+                                <p class="font-medium text-gray-900 text-xs mt-0.5">${orderState.salesOrg}</p>
+                            </div>
+                            <div class="bg-gray-50 p-2 rounded-lg">
+                                <span class="text-gray-500 text-xs">业务类型</span>
+                                <p class="font-medium text-gray-900 text-xs mt-0.5">${orderState.businessType}</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-gray-50 p-2 rounded-lg">
+                                <span class="text-gray-500 text-xs">客户名称</span>
+                                <p class="font-medium text-gray-900 text-xs mt-0.5">${orderState.customer}</p>
+                            </div>
+                            <div class="bg-gray-50 p-2 rounded-lg">
+                                <span class="text-gray-500 text-xs">供应方式</span>
+                                <p class="font-medium text-gray-900 text-xs mt-0.5">${orderState.supplyMethod}</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-50 p-2 rounded-lg border border-blue-200">
+                            <span class="text-blue-600 text-xs font-medium">订单编号</span>
+                            <p class="font-bold text-blue-700 text-xs mt-0.5">${orderNo}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 pt-3 border-t border-gray-200">
+                        <h4 class="font-semibold text-gray-800 text-sm mb-2">订单明细</h4>
+                        <div class="bg-gray-50 p-3 rounded-lg space-y-1.5 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">产品编码</span>
+                                <span class="font-medium text-gray-900">${orderState.productCode}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">数量</span>
+                                <span class="font-medium text-gray-900">${orderState.quantity} 片</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">单价</span>
+                                <span class="font-medium text-gray-900">¥${unitPrice.toFixed(2)}</span>
+                            </div>
+                            <div class="flex justify-between pt-1.5 border-t border-gray-200">
+                                <span class="text-gray-600">金额</span>
+                                <span class="font-bold text-green-600">¥${totalAmount}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 pt-3 border-t border-gray-200 space-y-1.5 text-sm">
+                        ${orderState.useDiscount ? `
+                        <div class="flex justify-between text-amber-600 text-xs">
+                            <span>折扣优惠</span>
+                            <span class="font-bold">-¥${discountAmount}</span>
+                        </div>` : ''}
+                        <div class="flex justify-between">
+                            <span class="font-bold text-gray-900">应付金额</span>
+                            <span class="font-bold text-green-600 text-lg">¥${finalAmount}</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex space-x-2">
+                        <button onclick="confirmOrder()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2.5 rounded-xl font-medium transition text-sm">
+                            ✓ 确认下单
+                        </button>
+                        <button onclick="cancelOrder()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2.5 rounded-xl font-medium transition text-sm">
+                            ✗ 取消
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            const container = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'flex justify-start mb-4 slide-in';
+            messageDiv.innerHTML = `
+                <div class="flex items-start space-x-3 max-w-[85%]">
+                    <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                        <span class="text-white text-sm font-bold">欧</span>
+                    </div>
+                    <div style="max-width: 100%;">${confirmationHTML}</div>
+                </div>
+            `;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 确认订单
+        function confirmOrder() {
+            addMessage('agent', '✅ 订单已提交成功！\n\n订单编号已生成，正在处理中...\n预计5分钟内完成审核。\n\n您可以在"订单管理"中查看订单状态。\n\n还需要帮你做什么吗？');
+            resetOrderState();
+        }
+
+        // 取消订单
+        function cancelOrder() {
+            addMessage('agent', '❌ 订单已取消\n\n如需重新下单，请再次发送订单信息或使用语音输入。');
+            resetOrderState();
+        }
+
+        // 重置订单状态
+        function resetOrderState() {
+            orderState = {
+                salesOrg: null,
+                customer: null,
+                customerDiscount: 0,
+                businessType: null,
+                supplyMethod: null,
+                productCode: null,
+                quantity: null,
+                useDiscount: false
+            };
+        }
+
+        // 页面加载
+        window.onload = function() {
+            initSpeechRecognition();
+            initChat();
+        };
+    </script>
+</body>
+</html>
