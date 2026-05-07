@@ -59,13 +59,13 @@ body { background:#070c14; font-family:-apple-system,BlinkMacSystemFont,'PingFan
 
 <!-- 统计行 -->
 <div class="px-6 py-4 grid grid-cols-7 gap-3 border-b border-slate-900" style="background:#060c16">
-  <div id="stat-auto"    class="text-center"></div>
-  <div id="stat-history" class="text-center"></div>
-  <div id="stat-zero"    class="text-center"></div>
-  <div id="stat-voice"   class="text-center"></div>
-  <div id="stat-ai"      class="text-center"></div>
-  <div id="stat-calc"    class="text-center"></div>
-  <div id="stat-human"   class="text-center"></div>
+  <div id="stat-auto"    class="text-center" title="点击筛选：系统自动拉取"></div>
+  <div id="stat-history" class="text-center" title="点击筛选：CRM历史沉淀"></div>
+  <div id="stat-zero"    class="text-center" title="点击筛选：零感知采集"></div>
+  <div id="stat-voice"   class="text-center" title="点击筛选：语音转结构化"></div>
+  <div id="stat-ai"      class="text-center" title="点击筛选：AI建议确认"></div>
+  <div id="stat-calc"    class="text-center" title="点击筛选：自动计算"></div>
+  <div id="stat-human"   class="text-center" title="点击筛选：人工判断"></div>
 </div>
 
 <!-- 图例 -->
@@ -392,6 +392,20 @@ function renderStats() {
       <div class="text-xs text-slate-500">${pct}%</div>
       <div class="text-xs text-slate-600" style="font-size:9px;line-height:1.3">${cfg.label}</div>
     `;
+    // 添加点击事件
+    statEl.style.cursor = 'pointer';
+    statEl.style.transition = 'all 0.2s';
+    statEl.onclick = () => filterSource(src);
+    statEl.onmouseenter = () => {
+      statEl.style.transform = 'scale(1.05)';
+      statEl.style.opacity = '1';
+    };
+    statEl.onmouseleave = () => {
+      statEl.style.transform = 'scale(1)';
+      statEl.style.opacity = (activeFilter === 'all' || activeFilter === src) ? '1' : '0.7';
+    };
+    // 初始透明度
+    statEl.style.opacity = (activeFilter === 'all' || activeFilter === src) ? '1' : '0.7';
   });
 }
 
@@ -426,12 +440,116 @@ function getComputedColor(src) {
 
 function filterSource(src) {
   activeFilter = src;
+  activeSection = null; // 清除区块筛选
   renderGrid(src);
   // highlight legend
   Object.keys(SRC_CONFIG).forEach(s => {
     const el = document.getElementById('leg-' + s);
     if (!el) return;
     el.style.opacity = (src === 'all' || src === s) ? '1' : '0.3';
+  });
+  // highlight stats
+  Object.keys(SRC_CONFIG).forEach(s => {
+    const statEl = document.getElementById('stat-' + s);
+    if (!statEl) return;
+    statEl.style.opacity = (src === 'all' || src === s) ? '1' : '0.7';
+  });
+}
+
+// 按区块筛选
+let activeSection = null;
+
+function filterBySection(section) {
+  activeSection = section;
+  activeFilter = 'all';
+  renderGridBySection(section);
+  // 重置图例高亮
+  Object.keys(SRC_CONFIG).forEach(s => {
+    const el = document.getElementById('leg-' + s);
+    if (el) el.style.opacity = '1';
+  });
+}
+
+// 按区块+数据源双重筛选
+function filterSectionAndSource(section, src) {
+  activeSection = section;
+  activeFilter = src;
+  renderGridBySectionAndSource(section, src);
+  // 高亮对应图例
+  Object.keys(SRC_CONFIG).forEach(s => {
+    const el = document.getElementById('leg-' + s);
+    if (!el) return;
+    el.style.opacity = (s === src) ? '1' : '0.3';
+  });
+}
+
+// 按区块渲染
+function renderGridBySection(section) {
+  const grid = document.getElementById('col-grid');
+  grid.innerHTML = '';
+
+  const sections = [...new Set(COLS.map(c => c.section))];
+  sections.forEach(sec => {
+    const secCols = COLS.filter(c => c.section === sec);
+    const wrap = document.createElement('div');
+    wrap.className = 'flex flex-col items-start mr-3 mb-2';
+
+    const label = document.createElement('div');
+    label.className = 'section-label mb-1';
+    label.textContent = sec + ' (' + secCols.length + ')';
+    wrap.appendChild(label);
+
+    const row = document.createElement('div');
+    row.className = 'flex gap-0.5';
+
+    secCols.forEach(col => {
+      const cell = document.createElement('div');
+      cell.className = 'col-cell ' + SRC_CONFIG[col.src].cls;
+      const dimmed = sec !== section;
+      if (dimmed) cell.style.opacity = '0.15';
+      cell.title = `[${col.c}] ${col.name}`;
+      cell.onclick = () => showDetail(col);
+      if (selectedCol === col.c) cell.classList.add('selected');
+      row.appendChild(cell);
+    });
+
+    wrap.appendChild(row);
+    grid.appendChild(wrap);
+  });
+}
+
+// 按区块+数据源渲染
+function renderGridBySectionAndSource(section, src) {
+  const grid = document.getElementById('col-grid');
+  grid.innerHTML = '';
+
+  const sections = [...new Set(COLS.map(c => c.section))];
+  sections.forEach(sec => {
+    const secCols = COLS.filter(c => c.section === sec);
+    const wrap = document.createElement('div');
+    wrap.className = 'flex flex-col items-start mr-3 mb-2';
+
+    const label = document.createElement('div');
+    label.className = 'section-label mb-1';
+    label.textContent = sec + ' (' + secCols.length + ')';
+    wrap.appendChild(label);
+
+    const row = document.createElement('div');
+    row.className = 'flex gap-0.5';
+
+    secCols.forEach(col => {
+      const cell = document.createElement('div');
+      cell.className = 'col-cell ' + SRC_CONFIG[col.src].cls;
+      const dimmed = (sec !== section) || (col.src !== src);
+      if (dimmed) cell.style.opacity = '0.15';
+      cell.title = `[${col.c}] ${col.name}`;
+      cell.onclick = () => showDetail(col);
+      if (selectedCol === col.c) cell.classList.add('selected');
+      row.appendChild(cell);
+    });
+
+    wrap.appendChild(row);
+    grid.appendChild(wrap);
   });
 }
 
@@ -449,12 +567,17 @@ function renderSectionSummary() {
 
     const chips = srcOrder.filter(s => srcBreak[s]).map(s => {
       const cfg = SRC_CONFIG[s];
-      return `<span class="text-xs px-2 py-0.5 rounded-full mr-1 font-semibold" style="background:rgba(255,255,255,.05);color:${getComputedColor(s)}">${cfg.label} ${srcBreak[s]}列</span>`;
+      return `<span class="text-xs px-2 py-0.5 rounded-full mr-1 font-semibold cursor-pointer hover:opacity-80 transition-opacity"
+                     style="background:rgba(255,255,255,.05);color:${getComputedColor(s)}"
+                     onclick="filterSectionAndSource('${sec}', '${s}')"
+                     title="点击查看${sec}中的${cfg.label}">${cfg.label} ${srcBreak[s]}列</span>`;
     }).join('');
 
     return `
       <div class="flex items-center gap-3 py-2 border-b border-slate-900/80">
-        <div class="w-24 text-xs text-slate-500 flex-shrink-0">${sec}</div>
+        <div class="w-24 text-xs text-slate-500 flex-shrink-0 cursor-pointer hover:text-slate-300 transition-colors"
+             onclick="filterBySection('${sec}')"
+             title="点击查看${sec}的所有列">${sec}</div>
         <div class="text-xs text-slate-700 w-6 flex-shrink-0">${secCols.length}列</div>
         <div class="flex flex-wrap gap-1">${chips}</div>
       </div>
