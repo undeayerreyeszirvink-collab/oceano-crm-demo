@@ -1,0 +1,2192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>欧神诺CRM · Skills编辑器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn { from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)} }
+        .fade-in { animation: fadeIn 0.25s ease-out; }
+        .skill-item { transition: background 0.15s, border-color 0.15s; }
+        .skill-item.active { background: rgb(30 41 59); border-color: rgb(99 102 241); }
+        .tab-btn { transition: all 0.15s; }
+        .tab-btn.active { background: rgb(30 58 138); color: white; border-color: rgb(59 130 246); }
+        .cap-card:hover { box-shadow: 0 0 0 1px rgb(99 102 241 / 0.4); }
+        .cap-card.expanded { box-shadow: 0 0 0 2px rgb(99 102 241 / 0.6); }
+        input, textarea, select {
+            background: rgb(15 23 42); border: 1px solid rgb(51 65 85);
+            color: rgb(226 232 240); border-radius: 6px; padding: 6px 10px;
+            width: 100%; font-size: 13px; outline: none; transition: border-color 0.15s;
+        }
+        input:focus, textarea:focus, select:focus { border-color: rgb(99 102 241); }
+        textarea { resize: vertical; font-family: ui-sans-serif, system-ui; line-height: 1.6; }
+        .field-label { font-size: 11px; font-weight: 600; color: rgb(148 163 184); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+        .section-title { font-size: 13px; font-weight: 700; color: rgb(199 210 254); border-left: 3px solid rgb(99 102 241); padding-left: 8px; margin-bottom: 12px; }
+        .report-section { background: rgb(15 23 42); border: 1px solid rgb(30 41 59); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+        .color-swatch { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
+        .color-swatch.selected { transform: scale(1.3); box-shadow: 0 0 0 2px white; }
+        .emoji-btn { font-size: 18px; cursor: pointer; padding: 3px 5px; border-radius: 5px; transition: background 0.1s; }
+        .emoji-btn:hover { background: rgb(51 65 85); }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgb(51 65 85); border-radius: 3px; }
+        .preview-chat { font-size: 12px; line-height: 1.6; }
+        .process-row { display: grid; grid-template-columns: 1fr 1fr 2fr 1fr; gap: 6px; align-items: start; margin-bottom: 6px; }
+        .list-item-row { display: grid; grid-template-columns: 1fr 2fr auto; gap: 6px; align-items: start; margin-bottom: 6px; }
+        .pain-card { background: rgb(30 41 59); border: 1px solid rgb(51 65 85); border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+        .add-row-btn { width: 100%; padding: 6px; border: 1px dashed rgb(51 65 85); border-radius: 6px; font-size: 12px; color: rgb(100 116 139); background: transparent; cursor: pointer; transition: all 0.15s; text-align: center; }
+        .add-row-btn:hover { border-color: rgb(99 102 241); color: rgb(165 180 252); }
+        .del-btn { background: transparent; border: none; color: rgb(148 163 184); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+        .del-btn:hover { color: rgb(248 113 113); background: rgb(30 41 59); }
+        /* Format guide styles */
+        .fmt-badge { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
+        .fmt-short  { background: rgb(30 58 138 / 0.5); color: rgb(147 197 253); }
+        .fmt-list   { background: rgb(20 83 45 / 0.5); color: rgb(134 239 172); }
+        .fmt-tpl    { background: rgb(88 28 135 / 0.5); color: rgb(216 180 254); }
+        .fmt-num    { background: rgb(120 53 15 / 0.5); color: rgb(253 186 116); }
+        .fmt-guide  { font-size: 11px; color: rgb(100 116 139); line-height: 1.6; margin: 4px 0 6px; padding: 8px 10px; background: rgb(15 23 42); border-left: 2px solid rgb(51 65 85); border-radius: 0 6px 6px 0; }
+        .fmt-guide strong { color: rgb(148 163 184); }
+        .fmt-guide code { background: rgb(30 41 59); padding: 1px 5px; border-radius: 3px; font-size: 10px; color: rgb(165 180 252); font-family: ui-monospace, monospace; }
+        .tpl-btn { font-size: 10px; padding: 2px 8px; background: rgb(30 41 59); border: 1px solid rgb(51 65 85); border-radius: 4px; color: rgb(148 163 184); cursor: pointer; transition: all 0.1s; white-space: nowrap; }
+        .tpl-btn:hover { border-color: rgb(99 102 241); color: rgb(165 180 252); }
+        .field-row { margin-bottom: 14px; }
+        .field-header { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+        .required { color: rgb(248 113 113); font-size: 10px; margin-left: 2px; }
+        .pain-card { background: rgb(30 41 59); border: 1px solid rgb(51 65 85); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+        .pain-card .sub-label { font-size: 10px; font-weight: 600; color: rgb(100 116 139); text-transform: uppercase; letter-spacing: 0.05em; margin: 8px 0 3px; }
+        .pain-card .sub-hint { font-size: 11px; color: rgb(71 85 105); margin-bottom: 4px; }
+        /* Permissions tab */
+        .risk-badge { display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:0.03em; }
+        .risk-low { background:rgb(20 83 45 / 0.4);color:rgb(134 239 172);border:1px solid rgb(20 83 45); }
+        .risk-mid { background:rgb(120 53 15 / 0.4);color:rgb(253 186 116);border:1px solid rgb(120 53 15); }
+        .risk-high { background:rgb(127 29 29 / 0.4);color:rgb(252 165 165);border:1px solid rgb(127 29 29); }
+        .perm-check { display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;border:2px solid rgb(51 65 85);cursor:pointer;transition:all 0.15s;flex-shrink:0; }
+        .perm-check.on { background:rgb(30 58 138);border-color:rgb(99 102 241);color:rgb(165 180 252); }
+        .compliance-item { display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;margin-bottom:6px;font-size:12px; }
+        .compliance-pass { background:rgb(20 83 45 / 0.15);border:1px solid rgb(20 83 45 / 0.4); }
+        .compliance-fail { background:rgb(127 29 29 / 0.15);border:1px solid rgb(127 29 29 / 0.4); }
+        .compliance-unknown { background:rgb(30 41 59);border:1px solid rgb(51 65 85); }
+        .audit-row { display:grid;grid-template-columns:130px 80px 150px 1fr 70px 1fr;gap:6px;padding:8px 10px;font-size:11px;border-bottom:1px solid rgb(30 41 59);align-items:center; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen flex flex-col overflow-hidden">
+
+<nav class="bg-slate-900 border-b border-slate-800 px-5 py-3 flex items-center justify-between shrink-0">
+    <div class="flex items-center space-x-3">
+        <div class="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center text-sm">⚙️</div>
+        <div>
+            <span class="font-semibold text-sm">欧神诺CRM · Skills编辑器</span>
+            <span id="save-status" class="ml-3 text-xs text-green-400 hidden">✓ 已保存</span>
+        </div>
+    </div>
+    <div class="flex items-center space-x-2">
+        <!-- 视图切换 -->
+        <div id="view-toggle" style="display:flex;background:rgb(30 41 59);border:1px solid rgb(51 65 85);border-radius:8px;padding:2px;gap:2px">
+            <button id="btn-biz-view" onclick="setViewMode('biz')" style="padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:rgb(99 102 241);color:white">👔 业务视图</button>
+            <button id="btn-tech-view" onclick="setViewMode('tech')" style="padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:transparent;color:rgb(100 116 139)">🔧 技术视图</button>
+        </div>
+        <div id="tech-only-btns" class="flex items-center space-x-2" style="display:none!important">
+            <button onclick="newSkill()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 rounded text-xs font-medium">+ 新增Skill</button>
+            <button onclick="exportDoc()" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 rounded text-xs font-medium">📄 导出调研报告</button>
+            <button onclick="exportSkillMd()" class="px-3 py-1.5 bg-indigo-800 hover:bg-indigo-700 rounded text-xs font-medium">📐 导出SKILL.md</button>
+            <button onclick="exportJSON()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-xs font-medium">📥 导出JSON</button>
+            <button onclick="importJSON()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-xs font-medium">📤 导入JSON</button>
+        </div>
+        <div id="biz-only-btns" class="flex items-center space-x-2">
+            <button onclick="newSkill()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 rounded text-xs font-medium">+ 新增Skill</button>
+        </div>
+    </div>
+</nav>
+
+<div class="flex flex-1 overflow-hidden">
+    <div class="w-52 shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col overflow-hidden">
+        <div class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-800">Skills</div>
+        <div id="skill-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+    </div>
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <div id="editor-panel" class="flex-1 overflow-y-auto p-5"></div>
+    </div>
+    <div class="w-72 shrink-0 bg-slate-900 border-l border-slate-800 flex flex-col overflow-hidden">
+        <div class="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-800 flex items-center justify-between">
+            <span>预览</span>
+            <div class="flex space-x-1">
+                <button onclick="setPreview('card')" id="preview-tab-card" class="tab-btn px-2 py-0.5 rounded text-xs border border-transparent active">卡片</button>
+                <button onclick="setPreview('chat')" id="preview-tab-chat" class="tab-btn px-2 py-0.5 rounded text-xs border border-transparent">对话</button>
+                <button onclick="setPreview('report')" id="preview-tab-report" class="tab-btn px-2 py-0.5 rounded text-xs border border-transparent">报告</button>
+            </div>
+        </div>
+        <div id="preview-panel" class="flex-1 overflow-y-auto p-4 text-xs"></div>
+    </div>
+</div>
+
+<script>
+// ─── Data ─────────────────────────────────────────────────────────────────────
+let skills = {
+    market: {
+        name: '市场运营 Skill', icon: '📢', color: 'blue', command: '/market-ops',
+        description: '智能管理市场活动、销售线索、网络留言，AI自动分析转化效果并优化策略',
+        skillId: 'oceano-market-leadanalysis-skill',
+        layer: 'L3',
+        provider: '欧神诺信息中心',
+        version: 'V1.0',
+        bizParams: [
+            { group: '线索跟进规则', params: [
+                { key: 'leadHighFollowHours', label: '高意向线索首次联系时限', value: '24', unit: '小时', hint: '超时自动推送企微提醒给主管', type: 'number' },
+                { key: 'leadMidFollowHours', label: '中意向线索首次联系时限', value: '72', unit: '小时', hint: '超时进入自动培育序列', type: 'number' },
+                { key: 'leadAutoAssign', label: '线索自动分配', value: 'true', unit: '', hint: '开启后按区域规则自动分配，关闭则需手动指派', type: 'toggle' }
+            ]},
+            { group: '活动ROI预警', params: [
+                { key: 'roiWarnThreshold', label: 'ROI预警阈值', value: '1.5', unit: '', hint: '低于此值触发预警，由市场总监介入', type: 'number' },
+                { key: 'roiTargetThreshold', label: 'ROI目标值', value: '3', unit: '', hint: '高于此值视为活动成功', type: 'number' }
+            ]},
+            { group: '活动预算管控', params: [
+                { key: 'budgetSingleCap', label: '单场活动预算上限', value: '50', unit: '万元', hint: '超出需市场总监审批', type: 'number' },
+                { key: 'budgetWarnPct', label: '超支预警阈值', value: '10', unit: '%', hint: '超支超过此比例需补充说明', type: 'number' },
+                { key: 'budgetFreezePct', label: '超支冻结阈值', value: '20', unit: '%', hint: '超支超过此比例冻结后续活动预算直至下季度', type: 'number' }
+            ]},
+            { group: '线索质量评级', params: [
+                { key: 'leadHighStayMin', label: '高意向：展会停留时长', value: '5', unit: '分钟', hint: '停留超过此时长 + 主动询价 = 高意向', type: 'number' },
+                { key: 'leadScoreModel', label: '评级模型', value: '行为权重+背景信息', unit: '', hint: '评级依据：停留时长/扫码/询价 × 公司规模/职位', type: 'text' }
+            ]}
+        ],
+        skillDef: {
+            reuseScope: '仅限本企业/租户',
+            semanticDep: '强依赖企业私有语义（品类定价体系、经销商分级规则、ROI计算公式）',
+            layerReason: '只有欧神诺这样干：展会线索评级基于企业专属的"停留时长+扫码+产品询价"行为权重，ROI公式引用企业毛利率参数，无法迁移至其他企业',
+            ontoEntities: '线索、活动、经销商、拜访记录、报价单',
+            ontoRoles: '市场推广经理、大区市场专员、市场总监',
+            ontoStatuses: '待跟进、跟进中、已转化、已流失、冷冻',
+            ontoRules: '高意向线索必须24小时内首次联系；ROI低于1.5时触发人工介入；活动预算超支>20%冻结后续审批权',
+            sopSteps: [
+                { step: '1', type: '识别', logic: '多渠道线索归集，OCR解析名片，自动去重合并', dep: 'L1: ocr-field-extract' },
+                { step: '2', type: '判断', logic: '基于行为权重（停留/扫码/询价）×背景信息（规模/职位）计算1-5星评级', dep: 'L2: lead-scoring-model' },
+                { step: '3', type: '执行', logic: '按区域规则分配给对应业务员，写入CRM任务队列', dep: 'CLI: CRM.task.create' },
+                { step: '4', type: '执行', logic: '超时未跟进触发企微自动提醒，升级至主管', dep: 'CLI: WeCom.notify' },
+                { step: '5', type: '判断', logic: '实时汇总已跟进数据，计算活动ROI，与阈值比对', dep: 'L2: roi-calculator' },
+                { step: '6', type: '执行', logic: 'ROI低于预警阈值时，推送预警至市场总监，暂停预算消耗', dep: 'CLI: BudgetSystem.freeze / HITL' }
+            ],
+            invocationB: 'Skill作为编排引擎Tool被调用：接受线索JSON输入，返回评级结果和分配建议',
+            invocationC: 'CLI接口：CRM.task.create（写入跟进任务）/ WeCom.notify（推送提醒）/ BudgetSystem.freeze（冻结预算）。所有写操作记录审计日志',
+            hitl: '① 信息缺失时追问（线索无手机号）② ROI低于0.8时人工决策是否继续活动 ③ 预算超支>20%需市场总监确认',
+            prohibit: ['L1线索评分Skill严禁直接调用BudgetSystem，必须经L3编排层审批', 'ROI低于0.8时严禁自动冻结，必须HITL', '企业专属折扣/毛利率参数严禁硬编码进L1/L2层'],
+            kpiAccuracy: '线索意向评级准确率 ≥ 88%（与销售员人工判断的一致性）',
+            kpiCoverage: '展会线索2小时内完成录入覆盖率 ≥ 95%；跟进任务自动创建覆盖率 ≥ 90%',
+            kpiLatency: 'ROI预警推送延迟 < 5分钟；线索评级响应时间 < 3秒',
+            permissions: {
+                roleMatrix: [
+                    { role:'市场推广经理', read:true, write:true, execute:true, approve:false },
+                    { role:'大区市场专员', read:true, write:true, execute:true, approve:false },
+                    { role:'市场总监', read:true, write:false, execute:false, approve:true }
+                ],
+                cliOps: [
+                    { name:'CRM.task.create', riskLevel:'中风险', requiresHitl:false, approver:'大区总监', auditLevel:'标准' },
+                    { name:'WeCom.notify', riskLevel:'低风险', requiresHitl:false, approver:'大区总监', auditLevel:'标准' },
+                    { name:'BudgetSystem.freeze', riskLevel:'高风险', requiresHitl:true, approver:'市场总监', auditLevel:'强制不可篡改' }
+                ],
+                hitlNodes: [
+                    { trigger:'线索无手机号等必填信息缺失', approver:'市场推广经理', timeoutRule:'10分钟无响应', timeoutAction:'等待人工响应' },
+                    { trigger:'活动ROI低于0.8时，是否继续活动', approver:'市场总监', timeoutRule:'30分钟无响应', timeoutAction:'上报更高层级' },
+                    { trigger:'活动预算超支>20%，是否冻结后续预算', approver:'市场总监', timeoutRule:'15分钟无响应', timeoutAction:'发送企微催办' }
+                ],
+                auditLog: [
+                    { ts:'2024-06-14 09:12', operator:'李晓燕', action:'CRM.task.create', target:'展会线索#1024（高意向）', result:'成功', approvalChain:'自动执行（中风险，无需HITL）' },
+                    { ts:'2024-06-14 09:15', operator:'AI Agent', action:'WeCom.notify', target:'大区专员张伟（超时提醒）', result:'成功', approvalChain:'自动执行（低风险）' },
+                    { ts:'2024-06-14 14:30', operator:'AI Agent', action:'BudgetSystem.freeze', target:'华南建材展预算账户（超支23%）', result:'待审批', approvalChain:'已发送审批请求 → 市场总监王芳（等待确认）' },
+                    { ts:'2024-06-14 14:47', operator:'王芳（市场总监）', action:'HITL.approve', target:'BudgetSystem.freeze 审批', result:'成功', approvalChain:'市场总监王芳 手动审批通过' }
+                ]
+            }
+        },
+        capabilities: [
+            { name: '线索智能分析', icon: '🔍', desc: 'AI评估线索质量，智能画像生成，ROI分析',
+              demoQuery: '最近的线索质量怎么样？',
+              demoResponse: `近7天共采集线索320个：\n\n📊 渠道分布：\n• 展会：120个（高质量37%）\n• 官网：85个（高质量22%）\n• 抖音：75个（高质量15%）\n\n💡 建议：48小时内跟进37个高质量展会线索` },
+            { name: '活动效果预警', icon: '⚠️', desc: '活动进度监控，预算超支预警，ROI异常检测',
+              alertLevel: '中', alertTitle: '华南建材展活动ROI低于预期',
+              alertContent: `预算：50万 | 实际：48万\n线索数：120个 | 预期：200个` },
+            { name: '转化策略建议', icon: '💡', desc: 'AI生成跟进话术，最佳联系时间推荐' },
+            { name: '行动自动追踪', icon: '✅', desc: '任务自动创建，未跟进提醒，漏斗追踪' }
+        ],
+        report: {
+            department: '市场部 / 品牌推广中心',
+            interviewee: '市场推广经理、大区市场专员',
+            objective: '评估AI接入展会线索管理与活动ROI分析的可行性，减少人工跟进遗漏',
+            background: `当前市场活动线索管理高度依赖人工整理。展会结束后，业务员通过Excel手工录入名片信息，平均48小时内完成录入，但跟进率仅约40%。\n\n核心变量：1. 渠道来源差异（展会/官网/社媒）；2. 线索质量评级（高/中/低）；3. 跟进时效（24h/48h/72h）；4. 活动预算vs实际ROI`,
+            systemGoal: '通过AI自动分类和评级线索，将线索从采集到首次跟进的周期从48小时压缩至2小时，跟进率提升至80%以上',
+            processChain: '线索采集 → AI质量评级 → 自动分配给业务员 → 跟进提醒 → 转化追踪 → ROI汇报',
+            processNodes: [
+                { step: '线索采集', input: '展会名片/官网表单/社媒留言', action: '多渠道统一归集，自动去重', output: '原始线索池' },
+                { step: 'AI评级', input: '线索基本信息、渠道标签', action: 'AI模型评估意向度，打1-5星', output: '评级后线索列表' },
+                { step: '自动分配', input: '评级列表+区域规则', action: '按区域和优先级分配给业务员', output: '待跟进任务' },
+                { step: '跟进提醒', input: '任务状态+时效规则', action: '超时未联系自动推送企微提醒', output: '已跟进记录' }
+            ],
+            bizClassification: '线索分为：1. 高意向（主动询价，展会停留>5分钟）走标准跟进流程；2. 中意向（收名片/扫码）走培育序列；3. 低意向（仅浏览）走自动内容推送，不占用销售精力',
+            coreLogic: 'ROI = (成交金额 × 毛利率) / 活动总投入。目标ROI>3，低于1.5触发预警，由市场总监介入决策',
+            costLogic: '活动预算由市场部审批，单场上限50万。超支>10%需补充说明，超支>20%冻结后续活动预算直至下季度',
+            structuredData: [
+                { name: '线索登记表（Excel/BIP）', desc: '记录所有渠道线索，字段：姓名/电话/来源/意向等级/负责人' },
+                { name: '活动预算台账（Excel）', desc: '每场活动的投入明细，含人员差旅/物料/场地' },
+                { name: '转化率数据（CRM系统）', desc: '历史活动线索到成交的转化漏斗数据' }
+            ],
+            unstructuredData: [
+                { name: '活动总结报告（Word/PPT）', desc: '每次活动后撰写，含效果评估和经验总结，是AI训练ROI预测的关键材料' },
+                { name: '展会现场照片/视频', desc: '记录展位布置和客户互动，用于AI分析展位效果' }
+            ],
+            painPoints: [
+                { title: '线索录入严重滞后', desc: '展会结束后业务员手工录入名片，平均延迟48小时，高峰期超过72小时', impact: '错过最佳联系时机，线索自然衰减，首次跟进率<40%' },
+                { title: '线索质量参差无统一标准', desc: '不同业务员对高/中/低意向的判断标准不一，导致资源错配', impact: '高价值线索被遗漏，低价值线索过度跟进，人力浪费约30%' },
+                { title: '活动ROI事后才能评估', desc: '活动结束后2-4周才能出完整ROI分析，基于Excel手工计算', impact: '无法实时调整活动策略，同类活动重复踩坑' }
+            ],
+            aiRequirements: [
+                { title: '自动化线索录入（OCR+NLP）', desc: '扫描名片自动提取结构化信息，与企微/小程序集成，现场即时录入' },
+                { title: '智能意向评级', desc: '基于行为轨迹（停留时长/扫码/询价）+背景信息（公司规模/职位）自动打分' },
+                { title: '实时ROI仪表盘', desc: '活动期间实时计算已录入线索的预期ROI，支持预警阈值配置' }
+            ]
+        }
+    },
+    sales: {
+        name: '销售运营 Skill', icon: '💼', color: 'green', command: '/sales-ops',
+        description: '智能管理销售全流程：SFA零感知录入 + 商机分析 + AI辅助决策，让一线销售专注销售',
+        skillId: 'oceano-sales-sfa-skill',
+        layer: 'L3',
+        provider: '欧神诺信息中心',
+        version: 'V1.0',
+        bizParams: [
+            { group: '客户分级与拜访频率', params: [
+                { key: 'visitFreqA', label: 'A类客户（盟主）月拜访次数', value: '2', unit: '次/月', hint: '年销>300万，低于此频率触发提醒', type: 'number' },
+                { key: 'visitFreqB', label: 'B类客户月拜访次数', value: '1', unit: '次/月', hint: '年销100-300万', type: 'number' },
+                { key: 'visitFreqC', label: 'C类客户拜访频率', value: '1', unit: '次/季度', hint: '年销<100万', type: 'number' },
+                { key: 'visitDropAlert', label: '业绩下滑升级阈值', value: '30', unit: '%', hint: '下滑超过此比例自动升级为A类紧急跟进', type: 'number' }
+            ]},
+            { group: '报价折扣权限', params: [
+                { key: 'discountC', label: 'C类经销商最低折扣', value: '9', unit: '折', hint: '低于此折扣需大区总监审批', type: 'number' },
+                { key: 'discountB', label: 'B类经销商最低折扣', value: '8.5', unit: '折', hint: '低于此折扣需大区总监审批', type: 'number' },
+                { key: 'discountA', label: 'A类盟主最低折扣', value: '8', unit: '折', hint: '低于此折扣需总部审批', type: 'number' },
+                { key: 'quoteApprovalThreshold', label: '大额报价审批阈值', value: '50', unit: '万元', hint: '超过此金额需总部审批', type: 'number' }
+            ]},
+            { group: '日报与任务规则', params: [
+                { key: 'reportAutoGen', label: '日报自动生成', value: 'true', unit: '', hint: '开启后AI自动汇总当天拜访记录生成草稿', type: 'toggle' },
+                { key: 'reportConfirmRequired', label: '日报发送前需人工确认', value: 'true', unit: '', hint: '关闭则自动发送（不推荐）', type: 'toggle' },
+                { key: 'taskFollowupDays', label: '跟进任务默认提醒天数', value: '3', unit: '天', hint: '创建跟进任务后X天未完成自动升级提醒', type: 'number' }
+            ]}
+        ],
+        skillDef: {
+            reuseScope: '仅限本企业/租户',
+            semanticDep: '强依赖企业私有语义（经销商分级A/B/C、折扣权限体系、BIP系统业绩数据）',
+            layerReason: '只有欧神诺这样干：A类盟主折扣下限8折、业绩数据来自欧神诺BIP专有系统、日报模板按大区管理规范定制',
+            ontoEntities: '拜访记录、商机、报价单、日报、经销商档案',
+            ontoRoles: '前线销售代表、大区业务经理、大区总监',
+            ontoStatuses: '待拜访、拜访中、已跟进、待报价、已成交、已流失',
+            ontoRules: 'A类客户月拜访≥2次；报价折扣不低于权限下限，超限需审批；业绩下滑>30%自动升级紧急跟进',
+            sopSteps: [
+                { step: '1', type: '识别', logic: 'GPS定位+日历匹配识别当前客户，自动触发签到', dep: 'L1: geo-customer-match' },
+                { step: '2', type: '识别', logic: 'NLP解析语音/文字描述，提取客户名/业绩/诉求/下一步行动', dep: 'L1: visit-nlp-extract' },
+                { step: '3', type: '执行', logic: '写入结构化拜访记录，自动创建企微跟进任务', dep: 'CLI: CRM.visit.write / WeCom.task.create' },
+                { step: '4', type: '判断', logic: 'AI汇总当日所有拜访记录，生成日报草稿，输出预警信号', dep: 'L2: daily-report-gen' },
+                { step: '5', type: '执行', logic: '销售确认后一键发送日报至主管，同时更新BIP系统', dep: 'CLI: WeCom.send / BIP.sync' }
+            ],
+            invocationB: 'Skill作为语音助手Tool被调用：接受语音/文字输入，返回结构化拜访记录JSON',
+            invocationC: 'CLI接口：CRM.visit.write（写拜访记录）/ WeCom.task.create（创建提醒）/ BIP.sync（同步业绩）',
+            hitl: '① 客户信息模糊时追问确认 ② 日报发送前由销售员人工核实 ③ 报价低于折扣下限时需主管审批',
+            prohibit: ['L1语音提取Skill严禁直接调用BIP写接口', '日报严禁无人工确认自动发送', '折扣审批不得绕过HITL节点'],
+            kpiAccuracy: '语音信息提取准确率（客户名/业绩/诉求）≥ 92%；GPS自动签到匹配准确率 ≥ 95%',
+            kpiCoverage: '日报自动生成覆盖率 ≥ 95%；跟进任务自动创建率 ≥ 88%',
+            kpiLatency: '签到到记录写入 < 5秒；日报生成响应 < 10秒',
+            permissions: {
+                roleMatrix: [
+                    { role:'前线销售代表', read:true, write:true, execute:true, approve:false },
+                    { role:'大区业务经理', read:true, write:true, execute:true, approve:true },
+                    { role:'大区总监', read:true, write:false, execute:false, approve:true }
+                ],
+                cliOps: [
+                    { name:'CRM.visit.write', riskLevel:'中风险', requiresHitl:false, approver:'大区业务经理', auditLevel:'标准' },
+                    { name:'WeCom.task.create', riskLevel:'低风险', requiresHitl:false, approver:'大区业务经理', auditLevel:'标准' },
+                    { name:'WeCom.send', riskLevel:'中风险', requiresHitl:true, approver:'大区业务经理', auditLevel:'标准' },
+                    { name:'BIP.sync', riskLevel:'高风险', requiresHitl:true, approver:'大区总监', auditLevel:'强制不可篡改' }
+                ],
+                hitlNodes: [
+                    { trigger:'客户信息模糊或多义时（同城多个同名客户）', approver:'前线销售代表', timeoutRule:'5分钟无响应', timeoutAction:'等待人工响应' },
+                    { trigger:'日报发送前须销售员人工核实确认', approver:'前线销售代表', timeoutRule:'60分钟无响应', timeoutAction:'发送企微催办' },
+                    { trigger:'报价折扣低于权限下限时需主管审批', approver:'大区业务经理', timeoutRule:'30分钟无响应', timeoutAction:'上报更高层级' }
+                ],
+                auditLog: [
+                    { ts:'2024-06-14 11:23', operator:'赵明（前线销售）', action:'CRM.visit.write', target:'客户：樊俊涛（周口盟主）', result:'成功', approvalChain:'自动执行（中风险，含拜访记录）' },
+                    { ts:'2024-06-14 11:25', operator:'AI Agent', action:'WeCom.task.create', target:'跟进任务：6月21日发促销方案', result:'成功', approvalChain:'自动执行（低风险）' },
+                    { ts:'2024-06-14 18:05', operator:'赵明（前线销售）', action:'WeCom.send', target:'日报发送至主管刘磊', result:'成功', approvalChain:'销售员确认 → HITL通过 → 自动发送' },
+                    { ts:'2024-06-14 18:06', operator:'AI Agent', action:'BIP.sync', target:'华中区1-5月业绩数据同步', result:'成功', approvalChain:'大区总监审批通过 → 强制审计日志已写入（不可篡改）' }
+                ]
+            }
+        },
+        capabilities: [
+            { name: 'SFA零感知录入', icon: '🎙️', desc: '语音录入拜访记录、AI自动生成日报、GPS签到免打表、对话式数据归档',
+              demoQuery: '帮我记录刚才跟樊总的拜访',
+              demoResponse: `📍 已检测到您在：河南省周口市\n⏱️ 拜访时长：约50分钟\n\n✅ AI已生成拜访记录：\n━━━━━━━━━━━━━\n客户：樊俊涛（周口盟主）\n当前业绩：1-5月 ¥832万（同比-0.5%）\n客户诉求：下半年促销政策支持\n下一步：1周内给促销方案\n━━━━━━━━━━━━━\n📌 已自动创建任务：6月21日前发促销方案` },
+            { name: '报价智能生成', icon: '📋', desc: '一句话生成报价单，自动套用折扣政策，历史成交价参考',
+              demoQuery: '给郑州李红亮出个报价9折',
+              demoResponse: `📋 报价单草稿：\n━━━━━━━━━━━━━\n客户：李红亮（郑州猛狮建材）\n折扣：9折（符合盟主权限）\n• 中板系列 × 3000㎡  ¥115.2/㎡\n• 岩板系列 × 500㎡   ¥257.4/㎡\n合计预估：¥473,400\n━━━━━━━━━━━━━\n📊 李总1-5月提货¥564万（+77%，强增长！）` },
+            { name: '日报自动生成', icon: '📝', desc: 'AI从当天活动记录自动汇总日报，一键确认发送',
+              demoQuery: '帮我生成今天的日报',
+              demoResponse: `📊 今日工作日报（2024-06-14）\n━━━━━━━━━━━━━\n【拜访】4次\n• 周口·樊俊涛 ¥832万(-0.5%)\n• 驻马店·崔建波 ¥113万(↓47%)\n• 漯河·张兵 ¥128万(↑60%)\n• 电话·郑州李红亮 确认报价¥47万\n\n【业绩】华中1-5月¥1.11亿（-18.8%）\n⚠️ 崔建波连续下滑，需重点跟进\n\n📤 [一键发给主管]` },
+            { name: '商机分析预警', icon: '🎯', desc: '商机自动评分，停滞预警，成交概率预测',
+              demoQuery: '本月重点商机有哪些？',
+              demoResponse: `🔥 高概率签单：\n1. 郑州李红亮 · ¥47万 · 95%\n2. 漯河张兵 · ¥30万补货 · 88%\n\n🟡 需要推进：\n3. 周口樊俊涛 · 下半年政策谈判\n\n🔴 流失风险：\n4. 商丘张旭江 · ¥184万(↓47%) 连续2月下滑\n5. 驻马店崔建波 · ¥113万(↓47%)`,
+              alertLevel: '高', alertTitle: '商丘张旭江业绩严重下滑47%',
+              alertContent: `1-5月：¥184万（↓47%）\n可能主推竞品，建议本周内拜访` }
+        ],
+        report: {
+            department: '华中大区销售部 / 区域运营中心',
+            interviewee: '华中大区总监、区域业务经理（5名）、前线销售代表（12名）',
+            objective: '梳理一线销售数据录入痛点，评估SFA零感知录入和AI辅助决策的可行性，目标将人均日报填写时间从45分钟降至5分钟以内',
+            background: `华中大区（河南/湖北/安徽）2024年1-5月合计业绩¥1.11亿，同比下滑18.8%。前线销售团队约60人，分布在20余个城市，管理分散。\n\n核心矛盾：\n1. 数据录入负担重 — 业务员每天需手工填写拜访日报、更新CRM商机状态，平均耗时45-60分钟\n2. 数据质量差 — 因填写繁琐，约40%的拜访记录滞后1-3天补录，数据失真\n3. 管理决策滞后 — 大区总监依赖周报做决策，无法实时掌握客户异动`,
+            systemGoal: '部署SFA零感知录入系统，通过对话式交互+GPS自动签到，将日常数据录入工作降低90%，让销售专注客户，让管理实时可见',
+            processChain: '出门拜访 → GPS自动签到 → 语音描述 → AI整理归档 → 自动生成日报 → 一键发送 → 管理层实时查看',
+            processNodes: [
+                { step: '拜访签到', input: '销售员位置+日历中的客户地址', action: 'GPS自动匹配最近客户，一键确认签到', output: '签到记录（含时间地点）' },
+                { step: '情况描述', input: '销售员语音/文字输入', action: 'AI提取：客户名/业绩/诉求/下一步行动', output: '结构化拜访记录' },
+                { step: '任务创建', input: '拜访记录中的"下一步行动"', action: 'AI自动创建跟进任务，设置提醒时间', output: '企微待办任务' },
+                { step: '日报汇总', input: '当天所有拜访记录', action: 'AI按模板合并生成日报草稿', output: '日报草稿（待确认）' },
+                { step: '发送确认', input: '日报草稿', action: '销售员一键确认或修改后发给主管', output: '已归档日报' }
+            ],
+            bizClassification: '客户分级：A类（盟主，年销>300万）/ B类（核心经销商，年销100-300万）/ C类（普通经销商，年销<100万）\n拜访频率：A类每月≥2次，B类每月1次，C类每季度1次\n特殊情况：业绩下滑>30%的客户自动升级为A类紧急跟进',
+            coreLogic: '商机评分 = 基础分（客户等级×20）+ 互动分（拜访频率×10）+ 意向分（主动询价+30，主动推进+20）- 风险分（停滞>30天-20，业绩下滑>20%-15）',
+            costLogic: '报价折扣权限：C类经销商最低9折，B类最低8.5折，A类盟主最低8折，低于最低折扣需大区总监审批。超过¥50万的报价需总部审批',
+            structuredData: [
+                { name: '经销商档案（BIP系统）', desc: '含客户基本信息、历史进货记录、回款状态，通过BIP API实时读取' },
+                { name: '月度业绩数据（BIP/Excel）', desc: '华中1-5月经销商销售数据，已提取：樊俊涛¥832万(-0.5%)、李红亮¥564万(+77%)等' },
+                { name: '报价政策表（Excel）', desc: '各品类产品定价、折扣权限表，按经销商等级区分' },
+                { name: '拜访记录（CRM待建）', desc: '目前分散在业务员个人微信和Excel中，需统一归集' }
+            ],
+            unstructuredData: [
+                { name: '经销商拜访记录（微信聊天/语音）', desc: '大量拜访信息沉淀在业务员个人微信中，无法被企业系统检索和分析' },
+                { name: '促销政策文件（Word/PDF）', desc: '记录各区域促销政策，业务员需手工查阅对照，AI接入后可自动匹配' },
+                { name: '竞品情报（非结构化笔记）', desc: '业务员拜访中了解到的竞品动态，目前仅口头传递，需建立知识库' }
+            ],
+            painPoints: [
+                { title: '日报填写耗时极长', desc: '每天下班后需手工整理当天4-6次拜访记录，按模板填写Word日报，再发微信给主管', impact: '每人每天耗时45-60分钟，12名业务员每年浪费约4320小时，且质量参差不齐' },
+                { title: '拜访数据严重失真', desc: '补录率高达40%，业务员记忆模糊导致关键信息（价格/诉求/承诺）丢失', impact: '管理层决策基于失真数据，商机跟进漏洞率约25%，估计每年损失商机¥500万+' },
+                { title: '客户异动无法实时感知', desc: '大区总监只能在周会上才了解哪些客户出现下滑或竞品威胁', impact: '平均响应延迟5-7天，2024年华中有3个盟主级客户因响应不及时流失' },
+                { title: '报价流程繁琐易出错', desc: '业务员需手工查折扣权限表、历史成交价，再手工制作报价单', impact: '平均每份报价单耗时30分钟，折扣超权限情况每月发生约8次' }
+            ],
+            aiRequirements: [
+                { title: '对话式拜访录入', desc: '业务员用自然语言描述拜访情况（可语音），AI自动提取结构化字段并入库，支持企微直接操作' },
+                { title: 'GPS自动签到', desc: '根据位置自动匹配最近客户，无需手动选择，拜访开始/结束时间自动记录' },
+                { title: 'AI日报自动生成', desc: '当天工作结束后，AI汇总所有拜访记录，按标准模板生成日报草稿，销售员一键确认发送' },
+                { title: '客户异动实时预警', desc: '监控客户进货节奏、拜访频率、业绩变化，超出阈值立即推送企微告警给对应业务员和大区总监' },
+                { title: '智能报价辅助', desc: '输入客户名+折扣要求，AI自动查询客户等级+历史成交价+当前政策，生成合规报价单草稿' }
+            ]
+        }
+    },
+    dealer: {
+        name: '经销商运营 Skill', icon: '🏪', color: 'purple', command: '/dealer-ops',
+        description: '智能管理经销商全生命周期，从招商到日常运营，AI全方位赋能',
+        capabilities: [
+            { name: '经营数据分析', icon: '📊', desc: '销售数据分析，库存周转监控，回款状态追踪',
+              demoQuery: '华南区经销商整体情况？',
+              demoResponse: `华南区1-5月经销商表现：\n\n🏆 增长亮点：\n• 深圳 徐增勇 ¥300万（+85%）\n• 廉江 郭俊锋 ¥90万（+80%）\n\n⚠️ 需关注：\n• 惠州 吴松辉：¥255万（↓31%）\n• 江门 许清泓：¥7万（↓62%）` },
+            { name: '异常智能预警', icon: '⚠️', desc: '销量下滑预警，库存积压提醒，回款逾期预警',
+              alertLevel: '高', alertTitle: '惠州吴松辉业绩严重下滑31%',
+              alertContent: `1-5月：¥255万（↓31%）\n15年老经销商，需48小时内登门拜访` },
+            { name: '政策智能建议', icon: '💡', desc: '补货计划生成，促销方案推荐，信用额度调整' },
+            { name: '运营行动追踪', icon: '✅', desc: '拜访计划安排，政策执行追踪，培训任务监控' }
+        ],
+        report: {
+            department: '经销商运营中心 / 大区渠道管理部',
+            interviewee: '渠道运营总监、各大区渠道经理（8名）',
+            objective: '梳理经销商日常运营管理流程，评估AI接入经销商健康度监控和预警的可行性',
+            background: `全国经销商约400家，各大区分散管理。华南区1-5月总体数据参差不齐，增长和下滑分化明显。\n\n核心变量：1. 销售体量分级；2. 同比增减趋势；3. 回款周期；4. 库存周转天数`,
+            systemGoal: '建立经销商全生命周期数字化档案，通过AI实时监控健康度指标，将异常经销商的响应时间从7天压缩至24小时',
+            processChain: '数据采集（BIP） → 健康度计算 → 异常识别 → 预警推送 → 跟进处置 → 结果归档',
+            processNodes: [
+                { step: '数据采集', input: 'BIP系统销售/回款/库存数据', action: '每日自动同步，计算关键指标', output: '经销商健康度数据' },
+                { step: '异常识别', input: '健康度数据+预警阈值', action: 'AI对比历史均值，标记异常', output: '预警清单' },
+                { step: '预警推送', input: '预警清单+责任人信息', action: '企微推送给区域经理，附建议行动', output: '处置任务' },
+                { step: '跟进处置', input: '处置任务', action: '区域经理记录处置结果', output: '归档记录' }
+            ],
+            bizClassification: '经销商按年销额分4级：S级(>500万)、A级(200-500万)、B级(50-200万)、C级(<50万)\n预警阈值：销量下滑>15%、库存周转>60天、回款逾期>30天',
+            coreLogic: '健康度评分(0-100) = 业绩完成率(40分) + 同比增长(30分) + 回款及时率(20分) + 活跃度(10分)。低于60分触发黄色预警，低于40分触发红色预警',
+            costLogic: '促销政策：S/A级可申请专项促销资金，上限为年销额的3%。B级可申请标准促销物料。C级仅享受统一政策',
+            structuredData: [
+                { name: '经销商档案（BIP）', desc: '含注册信息、等级、授信额度、历史进货记录' },
+                { name: '终端销售数据（BIP/报表）', desc: '月度终端销售数据，华南区已有详细Excel数据' },
+                { name: '回款记录（BIP财务模块）', desc: '经销商回款时间、金额、账期使用情况' }
+            ],
+            unstructuredData: [
+                { name: '区域分析报告（PPT/Word）', desc: '大区经理定期撰写的区域分析，含竞品动态和市场判断' },
+                { name: '经销商拜访记录（微信/邮件）', desc: '拜访记录分散在个人设备，无法被系统检索' }
+            ],
+            painPoints: [
+                { title: '异常经销商发现滞后', desc: '区域经理每周手工整理数据才能发现下滑趋势', impact: '平均响应延迟7天，错过最佳干预窗口' },
+                { title: '数据分散无法实时汇总', desc: 'BIP数据、Excel报表、微信沟通记录分散在多处', impact: '制作一份区域分析报告需耗时2-3天' }
+            ],
+            aiRequirements: [
+                { title: '经销商健康度实时监控', desc: '每日自动计算400家经销商的健康度评分，异常即时推送' },
+                { title: '智能区域分析报告', desc: '按需生成大区/省份/城市的经销商分析报告，含图表和建议' }
+            ]
+        }
+    },
+    service: {
+        name: '服务运营 Skill', icon: '🛠️', color: 'amber', command: '/service-ops',
+        description: '智能管理售后服务全流程，提升客户满意度，降低服务成本',
+        capabilities: [
+            { name: '工单智能分析', icon: '📋', desc: '工单自动分类，响应时效分析，问题根因识别',
+              demoQuery: '本周工单处理情况怎么样？',
+              demoResponse: `本周工单处理概况：\n\n📋 新增：68个 | 已处理：52个（76%）\n平均响应：2.3小时\n\n⚠️ 需关注：\n• 5个工单超48小时未处理\n• 质量投诉环比+30%，集中800×800规格\n\n💡 建议：排查800×800规格质量批次问题` },
+            { name: '服务质量预警', icon: '⚠️', desc: '响应超时预警，投诉升级提醒，满意度异常检测',
+              alertLevel: '高', alertTitle: '深圳龙华项目投诉升级',
+              alertContent: `客户：万科龙华项目\n投诉：色差严重，已超时72小时` },
+            { name: '服务优化建议', icon: '💡', desc: 'AI生成解决方案，流程优化建议，知识库推荐' },
+            { name: '服务全程追踪', icon: '✅', desc: '工单状态追踪，人员绩效分析，回访自动提醒' }
+        ],
+        report: {
+            department: '客户服务部 / 售后运营中心',
+            interviewee: '服务运营总监、客服主管、现场安装技术人员',
+            objective: '梳理工单处理流程，评估AI自动分类和响应预警的可行性，将平均响应时间从4小时降至1小时',
+            background: `每月平均接收工单250-300张，涵盖安装、质量投诉、退换货、咨询等类型。人工分类和分配耗时长，超时率约15%。`,
+            systemGoal: 'AI自动分类工单类型和优先级，智能匹配最近技术人员，将超时工单率从15%降至3%',
+            processChain: '工单提交 → AI自动分类 → 优先级评估 → 分配技术人员 → 处理反馈 → 满意度回访',
+            processNodes: [
+                { step: '工单提交', input: '客户/经销商通过企微/电话提交', action: 'AI提取关键信息，自动分类', output: '结构化工单' },
+                { step: '优先级评估', input: '工单类型+客户等级+已超时时间', action: 'AI评分，高优先级立即推送', output: '排序后的工单队列' },
+                { step: '分配处理', input: '工单+技术人员地理位置/能力', action: '智能匹配最近有能力的技术人员', output: '处理任务' }
+            ],
+            bizClassification: '工单分4类：安装类（标准流程）/ 质量投诉（需上报）/ 退换货（需审批）/ 咨询类（可自动回复）\n优先级：S级客户工单2小时内响应，普通客户4小时，逾期触发升级',
+            coreLogic: '满意度评分 = 响应时效分(40) + 处理结果分(40) + 服务态度分(20)。连续3次评分<60的技术人员需培训',
+            costLogic: '退换货成本核算：材料成本 + 人工费（150元/次）+ 物流费。质量问题退换货由工厂承担，安装原因由经销商承担',
+            structuredData: [
+                { name: '工单系统数据库', desc: '记录所有工单的提交/分配/处理/关闭时间和结果' },
+                { name: '技术人员档案', desc: '含地理位置、能力标签、当前工单量、历史评分' }
+            ],
+            unstructuredData: [
+                { name: '客户投诉记录（文字/图片）', desc: '客户描述问题的非结构化文本和现场图片，是AI识别质量问题模式的关键' }
+            ],
+            painPoints: [
+                { title: '工单分类全靠人工', desc: '客服人员每天手工阅读每张工单，判断类型和优先级', impact: '每张工单分类平均5分钟，高峰期出现积压' },
+                { title: '质量问题无法系统性识别', desc: '同一批次质量问题分散在多张工单中，无法快速关联', impact: '平均需要10张以上投诉才能发现批次问题，损失扩大' }
+            ],
+            aiRequirements: [
+                { title: '工单智能分类与路由', desc: '基于工单文本内容，自动判断类型、优先级，并推荐处理人' },
+                { title: '质量问题聚类分析', desc: '自动聚合相似工单，发现批次质量问题，生成质量预警报告' }
+            ]
+        }
+    },
+    project: {
+        name: '项目运营 Skill', icon: '🎯', color: 'red', command: '/project-ops',
+        description: '智能管理工程项目全生命周期，从立项到交付，AI全程风险管控',
+        capabilities: [
+            { name: '项目智能分析', icon: '📊', desc: '进度实时追踪，成本收益分析，资源利用监控',
+              demoQuery: '在建项目进度如何？',
+              demoResponse: `当前在建项目 12个：\n\n🟢 正常（7个）：广州天河万科城 85%...\n\n🟡 轻微延期（3个）：东莞松山湖 延期7天\n\n🔴 严重延期（2个）：\n中山翠亨项目 - 延期21天（设计变更）\n\n💡 建议：中山项目需紧急协调设计确认` },
+            { name: '风险智能预警', icon: '⚠️', desc: '进度延期预警，成本超支提醒，质量问题识别',
+              alertLevel: '高', alertTitle: '中山翠亨项目严重延期21天',
+              alertContent: `合同金额：¥380万  延期21天\n原因：设计变更，预计追加成本¥15万` },
+            { name: '资源优化建议', icon: '💡', desc: '人员调配建议，材料采购优化，施工计划调整' },
+            { name: '项目全程追踪', icon: '✅', desc: '里程碑监控，变更管理追踪，验收标准检查' }
+        ],
+        report: {
+            department: '工程项目部 / 大客户渠道中心',
+            interviewee: '工程项目总监、区域工程经理（4名）、项目跟单专员',
+            objective: '梳理工程项目全生命周期管理流程，评估AI接入进度监控和风险预警的可行性',
+            background: `公司承接工程项目以住宅楼盘为主，主要集中在华南地区。在建项目约20-30个，合同金额从¥50万到¥500万不等。项目周期普遍6-18个月。\n\n核心风险：工期延误导致违约金、设计变更带来追加成本、施工质量问题导致返工`,
+            systemGoal: '建立工程项目实时进度追踪系统，通过AI预测延期风险，将项目按时交付率从75%提升至90%',
+            processChain: '立项 → 合同签订 → 材料备货 → 现场施工 → 验收 → 回款',
+            processNodes: [
+                { step: '立项评审', input: '客户需求/设计方案/预算', action: '评估可行性和利润率，确定里程碑计划', output: '项目立项书' },
+                { step: '材料备货', input: '施工计划+材料清单', action: '按节点采购，协调仓库调配', output: '备货完成确认' },
+                { step: '进度追踪', input: '现场照片/工程日报', action: 'AI识别进度节点，对比计划预警', output: '进度报告+风险预警' },
+                { step: '验收回款', input: '竣工报告+验收标准', action: '核对验收标准，生成结算单', output: '回款申请' }
+            ],
+            bizClassification: '项目分3类：住宅楼盘（量大、标准化）/ 商业地产（定制化、利润高）/ 政府工程（周期长、回款慢）\n重点关注：合同金额>¥200万的S级项目',
+            coreLogic: '延期风险评分 = 当前进度偏差(%) × 剩余工期系数 + 外部风险因子（天气/设计变更/材料紧缺）\n超过25分触发黄色预警，超过50分触发红色预警',
+            costLogic: '利润率 = (合同金额 - 材料成本 - 人工费 - 物流费 - 违约金) / 合同金额\n目标利润率15-25%，低于10%需总监审批决策',
+            structuredData: [
+                { name: '项目台账（Excel/BIP）', desc: '记录所有在建项目的合同金额、里程碑计划、当前进度、责任人' },
+                { name: '材料采购记录（BIP）', desc: '各项目材料采购计划、到货情况、库存状态' }
+            ],
+            unstructuredData: [
+                { name: '工程日报（微信/Word）', desc: '现场施工人员每天发送的进度更新，含文字和照片，是AI分析进度的核心数据源' },
+                { name: '设计变更单（PDF）', desc: '记录设计调整内容和影响，是成本超支和工期延误的主要原因' }
+            ],
+            painPoints: [
+                { title: '多项目进度无法实时汇总', desc: '项目经理每周手工整理20+个项目的进度，制作进度汇报表', impact: '每周耗时8小时，且数据滞后3-5天' },
+                { title: '延期风险预判能力弱', desc: '通常在延期已经发生后才发现，缺乏提前预警机制', impact: '2023年有5个项目因延期产生违约金，合计约¥80万' }
+            ],
+            aiRequirements: [
+                { title: 'AI进度识别（图片+文字）', desc: '从工程日报的照片和文字中自动识别当前施工阶段，对比计划节点' },
+                { title: '延期风险预测', desc: '基于历史项目数据和当前偏差，预测未来延期概率，提前10-15天预警' }
+            ]
+        }
+    }
+};
+
+const COLORS = {
+    blue:   { bg:'#1e3a5f', border:'#3b82f6', text:'#60a5fa', swatch:'#3b82f6' },
+    green:  { bg:'#14532d', border:'#22c55e', text:'#4ade80', swatch:'#22c55e' },
+    purple: { bg:'#2e1065', border:'#a855f7', text:'#c084fc', swatch:'#a855f7' },
+    amber:  { bg:'#451a03', border:'#f59e0b', text:'#fbbf24', swatch:'#f59e0b' },
+    red:    { bg:'#450a0a', border:'#ef4444', text:'#f87171', swatch:'#ef4444' },
+    cyan:   { bg:'#083344', border:'#06b6d4', text:'#22d3ee', swatch:'#06b6d4' },
+    pink:   { bg:'#500724', border:'#ec4899', text:'#f472b6', swatch:'#ec4899' },
+    indigo: { bg:'#1e1b4b', border:'#6366f1', text:'#818cf8', swatch:'#6366f1' }
+};
+const EMOJIS = ['📢','💼','🏪','🛠️','🎯','📊','💡','🔍','⚠️','✅','🤖','📱','💬','🔔','📋','🎙️','📝','🏆','🌟','🚀','💎','🔧','📈','📉','🗂️','🎪','🏗️','🌐','💰','🎁'];
+
+let currentKey = null;
+let currentTab = 'basic';
+let previewMode = 'card';
+let expandedCap = null;
+let viewMode = 'biz'; // 'biz' | 'tech'
+
+function setViewMode(mode) {
+    viewMode = mode;
+    document.getElementById('btn-biz-view').style.background = mode==='biz' ? 'rgb(99 102 241)' : 'transparent';
+    document.getElementById('btn-biz-view').style.color = mode==='biz' ? 'white' : 'rgb(100 116 139)';
+    document.getElementById('btn-tech-view').style.background = mode==='tech' ? 'rgb(99 102 241)' : 'transparent';
+    document.getElementById('btn-tech-view').style.color = mode==='tech' ? 'white' : 'rgb(100 116 139)';
+    document.getElementById('tech-only-btns').style.display = mode==='tech' ? 'flex' : 'none';
+    document.getElementById('biz-only-btns').style.display = mode==='biz' ? 'flex' : 'none';
+    renderEditor();
+    renderSidebar();
+}
+
+function emptyPermissions() {
+    return { roleMatrix:[], cliOps:[], hitlNodes:[], auditLog:[] };
+}
+
+function emptySkillDef() {
+    return {
+        reuseScope:'', semanticDep:'', layerReason:'',
+        ontoEntities:'', ontoRoles:'', ontoStatuses:'', ontoRules:'',
+        sopSteps:[{step:'1',type:'识别',logic:'',dep:''}],
+        invocationB:'', invocationC:'', hitl:'',
+        prohibit:['','',''],
+        kpiAccuracy:'', kpiCoverage:'', kpiLatency:'',
+        permissions: emptyPermissions()
+    };
+}
+
+function emptyReport() {
+    return {
+        department:'', interviewee:'', objective:'',
+        background:'', systemGoal:'',
+        processChain:'',
+        processNodes:[{step:'',input:'',action:'',output:''}],
+        bizClassification:'', coreLogic:'', costLogic:'',
+        structuredData:[{name:'',desc:''}],
+        unstructuredData:[{name:'',desc:''}],
+        painPoints:[{title:'',desc:'',impact:''}],
+        aiRequirements:[{title:'',desc:'',painRef:''}]
+    };
+}
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+function renderSidebar() {
+    const list = document.getElementById('skill-list');
+    list.innerHTML = '';
+    Object.entries(skills).forEach(([key, skill]) => {
+        const el = document.createElement('div');
+        el.className = `skill-item flex items-center space-x-2 px-3 py-2 rounded-lg cursor-pointer border border-transparent ${key===currentKey?'active':'hover:bg-slate-800'}`;
+        el.onclick = () => selectSkill(key);
+        const reportPct = reportCompleteness(skill.report);
+        const paramCount = (skill.bizParams||[]).reduce((n,g)=>n+g.params.length,0);
+        el.innerHTML = `
+            <span class="text-xl">${skill.icon}</span>
+            <div class="flex-1 min-w-0">
+                <div class="text-xs font-medium truncate">${skill.name}</div>
+                ${viewMode==='biz'
+                    ? `<div class="text-xs text-slate-500 mt-0.5">${paramCount} 个业务参数</div>`
+                    : `<div class="flex items-center space-x-1 mt-0.5">
+                           <div class="flex-1 h-1 rounded bg-slate-700"><div class="h-1 rounded bg-indigo-500" style="width:${reportPct}%"></div></div>
+                           <span class="text-xs text-slate-500">${reportPct}%</span>
+                       </div>`
+                }
+            </div>
+            ${viewMode==='tech'?`<button onclick="event.stopPropagation();deleteSkill('${key}')" class="del-btn opacity-0 group-hover:opacity-100 text-xs">✕</button>`:''}
+        `;
+        el.onmouseenter = ()=>el.querySelector('.del-btn').style.opacity='1';
+        el.onmouseleave = ()=>el.querySelector('.del-btn').style.opacity='0';
+        list.appendChild(el);
+    });
+}
+
+function reportCompleteness(r) {
+    if (!r) return 0;
+    const fields = ['department','interviewee','objective','background','systemGoal','processChain','bizClassification','coreLogic'];
+    const filled = fields.filter(f => r[f] && r[f].trim()).length;
+    const hasPain = r.painPoints?.some(p=>p.title);
+    const hasReq = r.aiRequirements?.some(a=>a.title);
+    const hasNodes = r.processNodes?.some(n=>n.step);
+    return Math.round(((filled + (hasPain?1:0) + (hasReq?1:0) + (hasNodes?1:0)) / (fields.length+3)) * 100);
+}
+
+// ─── Select ───────────────────────────────────────────────────────────────────
+function selectSkill(key) {
+    currentKey = key;
+    expandedCap = null;
+    renderSidebar();
+    renderEditor();
+    renderPreview();
+}
+
+function setTab(tab) {
+    currentTab = tab;
+    ['basic','caps','demo','report','skilldef','perms'].forEach(t => {
+        const b = document.getElementById('tab-'+t);
+        if(b) b.classList.toggle('active', t===tab);
+    });
+    renderEditorContent();
+}
+
+// ─── Editor ───────────────────────────────────────────────────────────────────
+// ─── Business View ────────────────────────────────────────────────────────────
+function renderBizEditor(panel) {
+    const s = skills[currentKey];
+    const c = COLORS[s.color]||COLORS.blue;
+    const params = s.bizParams || [];
+
+    const groupsHtml = params.map(group => `
+        <div style="background:rgb(15 23 42);border:1px solid rgb(30 41 59);border-radius:12px;padding:20px;margin-bottom:16px">
+            <div style="font-size:13px;font-weight:700;color:${c.text};border-left:3px solid ${c.border};padding-left:10px;margin-bottom:16px">${group.group}</div>
+            <div class="space-y-4">
+                ${group.params.map(p => renderBizParam(p)).join('')}
+            </div>
+        </div>`).join('');
+
+    const noParams = params.length === 0 ? `
+        <div style="background:rgb(15 23 42);border:2px dashed rgb(51 65 85);border-radius:12px;padding:40px;text-align:center;color:rgb(71 85 105)">
+            <div style="font-size:32px;margin-bottom:12px">⚙️</div>
+            <div style="font-size:14px;margin-bottom:6px">此 Skill 暂无业务参数配置</div>
+            <div style="font-size:12px">切换到「技术视图」由技术人员添加业务参数</div>
+        </div>` : '';
+
+    panel.innerHTML = `
+    <div class="fade-in" style="max-width:720px">
+        <!-- Skill 头部 -->
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding:20px;background:rgb(15 23 42);border:1px solid ${c.border};border-radius:12px">
+            <div style="width:56px;height:56px;background:${c.swatch};border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px">${s.icon}</div>
+            <div style="flex:1">
+                <div style="font-size:20px;font-weight:700;margin-bottom:4px">${s.name}</div>
+                <div style="font-size:13px;color:rgb(100 116 139)">${s.description}</div>
+            </div>
+            <div style="text-align:right">
+                <div style="font-size:11px;color:rgb(71 85 105);margin-bottom:4px">命令</div>
+                <div style="font-size:13px;font-weight:600;color:${c.text};background:rgb(30 41 59);padding:4px 10px;border-radius:6px">${s.command}</div>
+            </div>
+        </div>
+
+        <!-- 业务参数说明 -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 14px;background:rgb(30 58 138 / 0.15);border:1px solid rgb(30 58 138 / 0.4);border-radius:8px">
+            <span style="font-size:16px">💡</span>
+            <span style="font-size:12px;color:rgb(147 197 253)">以下参数由业务团队维护，修改后即时生效。技术框架由信息中心管理，无需关注。</span>
+        </div>
+
+        ${groupsHtml}${noParams}
+    </div>`;
+}
+
+function renderBizParam(p) {
+    const inputHtml = p.type === 'toggle'
+        ? `<div onclick="toggleBizParam('${p.key}')" style="width:44px;height:24px;border-radius:12px;background:${p.value==='true'?'rgb(99 102 241)':'rgb(51 65 85)'};cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0">
+               <div style="width:18px;height:18px;border-radius:50%;background:white;position:absolute;top:3px;left:${p.value==='true'?'23px':'3px'};transition:left 0.2s"></div>
+           </div>
+           <span style="font-size:12px;color:${p.value==='true'?'rgb(134 239 172)':'rgb(100 116 139)'}">${p.value==='true'?'已开启':'已关闭'}</span>`
+        : `<div style="display:flex;align-items:center;gap:8px">
+               <input value="${esc(p.value)}" type="${p.type==='number'?'number':'text'}"
+                   oninput="updateBizParam('${p.key}',this.value)"
+                   style="width:${p.type==='number'?'100px':'200px'};background:rgb(15 23 42);border:1px solid rgb(51 65 85);color:white;padding:8px 12px;border-radius:8px;font-size:15px;font-weight:600;text-align:${p.type==='number'?'center':'left'}"/>
+               ${p.unit?`<span style="font-size:13px;color:rgb(100 116 139)">${p.unit}</span>`:''}
+           </div>`;
+
+    return `
+    <div style="display:flex;align-items:flex-start;gap:16px;padding:14px;background:rgb(30 41 59 / 0.5);border-radius:8px">
+        <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;color:rgb(226 232 240);margin-bottom:4px">${p.label}</div>
+            <div style="font-size:11px;color:rgb(71 85 105)">${p.hint}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">${inputHtml}</div>
+    </div>`;
+}
+
+function updateBizParam(key, val) {
+    const s = skills[currentKey];
+    for (const group of (s.bizParams||[])) {
+        const p = group.params.find(p=>p.key===key);
+        if (p) { p.value = val; autoSave(); return; }
+    }
+}
+
+function toggleBizParam(key) {
+    const s = skills[currentKey];
+    for (const group of (s.bizParams||[])) {
+        const p = group.params.find(p=>p.key===key);
+        if (p) { p.value = p.value==='true'?'false':'true'; autoSave(); renderBizEditor(document.getElementById('editor-panel')); return; }
+    }
+}
+
+function renderEditor() {
+    const panel = document.getElementById('editor-panel');
+    if (!currentKey) { panel.innerHTML=`<div class="h-full flex items-center justify-center text-slate-600 text-sm">← 选择一个Skill开始编辑</div>`; return; }
+    if (viewMode === 'biz') { renderBizEditor(panel); return; }
+    const skill = skills[currentKey];
+    const c = COLORS[skill.color]||COLORS.blue;
+    const r = skill.report || emptyReport();
+    const pct = reportCompleteness(r);
+    panel.innerHTML = `
+        <div class="fade-in">
+            <div class="flex items-center space-x-3 mb-4">
+                <span class="text-4xl">${skill.icon}</span>
+                <div class="flex-1">
+                    <div class="text-lg font-bold">${skill.name}</div>
+                    <div class="text-sm" style="color:${c.text}">${skill.command}</div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs text-slate-400 mb-1">调研完成度</div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-24 h-2 rounded bg-slate-700"><div class="h-2 rounded transition-all" style="width:${pct}%;background:${c.border}"></div></div>
+                        <span class="text-xs font-semibold" style="color:${c.text}">${pct}%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex space-x-1 mb-5 border-b border-slate-800">
+                <button id="tab-basic" onclick="setTab('basic')" class="tab-btn px-4 py-2 rounded-t text-sm border border-transparent ${currentTab==='basic'?'active':'text-slate-400 hover:text-slate-200'}">基本信息</button>
+                <button id="tab-caps" onclick="setTab('caps')" class="tab-btn px-4 py-2 rounded-t text-sm border border-transparent ${currentTab==='caps'?'active':'text-slate-400 hover:text-slate-200'}">Capabilities <span class="ml-1 text-xs bg-slate-700 px-1.5 rounded-full">${skill.capabilities.length}</span></button>
+                <button id="tab-demo" onclick="setTab('demo')" class="tab-btn px-4 py-2 rounded-t text-sm border border-transparent ${currentTab==='demo'?'active':'text-slate-400 hover:text-slate-200'}">对话Demo</button>
+                <button id="tab-report" onclick="setTab('report')" class="tab-btn px-4 py-2 rounded-t text-sm border border-transparent ${currentTab==='report'?'active':'text-slate-400 hover:text-slate-200'}">📋 调研报告</button>
+                <button id="tab-skilldef" onclick="setTab('skilldef')" class="tab-btn px-4 py-2 rounded-t text-sm border border-transparent ${currentTab==='skilldef'?'active':'text-slate-400 hover:text-slate-200'}">📐 Skill定义</button>
+                <button id="tab-perms" onclick="setTab('perms')" class="tab-btn px-4 py-2 rounded-t text-sm border border-transparent ${currentTab==='perms'?'active':'text-slate-400 hover:text-slate-200'}">🔐 权限管理</button>
+            </div>
+            <div id="editor-content"></div>
+        </div>`;
+    renderEditorContent();
+}
+
+function renderEditorContent() {
+    const el = document.getElementById('editor-content');
+    if (!el) return;
+    if (currentTab==='basic') renderBasicTab(el);
+    else if (currentTab==='caps') renderCapsTab(el);
+    else if (currentTab==='demo') renderDemoTab(el);
+    else if (currentTab==='report') renderReportTab(el);
+    else if (currentTab==='skilldef') renderSkillDefTab(el);
+    else if (currentTab==='perms') renderPermTab(el);
+}
+
+// ─── Basic Tab ────────────────────────────────────────────────────────────────
+function renderBasicTab(el) {
+    const s = skills[currentKey];
+    el.innerHTML = `
+        <div class="space-y-4 max-w-xl">
+            <div class="grid grid-cols-2 gap-4">
+                <div><div class="field-label">名称</div><input value="${s.name}" oninput="update('name',this.value)"/></div>
+                <div><div class="field-label">命令</div><input value="${s.command}" oninput="update('command',this.value)"/></div>
+            </div>
+            <div><div class="field-label">描述</div><textarea rows="2" oninput="update('description',this.value)">${esc(s.description)}</textarea></div>
+            <div class="border-t border-slate-800 pt-4">
+                <div class="text-xs font-semibold text-indigo-400 mb-3 uppercase tracking-wider">SKILL.md 标识</div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><div class="field-label">Skill ID <span style="color:#64748b;font-weight:400;text-transform:none;font-size:10px">tenant-business-action-skill</span></div><input value="${esc(s.skillId||'')}" placeholder="oceano-market-leadanalysis-skill" oninput="update('skillId',this.value)"/></div>
+                    <div>
+                        <div class="field-label mb-1">所属层级</div>
+                        <div class="flex space-x-1">
+                            ${['L1','L2','L3'].map(l=>`<button onclick="update('layer','${l}')" style="flex:1;padding:6px;border-radius:6px;font-size:12px;font-weight:700;border:2px solid ${s.layer===l?'rgb(99 102 241)':'rgb(51 65 85)'};background:${s.layer===l?'rgb(30 58 138)':'rgb(15 23 42)'};color:${s.layer===l?'rgb(165 180 252)':'rgb(100 116 139)'};cursor:pointer">${l}</button>`).join('')}
+                        </div>
+                        <div class="text-xs mt-1" style="color:#475569">${s.layer==='L1'?'基础原子层 — 换个行业还能用':s.layer==='L2'?'行业能力层 — 换个企业还能用':'企业专属层 — 只有这家企业这样干'}</div>
+                    </div>
+                    <div><div class="field-label">Provider</div><input value="${esc(s.provider||'')}" placeholder="欧神诺信息中心" oninput="update('provider',this.value)"/></div>
+                    <div><div class="field-label">版本号</div><input value="${esc(s.version||'')}" placeholder="V1.0" oninput="update('version',this.value)"/></div>
+                </div>
+            </div>
+            <div>
+                <div class="field-label mb-2">图标</div>
+                <div class="flex flex-wrap gap-1 p-2 bg-slate-800 rounded-lg">
+                    ${EMOJIS.map(e=>`<button class="emoji-btn ${e===s.icon?'bg-indigo-900':''}" onclick="update('icon','${e}')">${e}</button>`).join('')}
+                    <input value="${s.icon}" oninput="update('icon',this.value)" style="width:50px;text-align:center"/>
+                </div>
+            </div>
+            <div>
+                <div class="field-label mb-2">颜色主题</div>
+                <div class="flex space-x-3 items-center">
+                    ${Object.entries(COLORS).map(([n,c])=>`<button class="color-swatch ${n===s.color?'selected':''}" style="background:${c.swatch}" title="${n}" onclick="update('color','${n}')"></button>`).join('')}
+                    <span class="text-xs text-slate-400">${s.color}</span>
+                </div>
+            </div>
+        </div>`;
+}
+
+// ─── Caps Tab ─────────────────────────────────────────────────────────────────
+function renderCapsTab(el) {
+    el.innerHTML = `<div class="space-y-3 max-w-2xl"><div id="caps-list"></div><button onclick="addCap()" class="add-row-btn">+ 添加 Capability</button></div>`;
+    renderCapsList();
+}
+
+function renderCapsList() {
+    const s = skills[currentKey];
+    const list = document.getElementById('caps-list');
+    if(!list) return;
+    list.innerHTML = s.capabilities.map((cap,i) => {
+        const exp = expandedCap===i;
+        return `
+        <div class="cap-card bg-slate-800 rounded-lg border border-slate-700 overflow-hidden ${exp?'expanded':''}">
+            <div class="flex items-center px-4 py-3 cursor-pointer" onclick="toggleCap(${i})">
+                <span class="text-xl mr-3">${cap.icon}</span>
+                <div class="flex-1"><div class="text-sm font-medium">${cap.name}</div><div class="text-xs text-slate-400 truncate">${cap.desc}</div></div>
+                <div class="flex items-center space-x-1">
+                    ${cap.demoQuery?'<span class="text-xs px-1.5 py-0.5 bg-green-900 text-green-300 rounded">Demo</span>':''}
+                    ${cap.alertTitle?'<span class="text-xs px-1.5 py-0.5 bg-red-900 text-red-300 rounded">Alert</span>':''}
+                    <button onclick="event.stopPropagation();deleteCap(${i})" class="del-btn text-xs">✕</button>
+                    <span class="text-slate-500 text-xs ml-1">${exp?'▲':'▼'}</span>
+                </div>
+            </div>
+            ${exp?`
+            <div class="border-t border-slate-700 p-4 space-y-3 fade-in">
+                <div class="grid grid-cols-2 gap-3">
+                    <div><div class="field-label">名称</div><input value="${cap.name}" oninput="updateCap(${i},'name',this.value)"/></div>
+                    <div><div class="field-label">图标</div><input value="${cap.icon}" oninput="updateCap(${i},'icon',this.value)" style="width:80px"/></div>
+                </div>
+                <div><div class="field-label">描述</div><textarea rows="2" oninput="updateCap(${i},'desc',this.value)">${cap.desc}</textarea></div>
+                <div class="border-t border-slate-700 pt-3">
+                    <div class="field-label mb-2">💬 Demo对话</div>
+                    <div class="space-y-2">
+                        <div><div class="text-xs text-slate-500 mb-1">用户提问</div><input value="${cap.demoQuery||''}" placeholder="触发此Demo的用户问题..." oninput="updateCap(${i},'demoQuery',this.value)"/></div>
+                        <div><div class="text-xs text-slate-500 mb-1">AI回复</div><textarea rows="6" oninput="updateCap(${i},'demoResponse',this.value)">${esc(cap.demoResponse)}</textarea></div>
+                    </div>
+                </div>
+                <div class="border-t border-slate-700 pt-3">
+                    <div class="field-label mb-2">⚠️ 预警模板</div>
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <div><div class="text-xs text-slate-500 mb-1">严重等级</div>
+                            <select oninput="updateCap(${i},'alertLevel',this.value)">
+                                <option value="">无预警</option>
+                                <option value="高" ${cap.alertLevel==='高'?'selected':''}>高</option>
+                                <option value="中" ${cap.alertLevel==='中'?'selected':''}>中</option>
+                                <option value="低" ${cap.alertLevel==='低'?'selected':''}>低</option>
+                            </select>
+                        </div>
+                        <div><div class="text-xs text-slate-500 mb-1">预警标题</div><input value="${cap.alertTitle||''}" oninput="updateCap(${i},'alertTitle',this.value)"/></div>
+                    </div>
+                    <textarea rows="3" placeholder="预警详情..." oninput="updateCap(${i},'alertContent',this.value)">${esc(cap.alertContent)}</textarea>
+                </div>
+                <div class="flex justify-between pt-1">
+                    <div class="flex space-x-2">
+                        ${i>0?`<button onclick="moveCap(${i},-1)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs">↑ 上移</button>`:''}
+                        ${i<s.capabilities.length-1?`<button onclick="moveCap(${i},1)" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs">↓ 下移</button>`:''}
+                    </div>
+                    <button onclick="previewCap(${i})" class="px-3 py-1 bg-indigo-700 hover:bg-indigo-600 rounded text-xs">👁 预览Demo</button>
+                </div>
+            </div>`:''}
+        </div>`;
+    }).join('');
+}
+
+// ─── Demo Tab ─────────────────────────────────────────────────────────────────
+function renderDemoTab(el) {
+    const s = skills[currentKey];
+    const demos = s.capabilities.filter(c=>c.demoQuery);
+    el.innerHTML = `
+        <div class="max-w-xl space-y-4">
+            <div class="text-xs text-slate-400 bg-slate-800 rounded p-3">💡 在「Capabilities」中为每个能力配置对话Demo。当前已配置 <span class="text-green-400 font-semibold">${demos.length}</span> 个。</div>
+            ${s.capabilities.map((cap,i)=>cap.demoQuery?`
+                <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+                    <div class="flex items-center space-x-2 mb-3"><span>${cap.icon}</span><span class="text-sm font-medium">${cap.name}</span></div>
+                    <div class="space-y-2 preview-chat">
+                        <div class="flex justify-end"><div class="bg-indigo-600 text-white rounded-xl rounded-tr-sm px-3 py-2 text-xs max-w-xs">${cap.demoQuery}</div></div>
+                        <div class="flex"><div class="bg-slate-700 rounded-xl rounded-tl-sm px-3 py-2 text-xs max-w-sm whitespace-pre-line text-slate-200">${cap.demoResponse}</div></div>
+                    </div>
+                    <button onclick="previewCap(${i})" class="mt-2 text-xs text-indigo-400 hover:text-indigo-300">→ 右侧预览</button>
+                </div>`:'').join('')}
+        </div>`;
+}
+
+// ─── Report Tab ───────────────────────────────────────────────────────────────
+function fld(label, badge, badgeClass, hint, inputHtml, tplFn) {
+    const tplBtn = tplFn ? `<button class="tpl-btn" onclick="${tplFn}">📋 填入模板</button>` : '';
+    return `
+    <div class="field-row">
+      <div class="field-header">
+        <span class="field-label" style="margin-bottom:0">${label}</span>
+        <span class="fmt-badge ${badgeClass}">${badge}</span>
+        ${tplBtn}
+      </div>
+      <div class="fmt-guide">${hint}</div>
+      ${inputHtml}
+    </div>`;
+}
+
+function renderReportTab(el) {
+    const s = skills[currentKey];
+    if (!s.report) s.report = emptyReport();
+    const r = s.report;
+
+    el.innerHTML = `<div class="max-w-3xl space-y-4 fade-in">
+
+<!-- ① 调研基本信息 -->
+<div class="report-section">
+  <div class="section-title">① 调研基本信息</div>
+  <div style="color:#64748b;font-size:11px;margin-bottom:12px">📌 填写谁在调研、调研谁、目的是什么。这三项决定了整份报告的视角和范围。</div>
+  <div class="grid grid-cols-2 gap-4">
+    ${fld('主导部门<span class="required">*</span>', '填部门名', 'fmt-short',
+      '写清楚是哪个业务部门发起这次调研。<br><strong>格式：</strong><code>[大区/中心] + [部门名]</code><br><strong>示例：</strong>华中大区销售部 / 客户服务部 / 经销商运营中心',
+      `<input value="${r.department||''}" placeholder="如：华中大区销售部 / 工程项目部" oninput="updateReport('department',this.value)"/>`
+    )}
+    ${fld('调研对象<span class="required">*</span>', '填职位+人数', 'fmt-short',
+      '列出接受调研的人，包括职位和人数。<br><strong>格式：</strong><code>[职位]（[人数]名）、[职位]（[人数]名）</code><br><strong>示例：</strong>大区总监、业务经理（5名）、前线销售代表（12名）',
+      `<input value="${r.interviewee||''}" placeholder="如：大区总监、业务经理（5名）、销售代表（12名）" oninput="updateReport('interviewee',this.value)"/>`
+    )}
+  </div>
+  ${fld('调研目标<span class="required">*</span>', '一句话', 'fmt-short',
+    '用一句话说清楚"评估什么"和"目标是什么数字"。<br><strong>公式：</strong><code>评估[技术/系统]接入[业务环节]的可行性，目标将[指标]从[当前值]降至[目标值]</code><br><strong>示例：</strong>评估SFA零感知录入的可行性，目标将人均日报填写时间从45分钟降至5分钟以内',
+    `<input value="${r.objective||''}" placeholder="评估[AI/系统]接入[业务环节]的可行性，目标将[指标]从[X]降至[Y]" oninput="updateReport('objective',this.value)"/>`
+  )}
+</div>
+
+<!-- ② 业务背景与目标 -->
+<div class="report-section">
+  <div class="section-title">② 业务背景与目标</div>
+  <div style="color:#64748b;font-size:11px;margin-bottom:12px">📌 让读者理解"为什么要做这件事"。重点是现状有多痛、变量有多复杂。</div>
+  ${fld('业务现状与核心挑战<span class="required">*</span>', '三段式', 'fmt-tpl',
+    '按固定三段结构填写，每段一到两句。<br><strong>现状：</strong>当前业务如何运作，依赖什么（人工/经验/线下沟通）<br><strong>变量：</strong>决策需要同时考量哪些互相影响的因素（列1-4个）<br><strong>结论：</strong>这些变量导致了什么问题（效率低/易出错/依赖个人经验）',
+    `<textarea rows="5" placeholder="现状：目前[业务名称]高度依赖[人工/线下沟通/个人经验]，[具体操作方式]，平均[耗时/频率]。\n\n变量：决策过程需同时考量：1.[变量A，如：客户等级差异]；2.[变量B，如：区域政策不同]；3.[变量C，如：历史成交记录]。\n\n结论：这些因素导致业务人员必须在[多个系统/表格/沟通渠道]之间反复切换，[问题后果，如：平均耗时X小时/出错率约X%/关键信息丢失率X%]。" oninput="updateReport('background',this.value)">${r.background||''}</textarea>`,
+    `insertTpl('background','现状：目前[业务名称]高度依赖[人工/线下沟通/个人经验]，[具体操作方式]，平均[耗时/频率]。\\n\\n变量：决策过程需同时考量：1.[变量A]；2.[变量B]；3.[变量C]。\\n\\n结论：这些因素导致业务人员必须在[多个系统/表格]之间反复切换，[问题后果]。')`
+  )}
+  ${fld('系统/AI接入目标<span class="required">*</span>', '一句话+数字', 'fmt-num',
+    '说清楚AI做什么、效果怎么量化。<br><strong>公式：</strong><code>通过[技术手段]，实现[业务环节]的[智能化/自动化]，核心指标是[指标名称]从[X]压缩至[Y]（降低[Z]%）</code><br><strong>示例：</strong>通过对话式录入+GPS签到，实现拜访数据的零感知归档，核心指标是人均日报耗时从45分钟降至5分钟（降低89%）',
+    `<textarea rows="3" placeholder="通过[技术手段，如：AI自动识别/对话式录入/自动计算]，实现[业务环节]的[智能化/自动化]，核心指标是将[指标名称]从[当前值]压缩至[目标值]，降低约[X]%的[人工成本/响应时间/错误率]。" oninput="updateReport('systemGoal',this.value)">${esc(r.systemGoal)}</textarea>`
+  )}
+</div>
+
+<!-- ③ 核心业务流程 -->
+<div class="report-section">
+  <div class="section-title">③ 核心业务流程</div>
+  <div style="color:#64748b;font-size:11px;margin-bottom:12px">📌 先用一行箭头图画出主干，再把每个节点拆细。AI接入点通常藏在"执行动作"列里。</div>
+  ${fld('整体业务链条<span class="required">*</span>', '箭头图', 'fmt-short',
+    '用"→"连接主要节点，控制在6个节点以内，只写主干不写分支。<br><strong>格式：</strong><code>[起点] → [节点] → [节点] → [终点]</code><br><strong>示例：</strong>出门拜访 → GPS自动签到 → 语音描述 → AI整理归档 → 日报自动生成 → 一键发送',
+    `<input value="${r.processChain||''}" placeholder="[起点] → [节点A] → [节点B] → [节点C] → [终点]" oninput="updateReport('processChain',this.value)"/>`,
+    `insertTpl('processChain','[起点] → [节点A] → [节点B] → [节点C] → [终点]')`
+  )}
+  <div class="field-row">
+    <div class="field-header">
+      <span class="field-label" style="margin-bottom:0">流程节点编排</span>
+      <span class="fmt-badge fmt-tpl">可视化</span>
+      <button onclick="addProcessNode()" class="tpl-btn" style="margin-left:auto">+ 添加节点</button>
+    </div>
+    <div class="fmt-guide">点击节点编辑详情，拖动调整顺序。每个节点包含：环节名称、输入、执行动作、输出。</div>
+    <div id="process-canvas" style="background:rgb(15 23 42);border:1px solid rgb(51 65 85);border-radius:8px;padding:20px;min-height:120px;position:relative"></div>
+  </div>
+</div>
+
+<!-- ④ 业务要点与核心逻辑 -->
+<div class="report-section">
+  <div class="section-title">④ 业务要点与核心逻辑</div>
+  <div style="color:#64748b;font-size:11px;margin-bottom:12px">📌 这是AI建模最关键的"潜规则"。写的越具体，AI就越能处理边界情况。</div>
+  ${fld('业务对象分类规则', '分类列举', 'fmt-list',
+    '说明业务对象分几类，各类走什么流程，哪些是特殊例外。<br><strong>格式：</strong><code>[对象]按[维度]分[N]类：类型1[名称]（[标准/特征]）走[流程]；类型2...；特殊情况：[描述]不参与/需人工介入</code><br><strong>示例：</strong>客户按年销额分4级：S级(>500万)优先响应；A级(200-500万)标准跟进；B级走常规流程；C级(<50万)仅自动推送，不占销售精力',
+    `<textarea rows="4" placeholder="[业务对象，如：客户/订单/工单]按[分类维度，如：金额/级别/类型]分[N]类：\n  类型1（[特征描述]）：走[标准流程]；\n  类型2（[特征描述]）：走[特殊流程]；\n  例外情况：[描述]→不参与自动化/需人工审批。" oninput="updateReport('bizClassification',this.value)">${esc(r.bizClassification)}</textarea>`,
+    `insertTpl('bizClassification','[业务对象]按[分类维度]分[N]类：\\n  类型1（[特征]）：走[标准流程]；\\n  类型2（[特征]）：走[特殊流程]；\\n  例外情况：[描述] → 需人工介入。')`
+  )}
+  ${fld('核心计算策略', '公式化', 'fmt-num',
+    '写出关键指标的计算方式。能用公式写公式，不能的用文字描述推导逻辑。<br><strong>格式：</strong><code>[指标名] = [计算公式或逻辑]。触发条件：[阈值]时[触发动作]</code><br><strong>示例：</strong>健康度评分(0-100) = 业绩完成率(40分) + 同比增长(30分) + 回款及时率(20分) + 活跃度(10分)。低于60分触发黄色预警，低于40分触发红色预警',
+    `<textarea rows="3" placeholder="[指标名称] = [计算公式]（各项权重/规则）。\n阈值设定：当[指标]低于[X]时触发[预警/行动]；高于[Y]时触发[奖励/升级]。\n特殊规则：[例外情况的处理逻辑]。" oninput="updateReport('coreLogic',this.value)">${esc(r.coreLogic)}</textarea>`
+  )}
+  ${fld('成本/收益核算逻辑', '公式化', 'fmt-num',
+    '写出涉及金额、时间、资源的核算规则，特别是折扣权限、审批门槛等。<br><strong>格式：</strong><code>[角色/等级] + [权限范围] + [超出时的处理方式]</code><br><strong>示例：</strong>报价折扣权限：C类最低9折，B类最低8.5折，A类最低8折；低于最低折扣需大区总监审批；超过¥50万报价需总部审批',
+    `<textarea rows="3" placeholder="[角色/等级A]权限：[规则描述，如：最低折扣X折/审批额度上限X万]；\n[角色/等级B]权限：[规则描述]；\n超出权限时：需[审批层级]审批，审批时限[X小时/工作日]。" oninput="updateReport('costLogic',this.value)">${esc(r.costLogic)}</textarea>`
+  )}
+</div>
+
+<!-- ⑤ 数据资产 -->
+<div class="report-section">
+  <div class="section-title">⑤ 关键数据资产（AI学习对象）</div>
+  <div style="color:#64748b;font-size:11px;margin-bottom:12px">📌 盘点AI需要"读"什么数据。结构化数据决定AI能算什么，非结构化数据决定AI能理解什么规则。</div>
+
+  <div class="field-row">
+    <div class="field-header">
+      <span class="field-label" style="margin-bottom:0">结构化数据</span>
+      <span class="fmt-badge fmt-list">逐项列举</span>
+      <span style="font-size:11px;color:#64748b">数据库 / Excel / 系统表单 — AI可以直接读取和计算的数据</span>
+    </div>
+    <div class="fmt-guide">
+      <strong>数据名称：</strong>写清楚叫什么、存在哪个系统（BIP/Excel/CRM）<br>
+      <strong>用途描述：</strong>AI用这份数据做什么？有什么字段？有什么局限性？<br>
+      <strong>示例：</strong><code>经销商档案（BIP系统）</code> | <code>含客户等级/历史进货/回款状态，通过API实时读取，账期数据需结合线下台账校正</code>
+    </div>
+    <div class="grid text-xs mb-1" style="grid-template-columns:1fr 2fr auto;gap:6px;color:#64748b;padding:0 2px">
+      <span>数据名称（系统/格式）</span><span>AI用途 + 关键字段 + 局限性</span><span></span>
+    </div>
+    <div id="structured-data-list"></div>
+    <button onclick="addDataItem('structuredData')" class="add-row-btn mt-1">+ 添加结构化数据源</button>
+  </div>
+
+  <div class="field-row" style="margin-top:16px">
+    <div class="field-header">
+      <span class="field-label" style="margin-bottom:0">非结构化数据</span>
+      <span class="fmt-badge fmt-list">逐项列举</span>
+      <span style="font-size:11px;color:#64748b">Word / PDF / 聊天记录 — 包含复杂规则，需AI理解</span>
+    </div>
+    <div class="fmt-guide">
+      <strong>文件名称：</strong>文件名+格式，说明存在哪里（微信/邮件/本地）<br>
+      <strong>包含逻辑：</strong>里面有什么复杂规则？为什么需要AI来理解？不能直接结构化？<br>
+      <strong>示例：</strong><code>促销政策文件（Word/PDF，存于钉钉群）</code> | <code>记录各区域促销规则和例外条款，规则以自然语言描述，无法直接转为数据库字段，需AI阅读并实时匹配</code>
+    </div>
+    <div class="grid text-xs mb-1" style="grid-template-columns:1fr 2fr auto;gap:6px;color:#64748b;padding:0 2px">
+      <span>文件名称（格式+存放位置）</span><span>包含哪些复杂规则/为何需AI理解</span><span></span>
+    </div>
+    <div id="unstructured-data-list"></div>
+    <button onclick="addDataItem('unstructuredData')" class="add-row-btn mt-1">+ 添加非结构化文档</button>
+  </div>
+</div>
+
+<!-- ⑥ 痛点分析 -->
+<div class="report-section">
+  <div class="section-title">⑥ 业务痛点分析</div>
+  <div style="color:#64748b;font-size:11px;margin-bottom:12px">📌 每个痛点用三段式描述：<strong style="color:#fca5a5">叫什么</strong> → <strong style="color:#fca5a5">具体怎么痛</strong> → <strong style="color:#fca5a5">痛到什么程度（量化）</strong>。建议3-5个痛点。</div>
+  <div id="pain-points-list"></div>
+  <button onclick="addPainPoint()" class="add-row-btn">+ 添加痛点</button>
+</div>
+
+<!-- ⑦ AI能力需求 -->
+<div class="report-section">
+  <div class="section-title">⑦ AI能力需求与可行性验证</div>
+  <div style="color:#64748b;font-size:11px;margin-bottom:12px">📌 每个能力需求对应上面的1-2个痛点。先写能力名称（动词+名词），再写AI具体做什么、输入什么、输出什么。</div>
+  <div id="ai-req-list"></div>
+  <button onclick="addAIReq()" class="add-row-btn">+ 添加AI能力需求</button>
+</div>
+
+</div>`;
+
+    renderProcessNodes();
+    renderDataItems('structuredData');
+    renderDataItems('unstructuredData');
+    renderPainPoints();
+    renderAIReqs();
+}
+
+function insertTpl(field, tpl) {
+    const cur = skills[currentKey].report[field] || '';
+    if (cur && !confirm('当前字段已有内容，填入模板会覆盖，确认？')) return;
+    skills[currentKey].report[field] = tpl.replace(/\\n/g, '\n');
+    autoSave();
+    renderReportTab(document.getElementById('editor-content'));
+}
+
+function renderProcessNodes() {
+    const r = skills[currentKey].report;
+    const el = document.getElementById('process-canvas');
+    if (!el) return;
+    const nodes = r.processNodes||[];
+    el.innerHTML = nodes.map((n,i) => `
+        <div onclick="editProcessNode(${i})" style="display:inline-block;background:rgb(30 41 59);border:2px solid rgb(99 102 241);border-radius:8px;padding:8px 12px;margin:0 8px 8px 0;cursor:pointer;position:relative;transition:all 0.15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div style="font-size:13px;font-weight:600;color:rgb(165 180 252);margin-bottom:2px">${n.step||'节点'+(i+1)}</div>
+            <div style="font-size:10px;color:rgb(100 116 139)">${n.action||'点击编辑'}</div>
+            ${i<nodes.length-1?'<span style="position:absolute;right:-20px;top:50%;transform:translateY(-50%);color:rgb(99 102 241);font-size:16px">→</span>':''}
+        </div>`).join('');
+}
+let editingNode = null;
+function editProcessNode(i) {
+    const n = skills[currentKey].report.processNodes[i];
+    editingNode = i;
+    const modal = `<div id="node-modal" onclick="if(event.target.id==='node-modal')closeNodeModal()" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999">
+        <div onclick="event.stopPropagation()" style="background:rgb(15 23 42);border:2px solid rgb(99 102 241);border-radius:12px;padding:20px;width:500px;max-width:90%">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <span style="font-size:16px;font-weight:700;color:rgb(199 210 254)">编辑节点 ${i+1}</span>
+                <button onclick="removeListItem('processNodes',${i});closeNodeModal()" style="background:rgb(127 29 29);color:white;padding:4px 10px;border-radius:6px;font-size:11px;border:none;cursor:pointer">删除节点</button>
+            </div>
+            <div style="margin-bottom:12px"><label style="font-size:11px;color:rgb(148 163 184);display:block;margin-bottom:4px">环节名称</label><input id="node-step" value="${esc(n.step)}" placeholder="如：拜访签到" style="width:100%;background:rgb(30 41 59);border:1px solid rgb(51 65 85);color:white;padding:8px;border-radius:6px"/></div>
+            <div style="margin-bottom:12px"><label style="font-size:11px;color:rgb(148 163 184);display:block;margin-bottom:4px">输入材料/数据</label><input id="node-input" value="${esc(n.input)}" placeholder="如：位置+客户地址" style="width:100%;background:rgb(30 41 59);border:1px solid rgb(51 65 85);color:white;padding:8px;border-radius:6px"/></div>
+            <div style="margin-bottom:12px"><label style="font-size:11px;color:rgb(148 163 184);display:block;margin-bottom:4px">执行动作</label><textarea id="node-action" rows="2" placeholder="如：GPS自动匹配，一键确认签到" style="width:100%;background:rgb(30 41 59);border:1px solid rgb(51 65 85);color:white;padding:8px;border-radius:6px;resize:vertical">${esc(n.action)}</textarea></div>
+            <div style="margin-bottom:16px"><label style="font-size:11px;color:rgb(148 163 184);display:block;margin-bottom:4px">输出产物</label><input id="node-output" value="${esc(n.output)}" placeholder="如：签到记录" style="width:100%;background:rgb(30 41 59);border:1px solid rgb(51 65 85);color:white;padding:8px;border-radius:6px"/></div>
+            <button onclick="saveNodeEdit()" style="width:100%;background:rgb(99 102 241);color:white;padding:10px;border-radius:6px;font-size:13px;font-weight:600;border:none;cursor:pointer">保存</button>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', modal);
+}
+function saveNodeEdit() {
+    const n = skills[currentKey].report.processNodes[editingNode];
+    n.step = document.getElementById('node-step').value;
+    n.input = document.getElementById('node-input').value;
+    n.action = document.getElementById('node-action').value;
+    n.output = document.getElementById('node-output').value;
+    autoSave();
+    closeNodeModal();
+    renderProcessNodes();
+}
+function closeNodeModal() {
+    document.getElementById('node-modal')?.remove();
+    editingNode = null;
+}
+
+function renderDataItems(key) {
+    const r = skills[currentKey].report;
+    const el = document.getElementById(key==='structuredData'?'structured-data-list':'unstructured-data-list');
+    if (!el) return;
+    const isStruct = key === 'structuredData';
+    el.innerHTML = (r[key]||[]).map((d,i) => `
+        <div class="list-item-row mb-1">
+            <input value="${d.name||''}" placeholder="${isStruct ? '如：经销商档案（BIP）' : '如：促销政策文件（Word）'}" oninput="updateReportList('${key}',${i},'name',this.value)"/>
+            <input value="${d.desc||''}" placeholder="${isStruct ? '含哪些字段，通过什么方式获取，有什么局限...' : '包含什么复杂规则，为何无法直接结构化...'}" oninput="updateReportList('${key}',${i},'desc',this.value)"/>
+            <button onclick="removeListItem('${key}',${i})" class="del-btn">✕</button>
+        </div>`).join('');
+}
+
+function renderPainPoints() {
+    const r = skills[currentKey].report;
+    const el = document.getElementById('pain-points-list');
+    if (!el) return;
+    el.innerHTML = (r.painPoints||[]).map((p,i) => `
+        <div class="pain-card">
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-2">
+                    <span style="font-size:11px;font-weight:700;color:#f87171">痛点 ${i+1}</span>
+                    <span class="fmt-badge fmt-short">概括性短语</span>
+                </div>
+                <button onclick="removeListItem('painPoints',${i})" class="del-btn text-xs">✕</button>
+            </div>
+            <div class="field-row" style="margin-bottom:10px">
+                <div class="sub-label">① 痛点名称 <span style="color:#64748b;font-weight:400;text-transform:none">— 3-8字，概括这个痛点的本质</span></div>
+                <div class="sub-hint">格式：<code style="background:#1e293b;padding:1px 4px;border-radius:3px;font-size:10px;color:#a5b4fc">[现象概括]</code>　示例：<em>日报填写耗时极长 / 线索跟进严重滞后 / 异常客户发现延迟</em></div>
+                <input value="${p.title||''}" placeholder="如：日报填写耗时极长" oninput="updateReportList('painPoints',${i},'title',this.value)" style="border-color:rgb(127 29 29 / 0.6)"/>
+            </div>
+            <div class="field-row" style="margin-bottom:10px">
+                <div class="sub-label">② 具体表现 <span style="color:#64748b;font-weight:400;text-transform:none">— 描述现在的人是怎么做的，做了哪些无效动作</span></div>
+                <div class="sub-hint">格式：<code style="background:#1e293b;padding:1px 4px;border-radius:3px;font-size:10px;color:#a5b4fc">每天[时间段]，[角色]需要[具体操作]，平均耗时[X]，[频率/场景]</code></div>
+                <textarea rows="2" placeholder="每天下班后，业务员需要手工整理当天X次拜访记录，按模板填写Word日报，再通过微信发给主管，平均耗时[X]分钟。" oninput="updateReportList('painPoints',${i},'desc',this.value)">${esc(p.desc)}</textarea>
+            </div>
+            <div class="field-row" style="margin-bottom:0">
+                <div class="sub-label">③ 影响与后果 <span style="color:#ef4444;font-weight:400;text-transform:none">— 必须量化！没有数字的影响说服力不足</span></div>
+                <div class="sub-hint">格式：<code style="background:#1e293b;padding:1px 4px;border-radius:3px;font-size:10px;color:#a5b4fc">[角色]每[时间]耗时[X]，[全团队]每年浪费[Y]小时，导致[业务结果，如：跟进率/转化率/响应时效]降低[Z]%</code></div>
+                <input value="${p.impact||''}" placeholder="如：12名业务员每年浪费约4320小时，拜访补录率40%导致商机跟进漏洞率约25%" oninput="updateReportList('painPoints',${i},'impact',this.value)" style="border-color:rgb(127 29 29 / 0.5)"/>
+            </div>
+        </div>`).join('');
+}
+
+function renderAIReqs() {
+    const r = skills[currentKey].report;
+    const el = document.getElementById('ai-req-list');
+    if (!el) return;
+    const painCount = (r.painPoints||[]).filter(p=>p.title).length;
+    el.innerHTML = (r.aiRequirements||[]).map((a,i) => `
+        <div class="pain-card" style="border:1px solid rgb(30 58 138 / 0.6)">
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-2">
+                    <span style="font-size:11px;font-weight:700;color:#818cf8">能力需求 ${i+1}</span>
+                    <span class="fmt-badge fmt-tpl">对应痛点</span>
+                </div>
+                <button onclick="removeListItem('aiRequirements',${i})" class="del-btn text-xs">✕</button>
+            </div>
+            <div class="field-row" style="margin-bottom:10px">
+                <div class="sub-label">① 能力名称 <span style="color:#64748b;font-weight:400;text-transform:none">— 动词+名词，5-10字</span></div>
+                <div class="sub-hint">格式：<code style="background:#1e293b;padding:1px 4px;border-radius:3px;font-size:10px;color:#a5b4fc">[技术手段]+[业务对象]+[结果]</code>　示例：<em>对话式拜访录入 / 智能工单自动分类 / 实时经销商健康度监控</em></div>
+                <input value="${a.title||''}" placeholder="如：对话式拜访录入 / 智能日报自动生成" oninput="updateReportList('aiRequirements',${i},'title',this.value)" style="border-color:rgb(30 58 138 / 0.6)"/>
+            </div>
+            <div class="field-row" style="margin-bottom:10px">
+                <div class="sub-label">② 能力描述 <span style="color:#64748b;font-weight:400;text-transform:none">— 输入什么→AI做什么→输出什么</span></div>
+                <div class="sub-hint">格式：<code style="background:#1e293b;padding:1px 4px;border-radius:3px;font-size:10px;color:#a5b4fc">用户输入[X]，AI通过[技术方法]自动提取/计算/生成[Y]，输出[Z]（格式：[具体格式]）</code></div>
+                <textarea rows="3" placeholder="用户用[语音/文字/照片]描述[场景]，AI通过[NLP/OCR/规则匹配]自动提取[关键字段]，生成[结构化记录/报告/预警]，并推送至[企微/CRM/主管]。" oninput="updateReportList('aiRequirements',${i},'desc',this.value)">${esc(a.desc)}</textarea>
+            </div>
+            <div class="field-row" style="margin-bottom:0">
+                <div class="sub-label">③ 解决的痛点 <span style="color:#64748b;font-weight:400;text-transform:none">— 关联上面第⑥节的痛点编号</span></div>
+                <input value="${a.painRef||''}" placeholder="${painCount > 0 ? '如：解决痛点1（日报耗时）和痛点2（数据失真）' : '先在第⑥节填写痛点，再在此关联'}" oninput="updateReportList('aiRequirements',${i},'painRef',this.value)" style="border-color:rgb(30 58 138 / 0.3)"/>
+            </div>
+        </div>`).join('');
+}
+
+// ─── Preview ──────────────────────────────────────────────────────────────────
+function setPreview(mode) {
+    previewMode = mode;
+    ['card','chat','report'].forEach(m => document.getElementById('preview-tab-'+m).classList.toggle('active', m===mode));
+    renderPreview();
+}
+
+function renderPreview() {
+    if (!currentKey) return;
+    const panel = document.getElementById('preview-panel');
+    if (previewMode==='card') renderCardPreview(panel);
+    else if (previewMode==='chat') renderChatPreview(panel);
+    else renderReportPreview(panel);
+}
+
+function renderCardPreview(panel) {
+    const s = skills[currentKey];
+    const c = COLORS[s.color]||COLORS.blue;
+    panel.innerHTML = `
+        <div class="fade-in">
+            <div class="rounded-xl p-4 mb-3 border-2" style="background:${c.bg};border-color:${c.border}">
+                <div class="flex items-center space-x-2 mb-2">
+                    <span class="text-2xl">${s.icon}</span>
+                    <div><div class="font-bold text-xs">${s.name}</div><div class="text-xs" style="color:${c.text}">${s.command}</div></div>
+                </div>
+                <p class="text-xs text-slate-300 mb-2">${s.description}</p>
+                <div class="space-y-1">
+                    ${s.capabilities.map(cap=>`
+                        <div class="flex items-center space-x-1 text-xs">
+                            <span>${cap.icon}</span><span>${cap.name}</span>
+                            ${cap.demoQuery?'<span class="text-green-400">•</span>':''}
+                            ${cap.alertTitle?'<span class="text-red-400">⚠</span>':''}
+                        </div>`).join('')}
+                </div>
+            </div>
+            ${s.capabilities.filter(c=>c.alertTitle).map(cap=>{
+                const clr=cap.alertLevel==='高'?'#ef4444':cap.alertLevel==='中'?'#f59e0b':'#64748b';
+                return `<div class="rounded-lg p-2 mb-2 border text-xs" style="border-color:${clr};background:${clr}18">
+                    <div class="flex items-center space-x-1 mb-1"><span style="color:${clr}">⚠ ${cap.alertLevel}</span><span class="font-medium">${cap.alertTitle}</span></div>
+                    <div class="text-slate-300 whitespace-pre-line">${cap.alertContent}</div>
+                </div>`;
+            }).join('')}
+        </div>`;
+}
+
+function renderChatPreview(panel, capIdx) {
+    const s = skills[currentKey];
+    const demos = s.capabilities.filter(c=>c.demoQuery);
+    if (!demos.length) { panel.innerHTML=`<div class="text-xs text-slate-500 text-center mt-10">暂无Demo对话</div>`; return; }
+    const cap = capIdx!==undefined ? s.capabilities[capIdx] : demos[0];
+    panel.innerHTML = `
+        <div class="fade-in">
+            <div class="flex flex-wrap gap-1 mb-3">
+                ${demos.map(c=>{
+                    const idx=s.capabilities.indexOf(c);
+                    return `<button onclick="renderChatPreview(document.getElementById('preview-panel'),${idx})"
+                        class="px-2 py-0.5 rounded text-xs border transition-colors ${c===cap?'bg-indigo-700 border-indigo-600':'bg-slate-800 border-slate-700 hover:border-indigo-600'}"
+                    >${c.icon} ${c.name}</button>`;
+                }).join('')}
+            </div>
+            <div class="preview-chat space-y-3">
+                <div class="flex justify-end"><div class="bg-indigo-600 text-white rounded-xl rounded-tr-sm px-3 py-2 text-xs max-w-full">${cap.demoQuery}</div></div>
+                <div class="flex items-start space-x-2">
+                    <div class="w-5 h-5 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-xs shrink-0 mt-0.5">🤖</div>
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl rounded-tl-sm px-3 py-2 text-xs whitespace-pre-line text-slate-200 leading-5">${cap.demoResponse}</div>
+                </div>
+            </div>
+        </div>`;
+}
+
+function renderReportPreview(panel) {
+    const s = skills[currentKey];
+    const r = s.report || emptyReport();
+    const pct = reportCompleteness(r);
+    const c = COLORS[s.color]||COLORS.blue;
+    panel.innerHTML = `
+        <div class="fade-in space-y-3">
+            <div class="rounded-lg p-3 border" style="border-color:${c.border};background:${c.bg}20">
+                <div class="flex items-center space-x-2 mb-1">
+                    <span class="text-xl">${s.icon}</span>
+                    <span class="font-bold text-sm">${s.name} 调研报告</span>
+                </div>
+                <div class="text-xs text-slate-400 space-y-0.5">
+                    ${r.department?`<div>📁 ${r.department}</div>`:''}
+                    ${r.interviewee?`<div>👤 ${r.interviewee}</div>`:''}
+                </div>
+                <div class="mt-2 flex items-center space-x-2">
+                    <div class="flex-1 h-1.5 rounded bg-slate-700"><div class="h-1.5 rounded" style="width:${pct}%;background:${c.border}"></div></div>
+                    <span class="text-xs" style="color:${c.text}">${pct}% 完成</span>
+                </div>
+            </div>
+            ${r.objective?`<div class="text-xs text-slate-300 bg-slate-800 rounded p-2 border border-slate-700">🎯 <strong>目标：</strong>${r.objective}</div>`:''}
+            ${(r.painPoints||[]).filter(p=>p.title).length?`
+            <div>
+                <div class="text-xs font-semibold text-red-400 mb-1">🔥 痛点 (${r.painPoints.filter(p=>p.title).length}个)</div>
+                ${r.painPoints.filter(p=>p.title).map(p=>`
+                    <div class="text-xs bg-slate-800 rounded p-2 mb-1 border-l-2 border-red-600">
+                        <div class="font-medium">${p.title}</div>
+                        ${p.impact?`<div class="text-slate-400 mt-0.5">${p.impact}</div>`:''}
+                    </div>`).join('')}
+            </div>`:''}
+            ${(r.aiRequirements||[]).filter(a=>a.title).length?`
+            <div>
+                <div class="text-xs font-semibold text-indigo-400 mb-1">🤖 AI能力需求 (${r.aiRequirements.filter(a=>a.title).length}项)</div>
+                ${r.aiRequirements.filter(a=>a.title).map((a,i)=>`
+                    <div class="text-xs bg-slate-800 rounded p-2 mb-1 border-l-2 border-indigo-600">
+                        <div class="font-medium">${i+1}. ${a.title}</div>
+                    </div>`).join('')}
+            </div>`:''}
+            <button onclick="exportDoc()" class="w-full py-2 rounded text-xs font-medium text-white" style="background:${c.border}">📄 导出此报告</button>
+        </div>`;
+}
+
+function previewCap(i) { setPreview('chat'); renderChatPreview(document.getElementById('preview-panel'),i); }
+
+// ─── Mutations ────────────────────────────────────────────────────────────────
+function update(field, val) {
+    skills[currentKey][field] = val;
+    autoSave();
+    if(['icon','color','name'].includes(field)) { renderSidebar(); renderEditor(); setTab(currentTab); }
+    renderPreview();
+}
+function updateCap(i,f,v) { skills[currentKey].capabilities[i][f]=v; autoSave(); renderPreview(); }
+function toggleCap(i) { expandedCap = expandedCap===i?null:i; renderCapsList(); }
+function addCap() { skills[currentKey].capabilities.push({name:'新能力',icon:'✨',desc:'描述...'}); expandedCap=skills[currentKey].capabilities.length-1; autoSave(); renderCapsTab(document.getElementById('editor-content')); renderPreview(); }
+function deleteCap(i) { skills[currentKey].capabilities.splice(i,1); if(expandedCap===i)expandedCap=null; else if(expandedCap>i)expandedCap--; autoSave(); renderCapsTab(document.getElementById('editor-content')); renderPreview(); }
+function moveCap(i,d) { const c=skills[currentKey].capabilities; [c[i],c[i+d]]=[c[i+d],c[i]]; if(expandedCap===i)expandedCap=i+d; else if(expandedCap===i+d)expandedCap=i; autoSave(); renderCapsList(); renderPreview(); }
+
+function updateReport(field, val) {
+    if(!skills[currentKey].report) skills[currentKey].report=emptyReport();
+    skills[currentKey].report[field]=val;
+    autoSave();
+    if(previewMode==='report') renderPreview();
+    renderSidebar();
+}
+function updateReportList(listKey, i, field, val) {
+    if (!skills[currentKey].report?.[listKey]?.[i]) return;
+    skills[currentKey].report[listKey][i][field]=val;
+    autoSave();
+}
+function removeListItem(listKey, i) {
+    skills[currentKey].report[listKey].splice(i,1);
+    autoSave();
+    renderReportTab(document.getElementById('editor-content'));
+}
+function addProcessNode() { skills[currentKey].report.processNodes.push({step:'',input:'',action:'',output:''}); autoSave(); renderProcessNodes(); }
+function addDataItem(key) { skills[currentKey].report[key].push({name:'',desc:''}); autoSave(); renderDataItems(key); }
+function addPainPoint() { skills[currentKey].report.painPoints.push({title:'',desc:'',impact:''}); autoSave(); renderPainPoints(); }
+function addAIReq() { skills[currentKey].report.aiRequirements.push({title:'',desc:''}); autoSave(); renderAIReqs(); }
+
+function newSkill() {
+    const key='skill_'+Date.now();
+    skills[key]={name:'新Skill',icon:'🆕',color:'indigo',command:'/new-skill',description:'...',capabilities:[],report:emptyReport()};
+    currentTab='basic'; selectSkill(key);
+}
+function deleteSkill(key) {
+    if(!confirm(`确定删除「${skills[key].name}」？`)) return;
+    delete skills[key];
+    currentKey=Object.keys(skills)[0]||null;
+    renderSidebar();
+    if(currentKey) renderEditor(); else document.getElementById('editor-panel').innerHTML='';
+    autoSave();
+}
+
+// ─── Export Document ──────────────────────────────────────────────────────────
+function exportDoc() {
+    const s = skills[currentKey];
+    if (!s) return;
+    const r = s.report || emptyReport();
+    const c = COLORS[s.color]||COLORS.blue;
+    const today = new Date().toLocaleDateString('zh-CN');
+
+    const tableRows = (r.processNodes||[]).filter(n=>n.step).map(n=>`
+        <tr><td>${n.step}</td><td>${n.input}</td><td>${n.action}</td><td>${n.output}</td></tr>`).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>${s.name} - 业务调研报告</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; color: #1e293b; margin: 0; padding: 0; background: #f8fafc; }
+  .page { max-width: 820px; margin: 40px auto; background: white; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.1); overflow: hidden; }
+  .cover { background: linear-gradient(135deg, ${c.bg}dd 0%, #0f172a 100%); padding: 48px 48px 40px; border-bottom: 4px solid ${c.border}; }
+  .cover h1 { color: white; font-size: 26px; font-weight: 700; margin: 0 0 8px; }
+  .cover .subtitle { color: ${c.text}; font-size: 14px; margin-bottom: 24px; }
+  .cover .meta { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .meta-item { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 12px 16px; }
+  .meta-item .label { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .meta-item .value { font-size: 13px; color: white; line-height: 1.4; }
+  .body { padding: 40px 48px; }
+  .section { margin-bottom: 36px; }
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; border-bottom: 2px solid ${c.border}; padding-bottom: 8px; }
+  .section-header h2 { font-size: 16px; font-weight: 700; color: #1e293b; margin: 0; }
+  .section-header .icon { font-size: 20px; }
+  .field-block { margin-bottom: 16px; }
+  .field-name { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .field-value { font-size: 13px; color: #334155; line-height: 1.7; white-space: pre-line; background: #f8fafc; border-radius: 6px; padding: 10px 14px; border: 1px solid #e2e8f0; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #1e293b; color: white; padding: 10px 12px; text-align: left; font-weight: 600; }
+  td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .pain-card { border-left: 4px solid #ef4444; padding: 12px 16px; background: #fef2f2; border-radius: 0 8px 8px 0; margin-bottom: 12px; }
+  .pain-title { font-weight: 700; color: #dc2626; margin-bottom: 4px; font-size: 13px; }
+  .pain-desc { color: #475569; font-size: 12px; line-height: 1.6; margin-bottom: 4px; }
+  .pain-impact { color: #991b1b; font-size: 12px; background: #fee2e2; padding: 4px 8px; border-radius: 4px; display: inline-block; }
+  .req-card { border-left: 4px solid ${c.border}; padding: 12px 16px; background: ${c.bg}20; border-radius: 0 8px 8px 0; margin-bottom: 10px; }
+  .req-title { font-weight: 700; color: ${c.text}; margin-bottom: 4px; font-size: 13px; }
+  .req-desc { color: #475569; font-size: 12px; line-height: 1.6; }
+  .data-item { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 12px; }
+  .data-name { font-weight: 600; color: #1e293b; min-width: 200px; }
+  .data-desc { color: #64748b; }
+  .footer { text-align: center; padding: 24px; color: #94a3b8; font-size: 12px; border-top: 1px solid #e2e8f0; }
+  .sign-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+  .sign-table td { padding: 16px 20px; border: 1px solid #e2e8f0; font-size: 13px; }
+  .sign-table td:first-child { font-weight: 600; width: 120px; background: #f8fafc; }
+  @media print { body { background: white; } .page { box-shadow: none; margin: 0; border-radius: 0; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="cover">
+    <div style="font-size:48px;margin-bottom:16px">${s.icon}</div>
+    <h1>${s.name}</h1>
+    <div class="subtitle">${s.command} · 业务调研报告</div>
+    <div class="meta">
+      <div class="meta-item"><div class="label">主导部门</div><div class="value">${r.department||'—'}</div></div>
+      <div class="meta-item"><div class="label">调研对象</div><div class="value">${r.interviewee||'—'}</div></div>
+      <div class="meta-item"><div class="label">报告日期</div><div class="value">${today}</div></div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    ${r.objective?`
+    <div class="section">
+      <div class="section-header"><span class="icon">🎯</span><h2>调研目标</h2></div>
+      <div class="field-value" style="font-size:14px;font-weight:500;border-left:4px solid ${c.border}">${r.objective}</div>
+    </div>`:''}
+
+    <div class="section">
+      <div class="section-header"><span class="icon">🏢</span><h2>业务背景与目标</h2></div>
+      ${r.background?`<div class="field-block"><div class="field-name">业务现状与核心挑战</div><div class="field-value">${r.background}</div></div>`:''}
+      ${r.systemGoal?`<div class="field-block"><div class="field-name">系统/AI接入目标</div><div class="field-value">${r.systemGoal}</div></div>`:''}
+    </div>
+
+    <div class="section">
+      <div class="section-header"><span class="icon">🔄</span><h2>核心业务流程</h2></div>
+      ${r.processChain?`<div class="field-block"><div class="field-name">整体链条</div><div class="field-value" style="background:#eff6ff;border-color:#bfdbfe">${r.processChain}</div></div>`:''}
+      ${tableRows?`
+      <div class="field-name" style="margin-bottom:8px">流程节点明细</div>
+      <table><thead><tr><th>环节</th><th>输入</th><th>执行动作</th><th>输出</th></tr></thead>
+      <tbody>${tableRows}</tbody></table>`:''}
+    </div>
+
+    ${r.bizClassification||r.coreLogic||r.costLogic?`
+    <div class="section">
+      <div class="section-header"><span class="icon">💡</span><h2>业务要点与核心逻辑</h2></div>
+      ${r.bizClassification?`<div class="field-block"><div class="field-name">业务分类规则</div><div class="field-value">${r.bizClassification}</div></div>`:''}
+      ${r.coreLogic?`<div class="field-block"><div class="field-name">核心计算策略</div><div class="field-value">${r.coreLogic}</div></div>`:''}
+      ${r.costLogic?`<div class="field-block"><div class="field-name">成本/收益核算逻辑</div><div class="field-value">${r.costLogic}</div></div>`:''}
+    </div>`:''}
+
+    ${(r.structuredData||[]).some(d=>d.name)||(r.unstructuredData||[]).some(d=>d.name)?`
+    <div class="section">
+      <div class="section-header"><span class="icon">🗄️</span><h2>关键数据资产（AI学习对象）</h2></div>
+      ${(r.structuredData||[]).some(d=>d.name)?`
+        <div class="field-name" style="margin-bottom:8px">结构化数据（数据库/Excel/系统表单）</div>
+        ${r.structuredData.filter(d=>d.name).map(d=>`<div class="data-item"><div class="data-name">📊 ${d.name}</div><div class="data-desc">${d.desc}</div></div>`).join('')}
+        <div style="margin-bottom:20px"></div>`:''}
+      ${(r.unstructuredData||[]).some(d=>d.name)?`
+        <div class="field-name" style="margin-bottom:8px">非结构化数据（Word/PDF/聊天记录）</div>
+        ${r.unstructuredData.filter(d=>d.name).map(d=>`<div class="data-item"><div class="data-name">📄 ${d.name}</div><div class="data-desc">${d.desc}</div></div>`).join('')}`:''}
+    </div>`:''}
+
+    ${(r.painPoints||[]).some(p=>p.title)?`
+    <div class="section">
+      <div class="section-header"><span class="icon">🔥</span><h2>业务痛点分析</h2></div>
+      ${r.painPoints.filter(p=>p.title).map((p,i)=>`
+        <div class="pain-card">
+          <div class="pain-title">痛点${i+1}：${p.title}</div>
+          ${p.desc?`<div class="pain-desc">${p.desc}</div>`:''}
+          ${p.impact?`<div class="pain-impact">影响：${p.impact}</div>`:''}
+        </div>`).join('')}
+    </div>`:''}
+
+    ${(r.aiRequirements||[]).some(a=>a.title)?`
+    <div class="section">
+      <div class="section-header"><span class="icon">🤖</span><h2>AI能力需求与可行性验证</h2></div>
+      ${r.aiRequirements.filter(a=>a.title).map((a,i)=>`
+        <div class="req-card">
+          <div class="req-title">能力需求${i+1}：${a.title}</div>
+          ${a.desc?`<div class="req-desc">${a.desc}</div>`:''}
+        </div>`).join('')}
+    </div>`:''}
+
+    <div class="section">
+      <div class="section-header"><span class="icon">✅</span><h2>调研确认</h2></div>
+      <p style="color:#64748b;font-size:13px;margin-bottom:12px">本报告内容已由调研双方共同确认无误，相关业务逻辑可作为后续需求设计的依据：</p>
+      <table class="sign-table">
+        <tr><td>调研人</td><td style="min-width:200px">____________________</td><td>日期</td><td>20___年___月___日</td></tr>
+        <tr><td>被调研人</td><td>____________________</td><td>日期</td><td>20___年___月___日</td></tr>
+      </table>
+    </div>
+
+  </div>
+  <div class="footer">欧神诺AI-Native CRM · Skills调研报告 · ${today}</div>
+</div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (!win) { alert('请在浏览器中允许弹出窗口后重试'); return; }
+    win.document.write(html);
+    win.document.close();
+}
+
+// ─── Skill Def Tab ────────────────────────────────────────────────────────────
+function renderSkillDefTab(el) {
+    const s = skills[currentKey];
+    const d = s.skillDef || emptySkillDef();
+    const c = COLORS[s.color]||COLORS.blue;
+    const layerBadge = s.layer==='L1'?'bg-blue-900 text-blue-300':s.layer==='L2'?'bg-purple-900 text-purple-300':'bg-amber-900 text-amber-300';
+
+    el.innerHTML = `<div class="space-y-4 max-w-3xl">
+
+    <!-- §2 判定依据 -->
+    <div class="report-section">
+        <div class="section-title">② 判定依据</div>
+        <div class="space-y-3">
+            <div>
+                <div class="field-label">复用范围</div>
+                <div class="flex space-x-2 mb-2">
+                    ${['跨行业通用 (L1)','同行业跨企业复用 (L2)','仅限本企业/租户 (L3)'].map(v=>`<button onclick="updateSkillDef('reuseScope','${v}')" style="padding:4px 10px;border-radius:20px;font-size:11px;border:1px solid ${d.reuseScope===v?c.border:'rgb(51 65 85)'};background:${d.reuseScope===v?'rgba(99,102,241,0.15)':'transparent'};color:${d.reuseScope===v?'rgb(165 180 252)':'rgb(100 116 139)'};cursor:pointer">${v}</button>`).join('')}
+                </div>
+            </div>
+            <div><div class="field-label">语义依赖</div>
+                <div class="flex space-x-2 mb-2">
+                    ${['无','依赖行业通用语义','强依赖企业私有语义'].map(v=>`<button onclick="updateSkillDef('semanticDep','${v}')" style="padding:4px 10px;border-radius:20px;font-size:11px;border:1px solid ${d.semanticDep===v?c.border:'rgb(51 65 85)'};background:${d.semanticDep===v?'rgba(99,102,241,0.15)':'transparent'};color:${d.semanticDep===v?'rgb(165 180 252)':'rgb(100 116 139)'};cursor:pointer">${v}</button>`).join('')}
+                </div>
+            </div>
+            <div><div class="field-label">判定理由（防止边界漂移）</div>
+                <div class="fmt-guide">用"只有[公司名]这样干"句式，具体说明哪些规则/数据是企业私有的</div>
+                <textarea rows="2" oninput="updateSkillDef('layerReason',this.value)" placeholder="只有欧神诺这样干：...">${esc(d.layerReason)}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- §3 Ontology依赖 -->
+    <div class="report-section">
+        <div class="section-title">③ Ontology 依赖</div>
+        <div class="fmt-guide" style="margin-bottom:12px">原则：Ontology先行。Skill 是在 Ontology 定义的世界中执行任务，必须先明确世界的边界。</div>
+        <div class="grid grid-cols-2 gap-3">
+            <div><div class="field-label">实体 Entities</div><input value="${esc(d.ontoEntities)}" placeholder="线索、活动、经销商、报价单..." oninput="updateSkillDef('ontoEntities',this.value)"/></div>
+            <div><div class="field-label">角色 Roles</div><input value="${esc(d.ontoRoles)}" placeholder="市场经理、大区总监、业务员..." oninput="updateSkillDef('ontoRoles',this.value)"/></div>
+            <div><div class="field-label">状态 Statuses</div><input value="${esc(d.ontoStatuses)}" placeholder="待跟进、跟进中、已转化、已流失..." oninput="updateSkillDef('ontoStatuses',this.value)"/></div>
+            <div><div class="field-label">规则约束 Rules</div><input value="${esc(d.ontoRules)}" placeholder="高意向线索必须24h内联系..." oninput="updateSkillDef('ontoRules',this.value)"/></div>
+        </div>
+    </div>
+
+    <!-- §4 SOP执行逻辑 -->
+    <div class="report-section">
+        <div class="section-title">④ 执行逻辑与 SOP 拆解</div>
+        <div class="fmt-guide" style="margin-bottom:12px">按照 SOP 拆解三类动作：<code>识别/抽取</code> (L1多用) → <code>判断/评估</code> (L2多用) → <code>执行/流程</code> (L3多用)</div>
+        <div style="display:grid;grid-template-columns:40px 80px 1fr 1fr auto;gap:6px;font-size:10px;color:#64748b;padding:0 2px;margin-bottom:4px">
+            <span>步骤</span><span>动作类型</span><span>逻辑描述</span><span>依赖项</span><span></span>
+        </div>
+        <div id="sop-steps-list"></div>
+        <button onclick="addSopStep()" class="add-row-btn mt-2">+ 添加步骤</button>
+    </div>
+
+    <!-- §5 调用机制 -->
+    <div class="report-section">
+        <div class="section-title">⑤ 调用机制设计</div>
+        <div class="space-y-3">
+            <div><div class="field-label">类型B 能力执行（Tool调用）</div>
+                <input value="${esc(d.invocationB)}" placeholder="Skill作为编排引擎的Tool被调用：接受...输入，返回..." oninput="updateSkillDef('invocationB',this.value)"/>
+            </div>
+            <div><div class="field-label">类型C 系统操作 CLI（状态写入）</div>
+                <div class="fmt-guide">涉及外部状态改变的动作必须通过 CLI Gateway，所有写操作可追溯</div>
+                <textarea rows="2" oninput="updateSkillDef('invocationC',this.value)" placeholder="CLI接口：ERP.write / OA.submit / WeCom.notify，所有写操作记录审计日志">${esc(d.invocationC)}</textarea>
+            </div>
+            <div><div class="field-label">HITL 人工环路中断点</div>
+                <textarea rows="2" oninput="updateSkillDef('hitl',this.value)" placeholder="① 信息缺失时追问 ② 高风险动作审批（金额>X万）③ 异常数据人工确认">${esc(d.hitl)}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- §6 风险控制 -->
+    <div class="report-section">
+        <div class="section-title">⑥ 风险控制与反模式预防</div>
+        <div class="fmt-guide" style="margin-bottom:10px">至少覆盖：L1不得直接操作业务系统 / 企业私有规则不得硬编码进L1 / 高风险动作必须有HITL</div>
+        ${(d.prohibit||['','']).map((p,i)=>`
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+            <span style="color:#ef4444;font-size:14px;flex-shrink:0">🚫</span>
+            <input value="${esc(p)}" placeholder="严禁..." oninput="updateSkillDefList('prohibit',${i},this.value)" style="flex:1"/>
+            <button onclick="removeProhibit(${i})" class="del-btn">✕</button>
+        </div>`).join('')}
+        <button onclick="addProhibit()" class="add-row-btn mt-1">+ 添加禁止项</button>
+    </div>
+
+    <!-- §7 验收标准 -->
+    <div class="report-section">
+        <div class="section-title">⑦ 验收标准</div>
+        <div class="grid grid-cols-3 gap-4">
+            <div>
+                <div class="field-label">准确率 Accuracy</div>
+                <input value="${esc(d.kpiAccuracy)}" placeholder="字段提取准确率 ≥ 95%" oninput="updateSkillDef('kpiAccuracy',this.value)"/>
+            </div>
+            <div>
+                <div class="field-label">覆盖率 Coverage</div>
+                <input value="${esc(d.kpiCoverage)}" placeholder="自动路由覆盖率 ≥ 85%" oninput="updateSkillDef('kpiCoverage',this.value)"/>
+            </div>
+            <div>
+                <div class="field-label">时效 Latency</div>
+                <input value="${esc(d.kpiLatency)}" placeholder="响应延迟 &lt; 5秒" oninput="updateSkillDef('kpiLatency',this.value)"/>
+            </div>
+        </div>
+    </div>
+
+    </div>`;
+    renderSopSteps();
+}
+
+function renderSopSteps() {
+    const d = skills[currentKey].skillDef || emptySkillDef();
+    const el = document.getElementById('sop-steps-list');
+    if (!el) return;
+    const types = ['识别','判断','执行'];
+    const typeColors = {识别:'rgb(30 58 138)',判断:'rgb(88 28 135)',执行:'rgb(6 78 59)'};
+    el.innerHTML = (d.sopSteps||[]).map((st,i)=>`
+        <div style="display:grid;grid-template-columns:40px 80px 1fr 1fr auto;gap:6px;align-items:center;margin-bottom:6px">
+            <input value="${esc(st.step)}" placeholder="${i+1}" style="text-align:center;padding:5px" oninput="updateSopStep(${i},'step',this.value)"/>
+            <select onchange="updateSopStep(${i},'type',this.value)" style="padding:5px;background:rgb(${st.type==='识别'?'30 58 138':st.type==='判断'?'88 28 135':'6 78 59'})">
+                ${types.map(t=>`<option value="${t}" ${st.type===t?'selected':''}>${t}</option>`).join('')}
+            </select>
+            <input value="${esc(st.logic)}" placeholder="核心处理逻辑..." oninput="updateSopStep(${i},'logic',this.value)"/>
+            <input value="${esc(st.dep)}" placeholder="L1: xxx / CLI: yyy" oninput="updateSopStep(${i},'dep',this.value)" style="font-size:11px;color:rgb(148 163 184)"/>
+            <button onclick="removeSopStep(${i})" class="del-btn">✕</button>
+        </div>`).join('');
+}
+
+function updateSkillDef(field, val) {
+    if (!skills[currentKey].skillDef) skills[currentKey].skillDef = emptySkillDef();
+    skills[currentKey].skillDef[field] = val;
+    autoSave();
+    if (field==='layerReason'||field==='invocationB'||field==='invocationC'||field==='hitl'||field==='kpiAccuracy'||field==='kpiCoverage'||field==='kpiLatency') return;
+    renderSkillDefTab(document.getElementById('editor-content'));
+}
+function updateSkillDefList(listKey, i, val) {
+    if (!skills[currentKey].skillDef) skills[currentKey].skillDef = emptySkillDef();
+    skills[currentKey].skillDef[listKey][i] = val;
+    autoSave();
+}
+function addProhibit() {
+    if (!skills[currentKey].skillDef) skills[currentKey].skillDef = emptySkillDef();
+    skills[currentKey].skillDef.prohibit.push('');
+    autoSave();
+    renderSkillDefTab(document.getElementById('editor-content'));
+}
+function removeProhibit(i) {
+    skills[currentKey].skillDef.prohibit.splice(i,1);
+    autoSave();
+    renderSkillDefTab(document.getElementById('editor-content'));
+}
+function updateSopStep(i, field, val) {
+    if (!skills[currentKey].skillDef) skills[currentKey].skillDef = emptySkillDef();
+    const steps = skills[currentKey].skillDef.sopSteps;
+    if (!steps[i]) return;
+    steps[i][field] = val;
+    autoSave();
+    if (field==='type') renderSopSteps();
+}
+function addSopStep() {
+    if (!skills[currentKey].skillDef) skills[currentKey].skillDef = emptySkillDef();
+    const n = (skills[currentKey].skillDef.sopSteps||[]).length + 1;
+    skills[currentKey].skillDef.sopSteps.push({step:String(n),type:'识别',logic:'',dep:''});
+    autoSave();
+    renderSopSteps();
+}
+function removeSopStep(i) {
+    skills[currentKey].skillDef.sopSteps.splice(i,1);
+    autoSave();
+    renderSopSteps();
+}
+
+// ─── Permissions Tab ──────────────────────────────────────────────────────────
+function extractRoles(skillKey) {
+    const d = skills[skillKey]?.skillDef;
+    if (!d?.ontoRoles) return [];
+    return d.ontoRoles.split(/[、,，]+/).map(r=>r.trim()).filter(Boolean);
+}
+
+function extractCliOpNames(skillKey) {
+    const d = skills[skillKey]?.skillDef;
+    if (!d) return [];
+    const names = new Set();
+    (d.sopSteps||[]).forEach(st => {
+        if (!st.dep) return;
+        st.dep.split('/').map(p=>p.trim()).forEach(p => {
+            if (p.toUpperCase().startsWith('CLI:')) {
+                const name = p.replace(/^CLI:\s*/i,'').replace(/\s*HITL$/i,'').trim();
+                if (name) names.add(name);
+            }
+        });
+    });
+    const matches = (d.invocationC||'').match(/[A-Za-z][A-Za-z0-9]*\.[A-Za-z][A-Za-z0-9.]*/g) || [];
+    matches.forEach(m => names.add(m));
+    return [...names];
+}
+
+function ensurePermissionsPopulated(skillKey) {
+    const s = skills[skillKey];
+    if (!s.skillDef) s.skillDef = emptySkillDef();
+    if (!s.skillDef.permissions) s.skillDef.permissions = emptyPermissions();
+    const p = s.skillDef.permissions;
+    if (!p.hitlNodes) p.hitlNodes = [];
+    if (!p.auditLog) p.auditLog = [];
+    if (!p.roleMatrix) p.roleMatrix = [];
+    if (!p.cliOps) p.cliOps = [];
+    // Only auto-seed once (if never been touched by user)
+    if (!p._seeded) {
+        if (p.roleMatrix.length === 0) {
+            const roles = extractRoles(skillKey);
+            if (roles.length > 0) p.roleMatrix = roles.map(role=>({role,read:true,write:false,execute:false,approve:false}));
+        }
+        if (p.cliOps.length === 0) {
+            const names = extractCliOpNames(skillKey);
+            if (names.length > 0) p.cliOps = names.map(name=>({name,riskLevel:'中风险',requiresHitl:false,approver:'',auditLevel:'标准'}));
+        }
+        p._seeded = true;
+        autoSave();
+    }
+}
+
+function renderPermTab(el) {
+    ensurePermissionsPopulated(currentKey);
+    el.innerHTML = `
+    <div class="fade-in space-y-5">
+        <div style="background:rgb(30 41 59 / 0.5);border:1px solid rgb(51 65 85);border-radius:8px;padding:10px 14px;font-size:12px;color:rgb(148 163 184);display:flex;gap:8px;align-items:flex-start">
+            <span style="font-size:16px;flex-shrink:0">🔒</span>
+            <span>权限配置基于 <strong style="color:rgb(199 210 254)">L1-L3 Skills 分层框架</strong>：Type A（知识注入，租户隔离）/ Type B（Skill执行，按Skill授权）/ Type C（系统写操作，动态Token + 强制审计日志）。高风险操作须配置 HITL 节点，严禁自动闭环。</span>
+        </div>
+        <div id="perm-role-matrix"></div>
+        <div id="perm-cli-ops"></div>
+        <div id="perm-hitl-nodes"></div>
+        <div id="perm-audit-log"></div>
+        <div id="perm-compliance"></div>
+    </div>`;
+    renderRoleMatrix();
+    renderCliOps();
+    renderHitlNodes();
+    renderAuditLog();
+    renderComplianceCheck();
+}
+
+function renderRoleMatrix() {
+    const el = document.getElementById('perm-role-matrix');
+    if (!el) return;
+    const p = skills[currentKey]?.skillDef?.permissions;
+    if (!p) return;
+    const rows = p.roleMatrix;
+    const matrixHtml = rows.length === 0
+        ? `<div style="color:rgb(71 85 105);font-size:12px;padding:16px;text-align:center">暂无角色，点击下方「添加角色」</div>`
+        : `<div style="display:grid;grid-template-columns:1fr 70px 70px 70px 70px 32px;gap:4px;align-items:center;margin-bottom:8px">
+            <div style="font-size:10px;font-weight:700;color:rgb(100 116 139);text-transform:uppercase;padding-left:4px">角色</div>
+            ${['读','写','执行','审批'].map(h=>`<div style="font-size:10px;font-weight:700;color:rgb(100 116 139);text-transform:uppercase;text-align:center">${h}</div>`).join('')}
+            <div></div>
+           </div>
+           ${rows.map((r,i)=>`
+           <div style="display:grid;grid-template-columns:1fr 70px 70px 70px 70px 32px;gap:4px;align-items:center;margin-bottom:4px">
+               <input value="${esc(r.role)}" placeholder="角色名称" style="font-size:12px;padding:4px 8px" oninput="updateRoleMatrix(${i},'role',this.value)"/>
+               ${['read','write','execute','approve'].map(k=>`
+               <div style="display:flex;justify-content:center">
+                   <div class="perm-check ${r[k]?'on':''}" onclick="toggleRolePerm(${i},'${k}')">${r[k]?'✓':''}</div>
+               </div>`).join('')}
+               <button class="del-btn" onclick="removeRoleRow(${i})">✕</button>
+           </div>`).join('')}`;
+    el.innerHTML = `
+    <div class="report-section">
+        <div class="section-title">① 角色权限矩阵</div>
+        <div style="font-size:11px;color:rgb(71 85 105);margin-bottom:12px">定义各角色对 Skill 的操作权限（读取数据 / 写入数据 / 触发执行 / 审批操作）</div>
+        ${matrixHtml}
+        <button class="add-row-btn mt-2" onclick="addRoleRow()">+ 添加角色</button>
+    </div>`;
+}
+
+function renderCliOps() {
+    const el = document.getElementById('perm-cli-ops');
+    if (!el) return;
+    const p = skills[currentKey]?.skillDef?.permissions;
+    if (!p) return;
+    const riskClass = r => r==='高风险'?'risk-high':r==='中风险'?'risk-mid':'risk-low';
+    const auditOpts = ['标准','强制不可篡改'];
+    const approverList = ['大区总监','市场总监','销售总监','技术负责人','系统管理员'];
+    const riskLevels = ['低风险','中风险','高风险'];
+    const opsHtml = p.cliOps.length === 0
+        ? `<div style="color:rgb(71 85 105);font-size:12px;padding:16px;text-align:center;border:1px dashed rgb(51 65 85);border-radius:6px">暂无 CLI 操作（点击「从SOP同步」自动提取，或手动添加）</div>`
+        : p.cliOps.map((op,i)=>{
+            const warning = (op.riskLevel==='高风险' && !op.requiresHitl)
+                ? `<div style="background:rgb(127 29 29 / 0.2);border:1px solid rgb(127 29 29 / 0.5);border-radius:6px;padding:8px 12px;font-size:11px;color:rgb(252 165 165);display:flex;gap:6px;align-items:center;margin-top:8px"><span>⚠️</span><span>高风险操作未配置 HITL，违反"高风险动作严禁无 HITL 自动闭环"原则</span></div>`
+                : '';
+            return `<div class="pain-card">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                    <input value="${esc(op.name)}" placeholder="接口名称，如 CRM.task.create" style="font-size:12px;font-family:ui-monospace,monospace;color:rgb(165 180 252);padding:3px 8px;flex:1" oninput="updateCliOpName(${i},this.value)"/>
+                    <span class="risk-badge ${riskClass(op.riskLevel)}">${op.riskLevel}</span>
+                    <button class="del-btn" onclick="removeCliOp(${i})">✕</button>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+                    <div>
+                        <div class="sub-label">风险级别</div>
+                        <select onchange="updateCliOp(${i},'riskLevel',this.value)">
+                            ${riskLevels.map(l=>`<option value="${l}" ${op.riskLevel===l?'selected':''}>${l}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <div class="sub-label">审批人</div>
+                        <select onchange="updateCliOp(${i},'approver',this.value)">
+                            <option value="">— 选择审批人 —</option>
+                            ${approverList.map(a=>`<option value="${a}" ${op.approver===a?'selected':''}>${a}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <div class="sub-label">审计级别</div>
+                        <select onchange="updateCliOp(${i},'auditLevel',this.value)">
+                            ${auditOpts.map(a=>`<option value="${a}" ${op.auditLevel===a?'selected':''}>${a}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-top:10px;display:flex;align-items:center;gap:10px">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px">
+                        <div class="perm-check ${op.requiresHitl?'on':''}" onclick="updateCliOp(${i},'requiresHitl',${!op.requiresHitl})">${op.requiresHitl?'✓':''}</div>
+                        <span>需要 HITL 审批</span>
+                    </label>
+                    ${op.requiresHitl?`<span style="font-size:11px;color:rgb(134 239 172)">✅ 已配置人工审批节点</span>`:''}
+                </div>
+                ${warning}
+            </div>`;
+        }).join('');
+    el.innerHTML = `
+    <div class="report-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div class="section-title" style="margin-bottom:0">② CLI 操作安全级别</div>
+            <div style="display:flex;gap:6px">
+                <button class="tpl-btn" onclick="syncCliOpsFromSop()">🔄 从SOP同步</button>
+                <button class="tpl-btn" onclick="addCliOp()">+ 手动添加</button>
+            </div>
+        </div>
+        <div style="font-size:11px;color:rgb(71 85 105);margin-bottom:12px">Type C 写操作须配置审批人和审计级别；高风险操作必须开启 HITL</div>
+        ${opsHtml}
+    </div>`;
+}
+
+function renderHitlNodes() {
+    const el = document.getElementById('perm-hitl-nodes');
+    if (!el) return;
+    const p = skills[currentKey]?.skillDef?.permissions;
+    if (!p) return;
+    const timeoutActions = ['等待人工响应','自动拒绝','上报更高层级','发送企微催办'];
+    const nodesHtml = p.hitlNodes.length === 0
+        ? `<div style="background:rgb(127 29 29 / 0.1);border:1px solid rgb(127 29 29 / 0.4);border-radius:6px;padding:14px;font-size:12px;color:rgb(252 165 165);display:flex;gap:8px;align-items:flex-start">
+            <span>⚠️</span>
+            <div><strong>无 HITL 节点</strong> — 如存在 CLI 执行步骤，"没有审批规则不得自动放行"。请添加人工审批节点。</div>
+           </div>`
+        : p.hitlNodes.map((n,i)=>`
+        <div class="pain-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <span style="font-size:11px;font-weight:700;color:rgb(253 186 116)">HITL 节点 ${i+1}</span>
+                <button class="del-btn" onclick="removeHitlNode(${i})">✕</button>
+            </div>
+            <div class="space-y-2">
+                <div>
+                    <div class="sub-label">触发条件</div>
+                    <input value="${esc(n.trigger)}" placeholder="例：ROI低于0.8时" oninput="updateHitlNode(${i},'trigger',this.value)"/>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                    <div>
+                        <div class="sub-label">审批人</div>
+                        <input value="${esc(n.approver)}" placeholder="例：市场总监" oninput="updateHitlNode(${i},'approver',this.value)"/>
+                    </div>
+                    <div>
+                        <div class="sub-label">超时规则</div>
+                        <input value="${esc(n.timeoutRule)}" placeholder="例：30分钟无响应" oninput="updateHitlNode(${i},'timeoutRule',this.value)"/>
+                    </div>
+                </div>
+                <div>
+                    <div class="sub-label">超时后处理</div>
+                    <select onchange="updateHitlNode(${i},'timeoutAction',this.value)">
+                        <option value="">— 选择处理方式 —</option>
+                        ${timeoutActions.map(a=>`<option value="${a}" ${n.timeoutAction===a?'selected':''}>${a}</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+        </div>`).join('');
+    el.innerHTML = `
+    <div class="report-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div class="section-title" style="margin-bottom:0">③ HITL 配置器</div>
+            <button class="tpl-btn" onclick="addHitlNode()">+ 添加 HITL 节点</button>
+        </div>
+        <div style="font-size:11px;color:rgb(71 85 105);margin-bottom:12px">配置每个人工介入点的触发条件、审批人、超时规则和超时处理方式</div>
+        ${nodesHtml}
+    </div>`;
+}
+
+function renderAuditLog() {
+    const el = document.getElementById('perm-audit-log');
+    if (!el) return;
+    const p = skills[currentKey]?.skillDef?.permissions;
+    if (!p) return;
+    const resultOpts = ['成功','待审批','拒绝','已撤销'];
+    const logHtml = p.auditLog.length === 0
+        ? `<div style="color:rgb(71 85 105);font-size:12px;padding:16px;text-align:center">暂无审计记录</div>`
+        : p.auditLog.map((e,i)=>`
+        <div class="audit-row" style="background:rgb(15 23 42 / 0.5);border-bottom:1px solid rgb(30 41 59)">
+            <input value="${esc(e.ts)}" style="font-size:10px;padding:2px 4px" oninput="updateAuditEntry(${i},'ts',this.value)"/>
+            <input value="${esc(e.operator)}" placeholder="操作员" style="font-size:10px;padding:2px 4px" oninput="updateAuditEntry(${i},'operator',this.value)"/>
+            <input value="${esc(e.action)}" placeholder="操作接口" style="font-size:10px;padding:2px 4px;font-family:ui-monospace,monospace;color:rgb(165 180 252)" oninput="updateAuditEntry(${i},'action',this.value)"/>
+            <input value="${esc(e.target)}" placeholder="目标对象" style="font-size:10px;padding:2px 4px" oninput="updateAuditEntry(${i},'target',this.value)"/>
+            <select style="font-size:10px;padding:2px 2px" onchange="updateAuditEntry(${i},'result',this.value)">
+                ${resultOpts.map(r=>`<option value="${r}" ${e.result===r?'selected':''}>${r}</option>`).join('')}
+            </select>
+            <div style="display:flex;gap:4px;align-items:center">
+                <input value="${esc(e.approvalChain)}" placeholder="审批链路" style="font-size:10px;padding:2px 4px;flex:1" oninput="updateAuditEntry(${i},'approvalChain',this.value)"/>
+                <button class="del-btn" style="font-size:12px;padding:1px 4px" onclick="removeAuditEntry(${i})">✕</button>
+            </div>
+        </div>`).join('');
+    const header = p.auditLog.length > 0 ? `
+        <div class="audit-row" style="background:rgb(15 23 42);font-weight:700;color:rgb(100 116 139);border-radius:6px 6px 0 0;border-bottom:1px solid rgb(51 65 85);font-size:10px">
+            <div>时间戳</div><div>操作员</div><div>操作</div><div>目标</div><div>结果</div><div>审批链</div>
+        </div>` : '';
+    el.innerHTML = `
+    <div class="report-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div class="section-title" style="margin-bottom:0">④ 审计日志模拟 <span style="font-size:10px;font-weight:400;color:rgb(71 85 105);margin-left:4px">Type C 写操作强制记录，不可篡改</span></div>
+            <button class="tpl-btn" onclick="addAuditEntry()">+ 添加记录</button>
+        </div>
+        <div style="font-size:11px;color:rgb(71 85 105);margin-bottom:12px">所有 CLI 写操作均需记录：时间、操作人、操作类型、目标对象、结果、审批链路</div>
+        ${header}${logHtml}
+    </div>`;
+}
+
+function renderComplianceCheck() {
+    const el = document.getElementById('perm-compliance');
+    if (!el) return;
+    const s = skills[currentKey];
+    const p = s?.skillDef?.permissions;
+    const d = s?.skillDef;
+    if (!p || !d) return;
+    // Check 1: All CLI ops have approver
+    let check1 = p.cliOps.length > 0 ? p.cliOps.every(op=>op.approver&&op.approver.trim()!=='') : null;
+    // Check 2: All high-risk ops have HITL
+    const highRiskOps = p.cliOps.filter(op=>op.riskLevel==='高风险');
+    let check2 = p.cliOps.length > 0 ? (highRiskOps.length===0 ? true : highRiskOps.every(op=>op.requiresHitl)) : null;
+    // Check 3: No 识别 step has CLI dep
+    const check3 = !(d.sopSteps||[]).some(st=>st.type==='识别'&&(st.dep||'').toUpperCase().includes('CLI'));
+    // Check 4: High-risk ops have 强制不可篡改
+    let check4 = p.cliOps.length > 0 ? (highRiskOps.length===0 ? true : highRiskOps.every(op=>op.auditLevel==='强制不可篡改')) : null;
+    // Check 5: If CLI execute steps exist, must have HITL node
+    const hasCliExec = (d.sopSteps||[]).some(st=>st.type==='执行'&&(st.dep||'').toUpperCase().includes('CLI'));
+    let check5 = hasCliExec ? p.hitlNodes.length > 0 : null;
+
+    const checks = [
+        { label:'所有 CLI 操作已配置审批人', desc:'每个写操作须明确责任边界，指定审批角色', val:check1 },
+        { label:'高风险操作已开启 HITL', desc:'高风险 CLI 操作严禁自动闭环，必须配置人工审批节点', val:check2 },
+        { label:'L1「识别」步骤不直接调用 CLI', desc:'反模式预防：L1 严禁直接操作业务系统，必须经 L3 编排层', val:check3 },
+        { label:'高风险操作审计级别为「强制不可篡改」', desc:'Type C 写操作的审计日志须不可篡改，可追溯', val:check4 },
+        { label:'CLI 执行步骤已配置 HITL 中断节点', desc:'"没有审批规则不得自动放行"前提条件', val:check5 },
+    ];
+    const itemClass = v => v===true?'compliance-item compliance-pass':v===false?'compliance-item compliance-fail':'compliance-item compliance-unknown';
+    const icon = v => v===true?'✅':v===false?'❌':'⬜';
+    const passCount = checks.filter(c=>c.val===true).length;
+    const failCount = checks.filter(c=>c.val===false).length;
+    const badgeBg = failCount>0 ? 'rgb(127 29 29 / 0.3)' : 'rgb(20 83 45 / 0.3)';
+    const badgeColor = failCount>0 ? 'rgb(252 165 165)' : 'rgb(134 239 172)';
+    el.innerHTML = `
+    <div class="report-section">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="section-title" style="margin-bottom:0">⑤ 合规检查</div>
+            <span style="font-size:11px;padding:2px 10px;border-radius:10px;font-weight:600;background:${badgeBg};color:${badgeColor}">${passCount}/${checks.length} 通过</span>
+        </div>
+        ${checks.map(c=>`
+        <div class="${itemClass(c.val)}">
+            <span style="font-size:14px;flex-shrink:0">${icon(c.val)}</span>
+            <div>
+                <div style="font-weight:600;color:rgb(203 213 225)">${c.label}</div>
+                <div style="font-size:11px;color:rgb(100 116 139);margin-top:2px">${c.desc}</div>
+                ${c.val===null?`<div style="font-size:10px;color:rgb(71 85 105);margin-top:2px">（无数据，配置后自动检测）</div>`:''}
+            </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ─── Permissions Update Functions ─────────────────────────────────────────────
+function toggleRolePerm(i, permKey) {
+    const p = skills[currentKey].skillDef.permissions;
+    p.roleMatrix[i][permKey] = !p.roleMatrix[i][permKey];
+    autoSave(); renderRoleMatrix(); renderComplianceCheck();
+}
+function updateRoleMatrix(i, field, val) {
+    const p = skills[currentKey].skillDef.permissions;
+    if (!p.roleMatrix[i]) return;
+    p.roleMatrix[i][field] = val;
+    autoSave();
+    if (field !== 'role') { renderRoleMatrix(); renderComplianceCheck(); }
+}
+function addRoleRow() {
+    skills[currentKey].skillDef.permissions.roleMatrix.push({role:'',read:true,write:false,execute:false,approve:false});
+    autoSave(); renderRoleMatrix();
+}
+function removeRoleRow(i) {
+    skills[currentKey].skillDef.permissions.roleMatrix.splice(i,1);
+    autoSave(); renderRoleMatrix(); renderComplianceCheck();
+}
+function updateCliOpName(i, val) {
+    const p = skills[currentKey].skillDef.permissions;
+    if (!p.cliOps[i]) return;
+    p.cliOps[i].name = val;
+    autoSave();
+}
+function updateCliOp(i, field, val) {
+    const p = skills[currentKey].skillDef.permissions;
+    if (!p.cliOps[i]) return;
+    if (field==='requiresHitl') val = (val===true||val==='true');
+    p.cliOps[i][field] = val;
+    autoSave(); renderCliOps(); renderComplianceCheck();
+}
+function addCliOp() {
+    skills[currentKey].skillDef.permissions.cliOps.push({name:'',riskLevel:'中风险',requiresHitl:false,approver:'',auditLevel:'标准'});
+    autoSave(); renderCliOps(); renderComplianceCheck();
+}
+function removeCliOp(i) {
+    skills[currentKey].skillDef.permissions.cliOps.splice(i,1);
+    autoSave(); renderCliOps(); renderComplianceCheck();
+}
+function syncCliOpsFromSop() {
+    const p = skills[currentKey].skillDef.permissions;
+    const existing = new Set(p.cliOps.map(o=>o.name));
+    let added = 0;
+    extractCliOpNames(currentKey).forEach(name=>{
+        if (!existing.has(name)) { p.cliOps.push({name,riskLevel:'中风险',requiresHitl:false,approver:'',auditLevel:'标准'}); added++; }
+    });
+    autoSave(); renderCliOps(); renderComplianceCheck();
+    if (added===0) alert('没有新的 CLI 操作需要同步（SOP步骤中的操作已全部存在）');
+}
+function updateHitlNode(i, field, val) {
+    const p = skills[currentKey].skillDef.permissions;
+    if (!p.hitlNodes[i]) return;
+    p.hitlNodes[i][field] = val;
+    autoSave(); renderComplianceCheck();
+}
+function addHitlNode() {
+    skills[currentKey].skillDef.permissions.hitlNodes.push({trigger:'',approver:'',timeoutRule:'',timeoutAction:''});
+    autoSave(); renderHitlNodes(); renderComplianceCheck();
+}
+function removeHitlNode(i) {
+    skills[currentKey].skillDef.permissions.hitlNodes.splice(i,1);
+    autoSave(); renderHitlNodes(); renderComplianceCheck();
+}
+function addAuditEntry() {
+    const now = new Date();
+    const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    skills[currentKey].skillDef.permissions.auditLog.push({ts,operator:'',action:'',target:'',result:'成功',approvalChain:''});
+    autoSave(); renderAuditLog();
+}
+function updateAuditEntry(i, field, val) {
+    const p = skills[currentKey].skillDef.permissions;
+    if (!p.auditLog[i]) return;
+    p.auditLog[i][field] = val;
+    autoSave();
+}
+function removeAuditEntry(i) {
+    skills[currentKey].skillDef.permissions.auditLog.splice(i,1);
+    autoSave(); renderAuditLog();
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ─── Persist ──────────────────────────────────────────────────────────────────
+function autoSave() {
+    localStorage.setItem('crm-skills-v2', JSON.stringify(skills));
+    const s = document.getElementById('save-status');
+    s.classList.remove('hidden');
+    clearTimeout(window._st);
+    window._st = setTimeout(()=>s.classList.add('hidden'), 2000);
+}
+function exportSkillMd() {
+    const s = skills[currentKey];
+    if (!s) return;
+    const d = s.skillDef || emptySkillDef();
+    const sopTable = (d.sopSteps||[]).map(st=>
+        `| ${st.step} | ${st.type} | ${st.logic} | ${st.dep} |`
+    ).join('\n');
+    const prohibitList = (d.prohibit||[]).filter(Boolean).map(p=>`  - [ ] ${p}`).join('\n');
+    const permSection = buildPermMdSection(d.permissions);
+    const md = `# SKILL.md — ${s.name}
+
+## 1. 基本信息 (Basic Information)
+
+- **Skill 名称**: ${s.name}
+- **Skill ID**: ${s.skillId||''}
+- **命令**: ${s.command||''}
+- **所属层级**: ${s.layer||''} ${s.layer==='L1'?'基础原子层':s.layer==='L2'?'行业能力层':'企业专属层'}
+- **Provider**: ${s.provider||''}
+- **版本号**: ${s.version||'V1.0'}
+- **描述**: ${s.description||''}
+
+## 2. 判定依据 (Boundary Determination)
+
+- **复用范围**: ${d.reuseScope||''}
+- **语义依赖**: ${d.semanticDep||''}
+- **判定口诀验证**: ${d.layerReason||''}
+
+## 3. Ontology 依赖 (Ontology Dependencies)
+
+- **实体 (Entities)**: ${d.ontoEntities||''}
+- **角色 (Roles)**: ${d.ontoRoles||''}
+- **状态 (Statuses)**: ${d.ontoStatuses||''}
+- **规则约束 (Rules)**: ${d.ontoRules||''}
+
+## 4. 执行逻辑与 SOP 拆解 (Execution Logic)
+
+| 步骤 | 动作类型 | 逻辑描述 | 依赖项 |
+| :--- | :--- | :--- | :--- |
+${sopTable}
+
+## 5. 调用机制设计 (Invocation Architecture)
+
+- **类型 B 能力执行**: ${d.invocationB||''}
+- **类型 C 系统操作 (CLI)**: ${d.invocationC||''}
+- **HITL (人工环路)**: ${d.hitl||''}
+
+## 6. 风险控制与反模式预防 (Risk Control)
+
+### 禁止事项:
+${prohibitList||'  - [ ] （待填写）'}
+
+## 7. 验收标准 (Acceptance Criteria)
+
+- **准确率**: ${d.kpiAccuracy||''}
+- **覆盖率**: ${d.kpiCoverage||''}
+- **时效性**: ${d.kpiLatency||''}
+${permSection}`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([md],{type:'text/markdown'}));
+    a.download = `SKILL_${(s.skillId||s.name.replace(/\s/g,'_'))}.md`;
+    a.click();
+}
+function buildPermMdSection(p) {
+    if (!p) return '';
+    const hasData = (p.roleMatrix||[]).length>0||(p.cliOps||[]).length>0||(p.hitlNodes||[]).length>0;
+    if (!hasData) return '';
+    let sec = '\n## 8. 权限与安全配置 (Security & Permissions)\n';
+    if ((p.roleMatrix||[]).length>0) {
+        sec += '\n### 角色权限矩阵\n\n| 角色 | 读 | 写 | 执行 | 审批 |\n| :--- | :---: | :---: | :---: | :---: |\n';
+        sec += p.roleMatrix.map(r=>`| ${r.role} | ${r.read?'✓':''} | ${r.write?'✓':''} | ${r.execute?'✓':''} | ${r.approve?'✓':''} |`).join('\n');
+        sec += '\n';
+    }
+    if ((p.cliOps||[]).length>0) {
+        sec += '\n### CLI 操作安全级别\n\n| 接口 | 风险级别 | 需要HITL | 审批人 | 审计级别 |\n| :--- | :---: | :---: | :--- | :--- |\n';
+        sec += p.cliOps.map(op=>`| ${op.name} | ${op.riskLevel} | ${op.requiresHitl?'是':'否'} | ${op.approver||'—'} | ${op.auditLevel} |`).join('\n');
+        sec += '\n';
+    }
+    if ((p.hitlNodes||[]).length>0) {
+        sec += '\n### HITL 人工介入节点\n';
+        p.hitlNodes.forEach((n,i)=>{
+            sec += `\n**节点 ${i+1}**\n- 触发条件：${n.trigger||'—'}\n- 审批人：${n.approver||'—'}\n- 超时规则：${n.timeoutRule||'—'}\n- 超时处理：${n.timeoutAction||'—'}\n`;
+        });
+    }
+    return sec;
+}
+function exportJSON() {
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([JSON.stringify(skills,null,2)],{type:'application/json'}));
+    a.download='crm-skills-config.json'; a.click();
+}
+function importJSON() {
+    const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+    inp.onchange=e=>{
+        const r=new FileReader(); r.readAsText(e.target.files[0]);
+        r.onload=ev=>{ try{ skills=JSON.parse(ev.target.result); currentKey=Object.keys(skills)[0]; currentTab='basic'; renderSidebar(); renderEditor(); renderPreview(); autoSave(); }catch(err){alert('导入失败：'+err.message);} };
+    }; inp.click();
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+const saved = localStorage.getItem('crm-skills-v2');
+if(saved){ try{ skills=JSON.parse(saved); }catch(e){} }
+// ensure all skills have report
+Object.values(skills).forEach(s=>{ if(!s.report) s.report=emptyReport(); });
+// ensure all skills have skillDef.permissions
+Object.values(skills).forEach(s=>{
+    if(!s.skillDef) s.skillDef=emptySkillDef();
+    if(!s.skillDef.permissions) s.skillDef.permissions=emptyPermissions();
+});
+
+currentKey = Object.keys(skills)[0];
+setViewMode('biz'); // 默认业务视图
+renderPreview();
+</script>
+</body>
+</html>
