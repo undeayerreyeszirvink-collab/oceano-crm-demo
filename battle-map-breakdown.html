@@ -667,8 +667,8 @@ function renderSectionSummary() {
       <div class="mb-3">
         <div class="flex items-center gap-3 py-2 border-b border-slate-900/80">
           <div class="w-24 text-xs text-slate-500 flex-shrink-0 cursor-pointer hover:text-slate-300 transition-colors"
-               onclick="filterBySection('${sec}')"
-               title="点击查看${sec}的所有列">${sec}</div>
+               onclick="toggleFieldList('${sec}', null, event)"
+               title="点击查看${sec}的所有字段名">${sec}</div>
           <div class="text-xs text-slate-700 w-6 flex-shrink-0">${secCols.length}列</div>
           <div class="flex flex-wrap gap-1">${chips}</div>
         </div>
@@ -680,6 +680,7 @@ function renderSectionSummary() {
 
 // 切换字段列表显示
 let activeFieldList = null;
+let activeFieldListKey = null;
 
 function toggleFieldList(section, src, event) {
   // 阻止事件冒泡，避免触发全局点击
@@ -689,14 +690,20 @@ function toggleFieldList(section, src, event) {
 
   const fieldListId = `fields-${section.replace(/\s+/g, '-')}`;
   const fieldListEl = document.getElementById(fieldListId);
+  const fieldListKey = `${fieldListId}::${src || 'all'}`;
 
   // 如果点击的是当前显示的列表，则关闭
-  if (activeFieldList === fieldListId) {
+  if (activeFieldListKey === fieldListKey) {
     fieldListEl.classList.add('hidden');
     fieldListEl.innerHTML = '';
     activeFieldList = null;
-    // 同时取消筛选
-    filterSectionAndSource(section, src);
+    activeFieldListKey = null;
+
+    if (src) {
+      filterSectionAndSource(section, src);
+    } else {
+      filterBySection(section);
+    }
     return;
   }
 
@@ -709,14 +716,20 @@ function toggleFieldList(section, src, event) {
     }
   }
 
-  // 获取该区块+数据源的所有字段
-  const fields = COLS.filter(c => c.section === section && c.src === src);
+  // 获取字段：点区块标题时显示全部字段；点小标签时显示该数据源字段
+  const fields = src
+    ? COLS.filter(c => c.section === section && c.src === src)
+    : COLS.filter(c => c.section === section);
+
+  const title = src
+    ? `${section} · ${SRC_CONFIG[src].label} (${fields.length}列)`
+    : `${section} · 全部字段 (${fields.length}列)`;
 
   // 生成字段列表
   const fieldListHTML = `
     <div class="field-list-panel" onclick="event.stopPropagation()">
       <div class="text-xs text-slate-500 mb-2 font-semibold">
-        ${section} · ${SRC_CONFIG[src].label} (${fields.length}列)
+        ${title}
       </div>
       ${fields.map(col => `
         <div class="field-item" onclick="showDetail(COLS[${col.c}]); event.stopPropagation();" title="点击查看详情">
@@ -730,9 +743,14 @@ function toggleFieldList(section, src, event) {
   fieldListEl.innerHTML = fieldListHTML;
   fieldListEl.classList.remove('hidden');
   activeFieldList = fieldListId;
+  activeFieldListKey = fieldListKey;
 
   // 同时应用筛选
-  filterSectionAndSource(section, src);
+  if (src) {
+    filterSectionAndSource(section, src);
+  } else {
+    filterBySection(section);
+  }
 }
 
 // 全局点击事件：点击空白处关闭字段列表
@@ -743,6 +761,7 @@ document.addEventListener('click', function(event) {
       fieldListEl.classList.add('hidden');
       fieldListEl.innerHTML = '';
       activeFieldList = null;
+      activeFieldListKey = null;
       // 恢复显示全部
       activeFilter = 'all';
       activeSection = null;
